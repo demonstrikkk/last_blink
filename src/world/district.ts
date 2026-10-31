@@ -8,11 +8,11 @@
  */
 
 export const TILE = 16;
-export const VIEW_W = 512;
-export const VIEW_H = 288;
+export const VIEW_W = 960;
+export const VIEW_H = 540;
 
-export const GRID_WIDTH = 48;
-export const GRID_HEIGHT = 22;
+export const GRID_WIDTH = 96;
+export const GRID_HEIGHT = 44;
 export const WORLD_WIDTH = GRID_WIDTH * TILE;
 export const WORLD_HEIGHT = GRID_HEIGHT * TILE;
 
@@ -51,10 +51,43 @@ const SOLID: ReadonlySet<Cell> = new Set(['#', 'B', 'L', 'T', 'A', 'N', 'R', 'D'
 export const SPAWN: Point = { x: 10 * TILE + 8, y: 15 * TILE + 15 };
 
 function baseCell(x: number, y: number): Cell {
-  if (y <= 3 || y >= 17) return '#';
-  if (y >= 7 && y <= 13) return ',';
-  if (x === 0 || x === GRID_WIDTH - 1) return '#';
-  return '.';
+  // World border boundaries
+  if (x === 0 || x === GRID_WIDTH - 1 || y === 0 || y === GRID_HEIGHT - 1) return '#';
+
+  // 1. Enterable Building Interiors
+  // Relay 7 Substation Room (x: 19..23, y: 1..3 with door at x: 21, y: 4)
+  if (x >= 19 && x <= 23 && y >= 1 && y <= 3) return '.';
+  // Nocturne Diner Interior (x: 66..72, y: 1..3 with door at x: 68, y: 4)
+  if (x >= 66 && x <= 72 && y >= 1 && y <= 3) return '.';
+  // Freight Depot Office Interior (x: 76..82, y: 39..41 with door at x: 78, y: 38)
+  if (x >= 76 && x <= 82 && y >= 39 && y <= 41) return '.';
+
+  // North Rooftops & Storefront Tops
+  if (y <= 3) return '#';
+
+  // 2. Circular Street Grid: Vertical Avenue Connectors
+  // East Connector Avenue (Connecting Central/East to South Market)
+  if (x >= 48 && x <= 53 && y >= 7 && y <= 33) return ',';
+  // West Connector Alleyway (Completing the circular loop around the city)
+  if (x >= 2 && x <= 5 && y >= 14 && y <= 33) return ',';
+
+  // Central Relay Street & East Commercial Plaza (North District)
+  if (y <= 21) {
+    if (y >= 7 && y <= 13) return ','; // Main thoroughfare
+    if (y >= 4 && y <= 6) return '.';  // North sidewalk
+    if (y >= 14 && y <= 16) return '.'; // South sidewalk
+    // South building row for north district
+    return '#';
+  }
+
+  // Divider buildings between North and South districts
+  if (y <= 24) return '#';
+
+  // South District Market & Freight Yard
+  if (y >= 25 && y <= 27) return '.'; // Market north walkway
+  if (y >= 28 && y <= 33) return ','; // Freight road
+  if (y >= 34 && y <= 37) return '.'; // Market south walkway
+  return '#'; // South boundary warehouses
 }
 
 function buildGrid(): Cell[][] {
@@ -68,7 +101,7 @@ function buildGrid(): Cell[][] {
     row[x] = cell;
   };
 
-  // Road furniture. Every prop is solid and occupies exactly one tile.
+  // Road furniture: Central Relay Street
   for (const [x, y] of [
     [5, 4],
     [15, 4],
@@ -77,20 +110,38 @@ function buildGrid(): Cell[][] {
     [8, 16],
     [24, 16],
     [40, 16],
+    // East Commercial Plaza Lamps
+    [58, 4],
+    [72, 4],
+    [86, 4],
+    [62, 16],
+    [78, 16],
+    [90, 16],
+    // South District Market Lamps
+    [24, 25],
+    [44, 25],
+    [66, 25],
+    [86, 25],
+    [32, 37],
+    [56, 37],
+    [78, 37],
   ] as const) {
     stamp(x, y, 'L');
   }
 
+  // Police checkpoint barriers
   for (const [x, y] of [
     [7, 8],
     [8, 8],
     [7, 9],
+    // Freight depot barriers
+    [52, 28],
+    [52, 29],
   ] as const) {
     stamp(x, y, 'B');
   }
 
-  // Street trees along the building side of each walk. They frame the street
-  // without narrowing the walkable three-tile pavement.
+  // Street trees
   for (const [x, y] of [
     [5, 4],
     [14, 4],
@@ -102,20 +153,37 @@ function buildGrid(): Cell[][] {
     [23, 16],
     [36, 16],
     [44, 16],
+    // East Plaza trees
+    [60, 4],
+    [75, 4],
+    [88, 4],
+    [64, 16],
+    [80, 16],
+    // South Market trees
+    [22, 25],
+    [42, 25],
+    [70, 25],
+    [30, 37],
+    [68, 37],
   ] as const) {
     stamp(x, y, 'R');
   }
 
-  // Parked cars do not survive the single-tile prop projection; the street is
-  // dressed with lamps, barriers and trees instead.
+  // Canonical interactive targets (Central Relay Street)
+  stamp(20, 4, 'T'); // Relay 7 terminal
+  stamp(34, 4, 'D'); // Ward dispatch board
+  stamp(12, 16, 'A'); // Anchor lamp
+  stamp(30, 16, 'N'); // Sable
+  stamp(42, 16, 'C'); // Ward call-box
 
-  // The evidence terminal, the ward dispatch board, the anchor lamp, Sable,
-  // Ivo's stall and the ward call-box.
-  stamp(20, 4, 'T');
-  stamp(34, 4, 'D');
-  stamp(12, 16, 'A');
-  stamp(30, 16, 'N');
-  stamp(42, 16, 'C');
+  // Expanded targets (East Plaza & South Market)
+  stamp(68, 16, 'N'); // Lyra (Nocturne Diner)
+  stamp(60, 4, 'T');  // Plaza Customer Terminal
+  stamp(86, 16, 'A'); // East Plaza Anchor Lamp
+  stamp(42, 34, 'N'); // Vane (Ward Courier)
+  stamp(78, 34, 'N'); // Castor (Dispatch Enforcer)
+  stamp(70, 25, 'D'); // Freight Manifest Board
+  stamp(26, 37, 'A'); // Freight Yard Anchor Post
 
   return grid;
 }
@@ -153,6 +221,10 @@ export function groundTileFor(cell: Cell, x: number, y: number): number {
 
 /** Storefront band tiles for the two rows that face the street. */
 export function facadeTileFor(x: number, y: number): number {
+  // Open doorways for enterable buildings
+  if ((x === 21 && y === 3) || (x === 68 && y === 3) || (x === 78 && y === 38)) {
+    return 703;
+  }
   const block = Math.floor(x / 6) % 4;
   const wear = (x * 7 + y) % 2;
   if (block === 0) return 148 + wear;
@@ -270,6 +342,128 @@ export const WORLD_TARGETS: readonly WorldTarget[] = [
     y: 16 * TILE + 8,
     radius: 26,
     priority: 1,
+  },
+  // Expanded targets: East Commercial Plaza & South Freight District
+  {
+    id: 'lyra',
+    kind: 'npc',
+    label: 'Lyra',
+    prompt: 'Talk to Lyra (Diner)',
+    tileX: 68,
+    tileY: 16,
+    x: 68 * TILE + 8,
+    y: 16 * TILE + 8,
+    radius: 28,
+    priority: 3,
+  },
+  {
+    id: 'vane',
+    kind: 'npc',
+    label: 'Courier Vane',
+    prompt: 'Question Courier Vane',
+    tileX: 42,
+    tileY: 34,
+    x: 42 * TILE + 8,
+    y: 34 * TILE + 8,
+    radius: 28,
+    priority: 3,
+  },
+  {
+    id: 'castor',
+    kind: 'npc',
+    label: 'Enforcer Castor',
+    prompt: 'Confront Enforcer Castor',
+    tileX: 78,
+    tileY: 34,
+    x: 78 * TILE + 8,
+    y: 34 * TILE + 8,
+    radius: 28,
+    priority: 3,
+  },
+  {
+    id: 'plaza_terminal',
+    kind: 'evidence',
+    label: 'Nocturne Diner Terminal',
+    prompt: 'Scan guest register',
+    tileX: 60,
+    tileY: 4,
+    x: 60 * TILE + 8,
+    y: 4 * TILE + 8,
+    radius: 28,
+    priority: 2,
+  },
+  {
+    id: 'freight_log',
+    kind: 'evidence',
+    label: 'Freight Manifest Board',
+    prompt: 'Inspect shipping manifest',
+    tileX: 70,
+    tileY: 25,
+    x: 70 * TILE + 8,
+    y: 25 * TILE + 8,
+    radius: 28,
+    priority: 2,
+  },
+  {
+    id: 'anchor_plaza',
+    kind: 'anchor',
+    label: 'Plaza Anchor Post',
+    prompt: 'Set timeline anchor',
+    tileX: 86,
+    tileY: 16,
+    x: 86 * TILE + 8,
+    y: 16 * TILE + 8,
+    radius: 26,
+    priority: 1,
+  },
+  {
+    id: 'anchor_market',
+    kind: 'anchor',
+    label: 'Freight Yard Anchor',
+    prompt: 'Set timeline anchor',
+    tileX: 26,
+    tileY: 37,
+    x: 26 * TILE + 8,
+    y: 37 * TILE + 8,
+    radius: 26,
+    priority: 1,
+  },
+  // Interactive Clues & Search Spots
+  {
+    id: 'clue_conduit',
+    kind: 'evidence',
+    label: 'Gutter Conduit Wire',
+    prompt: 'Inspect optical wire in gutter',
+    tileX: 14,
+    tileY: 14,
+    x: 14 * TILE + 8,
+    y: 14 * TILE + 8,
+    radius: 26,
+    priority: 2,
+  },
+  {
+    id: 'clue_guestbook',
+    kind: 'evidence',
+    label: 'Nocturne Diner Counter',
+    prompt: 'Search counter guestbook',
+    tileX: 70,
+    tileY: 2,
+    x: 70 * TILE + 8,
+    y: 2 * TILE + 8,
+    radius: 26,
+    priority: 2,
+  },
+  {
+    id: 'clue_locker',
+    kind: 'evidence',
+    label: 'Enforcer Locker',
+    prompt: 'Crack enforcer frequency locker',
+    tileX: 80,
+    tileY: 40,
+    x: 80 * TILE + 8,
+    y: 40 * TILE + 8,
+    radius: 26,
+    priority: 2,
   },
 ];
 

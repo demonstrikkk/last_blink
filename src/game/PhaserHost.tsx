@@ -11,6 +11,10 @@ import type { WorldView } from '../world/worldView.js';
 export interface WorldHandle {
   playSfx(name: SfxName): void;
   setMuted(muted: boolean): void;
+  triggerBlinkWarp(): void;
+  triggerTimelineShift(): void;
+  triggerInvestigativePulse(): void;
+  setQuality(quality: 'high' | 'low'): void;
 }
 
 interface PhaserHostProps {
@@ -21,6 +25,7 @@ interface PhaserHostProps {
   readonly onInteract: (targetId: string) => void;
   readonly onReady: () => void;
   readonly worldRef: RefObject<WorldHandle | null>;
+  readonly quality?: 'high' | 'low';
 }
 
 /**
@@ -62,7 +67,14 @@ export function PhaserHost(props: PhaserHostProps) {
           liveRef.current.worldRef.current = {
             playSfx: (name) => scene.playSfx(name),
             setMuted: (muted) => scene.setMuted(muted),
+            triggerBlinkWarp: () => scene.triggerBlinkWarp(),
+            triggerTimelineShift: () => scene.triggerTimelineShift(),
+            triggerInvestigativePulse: () => scene.triggerInvestigativePulse(),
+            setQuality: (quality) => scene.setQuality(quality),
           };
+          if (liveRef.current.quality) {
+            scene.setQuality(liveRef.current.quality);
+          }
           liveRef.current.onReady();
         },
       });
@@ -71,8 +83,8 @@ export function PhaserHost(props: PhaserHostProps) {
         type: Phaser.AUTO,
         parent,
         backgroundColor: '#070a0f',
-        width: 512,
-        height: 288,
+        width: 960,
+        height: 540,
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH,

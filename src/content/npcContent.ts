@@ -73,9 +73,95 @@ export const IVO = npcDefinitionSchema.parse({
   voice: { register: 'warm', speechRate: 1.05 },
 });
 
+export const LYRA = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_lyra',
+  displayName: 'Lyra',
+  role: 'Nocturne Diner proprietor',
+  goals: [
+    {
+      goalId: 'protect_patrons',
+      description: 'Shield curfew violators drinking at the counter from MORROW sweeps.',
+      priority: 5,
+    },
+    {
+      goalId: 'verify_blackout',
+      description: 'Confirm the exact time diner neon flickered out during the outage.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: ['evidence.', 'story.', 'npc.lyra.', 'world.ward_alert'],
+  permissions: {
+    observableFactPrefixes: ['evidence.', 'story.', 'npc.lyra.', 'world.ward_alert'],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'lyra_diner',
+  modelManifestId: null,
+  voice: { register: 'warm', speechRate: 1.0 },
+});
+
+export const CASTOR = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_castor',
+  displayName: 'Enforcer Castor',
+  role: 'Ward Dispatch Enforcer',
+  goals: [
+    {
+      goalId: 'enforce_curfew',
+      description: 'Lock down the south freight line and seal transmission records.',
+      priority: 5,
+    },
+    {
+      goalId: 'follow_ward_directive',
+      description: 'Obey MORROW automated security advisories without question.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: ['evidence.', 'story.', 'npc.castor.', 'world.ward_alert'],
+  permissions: {
+    observableFactPrefixes: ['evidence.', 'story.', 'npc.castor.', 'world.ward_alert'],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'castor_dispatch',
+  modelManifestId: null,
+  voice: { register: 'clipped', speechRate: 0.9 },
+});
+
+export const VANE = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_vane',
+  displayName: 'Courier Vane',
+  role: 'Intercepted Ward Courier',
+  goals: [
+    {
+      goalId: 'recover_package',
+      description: 'Deliver the intercepted optical data drive before the next tick.',
+      priority: 5,
+    },
+    {
+      goalId: 'evade_surveillance',
+      description: 'Stay outside MORROW camera corridors along the freight yard.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: ['evidence.', 'story.', 'npc.vane.', 'world.ward_alert'],
+  permissions: {
+    observableFactPrefixes: ['evidence.', 'story.', 'npc.vane.', 'world.ward_alert'],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'vane_courier',
+  modelManifestId: null,
+  voice: { register: 'clipped', speechRate: 1.1 },
+});
+
 export const STAGE9_NPC_DEFINITIONS: Record<NpcId, NpcDefinition> = {
   [SABLE.npcId]: SABLE,
   [IVO.npcId]: IVO,
 };
 
 export const STAGE9_NPC_LIST: readonly NpcDefinition[] = [SABLE, IVO];
+export const EXPANDED_CITY_NPCS: readonly NpcDefinition[] = [LYRA, CASTOR, VANE];
+export const ALL_CITY_NPCS: readonly NpcDefinition[] = [SABLE, IVO, LYRA, CASTOR, VANE];

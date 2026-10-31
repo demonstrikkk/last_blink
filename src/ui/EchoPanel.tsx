@@ -30,8 +30,8 @@ const MODES: readonly { readonly id: Mode; readonly label: string }[] = [
 ];
 
 /**
- * ECHO is a viewer over canonical records. It never dispatches an action and
- * never writes a fact; the panel only asks EchoService a question.
+ * ECHO is an investigative console over canonical records. It never dispatches an action
+ * and never writes a fact; the panel only asks EchoService a query.
  */
 export function EchoPanel({
   open,
@@ -86,7 +86,7 @@ export function EchoPanel({
     const query = buildQuery();
     if (!query) {
       setAnswer(null);
-      setError('This query needs a scope first.');
+      setError('This query needs a valid target parameter first.');
       return;
     }
     try {
@@ -100,23 +100,28 @@ export function EchoPanel({
   return (
     <div className="echo-layer">
       <button type="button" className="ledger-backdrop" aria-label="Close ECHO" onClick={onClose} />
-      <aside className="echo-panel" role="dialog" aria-modal="true" aria-labelledby="echo-title">
-        <header className="ledger-head">
+      <aside className="echo-panel crt-frame" role="dialog" aria-modal="true" aria-labelledby="echo-title">
+        <div className="echo-scanlines" aria-hidden="true" />
+        <header className="echo-terminal-head">
           <div>
-            <p className="micro">ECHO / GROUNDED RETRIEVAL</p>
-            <h2 id="echo-title">What the record can support</h2>
+            <p className="micro terminal-tag">
+              <span className="terminal-dot" /> SYSTEM // ECHO INVESTIGATION CONSOLE v2.4
+            </p>
+            <h2 id="echo-title" className="terminal-title">
+              What the record can support
+            </h2>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close ECHO">
-            x
+          <button type="button" className="icon-btn console-close" onClick={onClose} aria-label="Close ECHO">
+            ✕
           </button>
         </header>
 
-        <p className="echo-intro">
-          ECHO answers only from canonical facts, events, choices, anchors and rules in one
-          branch. It never consults another timeline except through an explicit comparison.
+        <p className="echo-intro mono">
+          &gt; PROVENANCE ARCHIVE: ECHO queries strictly canonical facts, events, and rules
+          within timeline isolation. Foreign branches are accessible only via explicit comparison.
         </p>
 
-        <div className="echo-modes" role="group" aria-label="Query type">
+        <div className="echo-modes" role="group" aria-label="Query mode selection">
           {MODES.map((item) => (
             <button
               key={item.id}
@@ -129,6 +134,7 @@ export function EchoPanel({
                 setError(null);
               }}
             >
+              <span className="echo-led" aria-hidden="true" />
               {item.label}
             </button>
           ))}
@@ -136,19 +142,20 @@ export function EchoPanel({
 
         {mode === 'fact' ? (
           <label className="echo-field">
-            <span>Fact key</span>
+            <span className="mono">&gt; FACT KEY</span>
             <input
               value={factKey}
               onChange={(event) => setFactKey(event.target.value)}
               placeholder="evidence.relay_7"
+              className="mono"
             />
           </label>
         ) : null}
 
         {mode === 'decision' ? (
           <label className="echo-field">
-            <span>Decision node</span>
-            <select value={nodeId} onChange={(event) => setNodeId(event.target.value)}>
+            <span className="mono">&gt; DECISION NODE</span>
+            <select value={nodeId} onChange={(event) => setNodeId(event.target.value)} className="mono">
               {content.choices.map((node) => (
                 <option key={node.nodeId} value={node.nodeId}>
                   {node.nodeId}
@@ -160,10 +167,11 @@ export function EchoPanel({
 
         {mode === 'compare' && otherBranches.length > 0 ? (
           <label className="echo-field">
-            <span>Compare with</span>
+            <span className="mono">&gt; TARGET TIMELINE</span>
             <select
               value={otherBranchId || fallbackOther}
               onChange={(event) => setOtherBranchId(event.target.value)}
+              className="mono"
             >
               {otherBranches.map((branch) => (
                 <option key={branch.branchId} value={branch.branchId}>
@@ -175,36 +183,36 @@ export function EchoPanel({
         ) : null}
 
         {mode === 'compare' && otherBranches.length === 0 ? (
-          <p className="echo-empty">
-            There is no second timeline yet. Record an anchor, then BLINK to fork one.
+          <p className="echo-empty mono">
+            [NOTICE] No secondary timeline discovered. Set an anchor on Relay Street, then BLINK to fork one.
           </p>
         ) : null}
 
         <button type="button" className="btn echo-ask" onClick={ask}>
-          Ask ECHO
+          Execute Query ⏎
         </button>
 
-        {error ? <p className="echo-error">{error}</p> : null}
+        {error ? <p className="echo-error mono">{error}</p> : null}
 
         {answer ? (
           <section className={`echo-answer echo-${answer.status}`} aria-live="polite">
             <div className="echo-answer-head">
-              <span className={`state-chip echo-status echo-status-${answer.status}`}>
-                {answer.status.toUpperCase()}
+              <span className={`state-chip echo-status echo-status-${answer.status} mono`}>
+                STATUS: {answer.status.toUpperCase()}
               </span>
-              <span className="mono echo-scope">{answer.branchLabel ?? 'unscoped'}</span>
+              <span className="mono echo-scope">[BRANCH: {answer.branchLabel ?? 'unscoped'}]</span>
             </div>
             <p className="echo-summary">{answer.summary}</p>
 
             {answer.claims.map((claim, index) => (
               <article key={`${claim.kind}-${index}`} className={`echo-claim echo-claim-${claim.kind}`}>
-                <p className="mono echo-claim-kind">{claim.kind.replace('_', ' ')}</p>
-                <p>{claim.text}</p>
+                <p className="mono echo-claim-kind">CLAIM // {claim.kind.replace('_', ' ').toUpperCase()}</p>
+                <p className="echo-claim-body">{claim.text}</p>
                 {claim.citations.length > 0 ? (
                   <ul className="echo-citations">
                     {claim.citations.map((citation) => (
                       <li key={`${citation.kind}-${citation.id}-${citation.sequenceNo ?? 0}`}>
-                        <span className="mono echo-citation-kind">{citation.kind}</span>
+                        <span className="mono echo-citation-kind">{citation.kind.toUpperCase()}</span>
                         <span className="mono echo-citation-id">
                           {citation.id}
                           {citation.sequenceNo !== null ? ` #${citation.sequenceNo}` : ''}
@@ -218,7 +226,7 @@ export function EchoPanel({
             ))}
 
             {answer.missing.length > 0 ? (
-              <p className="echo-missing mono">Missing: {answer.missing.join(', ')}</p>
+              <p className="echo-missing mono">&gt; MISSING CAUSAL PREREQUISITES: {answer.missing.join(', ')}</p>
             ) : null}
           </section>
         ) : null}

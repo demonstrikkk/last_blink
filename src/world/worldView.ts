@@ -16,6 +16,11 @@ export interface EvidenceView {
   readonly provenance: string;
   readonly sourceKind: string;
   readonly confidence: number;
+  readonly verificationStatus: 'verified_record' | 'unverified_claim' | 'uncollected';
+  readonly discoveryContext: string;
+  readonly contradictionNote: string | null;
+  readonly relatedRef: string;
+  readonly timelineBranch: string;
 }
 
 export interface ChoiceOptionView {
@@ -40,6 +45,15 @@ export interface ObjectiveView {
   readonly label: string;
   readonly detail: string;
   readonly done: boolean;
+  readonly completionCondition: string;
+}
+
+export interface DiscrepancyView {
+  readonly id: string;
+  readonly title: string;
+  readonly claim: string;
+  readonly contradiction: string;
+  readonly status: 'active' | 'resolved' | 'pending';
 }
 
 export interface EndingView {
@@ -85,6 +99,7 @@ export interface WorldView {
   readonly collectedEvidence: readonly EvidenceView[];
   readonly objectives: readonly ObjectiveView[];
   readonly currentObjective: ObjectiveView | null;
+  readonly discrepancies: readonly DiscrepancyView[];
   readonly choices: readonly ChoiceView[];
   readonly choice: ChoiceView | null;
   readonly choiceResolved: boolean;
@@ -136,21 +151,78 @@ function choiceView(
   };
 }
 
+function describeObjectiveCondition(objectiveId: string, requires: readonly string[]): string {
+  switch (objectiveId) {
+    case 'obj_read_relay':
+      return 'Inspect Relay 7 terminal on north kerb to recover evidence.relay_7';
+    case 'obj_decide_relay':
+      return 'Converse with Sable and commit story.relay_choice_resolved (share or conceal)';
+    case 'obj_find_dispatch':
+      return 'Inspect North Walk dispatch board to recover evidence.ward_dispatch';
+    case 'obj_hear_ivo':
+      return 'Converse with Ivo on South Walk to record evidence.vendor_testimony';
+    case 'obj_decide_vendor':
+      return 'Commit story.vendor_choice_resolved (protect or name Ivo) with witness';
+    case 'obj_make_call':
+      return 'Use the East Walk call-box to submit or close the ward line (story.ward_call)';
+    default:
+      return `Requires canonical facts: ${requires.join(', ')}`;
+  }
+}
+
 export function deriveWorldView(state: GameState, content: GameContent): WorldView {
+  const activeBranch = state.branches.find((branch) => branch.branchId === state.branchId);
+  const parentBranch = activeBranch?.parentBranchId
+    ? state.branches.find((branch) => branch.branchId === activeBranch.parentBranchId)
+    : undefined;
+  const branchLabel = activeBranch?.label ?? 'Original timeline';
+
   const evidence: EvidenceView[] = content.evidence.map((definition) => {
     const fact = state.facts[definition.factKey];
     const missing = missingKeys(state, definition.requires);
+    const collected = fact !== undefined;
+    const sourceKind = fact?.source.kind ?? definition.sourceKind;
+
+    let discoveryContext = definition.sourceRef;
+    let contradictionNote: string | null = null;
+    let relatedRef = 'Relay Street investigation';
+
+    if (definition.evidenceId === 'relay_7_log') {
+      discoveryContext = 'North kerb terminal · direct hardware counter read';
+      contradictionNote = 'Contradicts city-wide clock zeroing: recorded 8-minute duration';
+      relatedRef = 'Related to 03:14 dispatch runner timing';
+    } else if (definition.evidenceId === 'ward_dispatch') {
+      discoveryContext = 'North walk board · handwritten desk log';
+      contradictionNote = 'Contradicted by Ivo: courier had no sealed pouch and was in flight';
+      relatedRef = 'Related to Relay 7 hardware clock log';
+    } else if (definition.evidenceId === 'vendor_testimony') {
+      discoveryContext = 'South walk stall · eyewitness account from stallholder';
+      contradictionNote = 'Contradicts official ward dispatch claim of authorized sealed route';
+      relatedRef = 'Related to ward dispatch slip 03:14';
+    }
+
+    const verificationStatus = !collected
+      ? 'uncollected'
+      : sourceKind === 'testimony'
+        ? 'unverified_claim'
+        : 'verified_record';
+
     return {
       evidenceId: definition.evidenceId,
       factKey: definition.factKey,
       label: definition.label,
       summary: definition.summary,
-      collected: fact !== undefined,
-      available: fact === undefined && missing.length === 0,
+      collected,
+      available: !collected && missing.length === 0,
       requires: definition.requires,
       provenance: fact?.source.ref ?? definition.sourceRef,
-      sourceKind: fact?.source.kind ?? definition.sourceKind,
+      sourceKind,
       confidence: fact?.confidence ?? definition.confidence,
+      verificationStatus,
+      discoveryContext,
+      contradictionNote,
+      relatedRef,
+      timelineBranch: branchLabel,
     };
   });
 
@@ -159,7 +231,30 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
     label: definition.label,
     detail: definition.detail,
     done: missingKeys(state, definition.requires).length === 0,
+    completionCondition: describeObjectiveCondition(definition.objectiveId, definition.requires),
   }));
+
+  const hasRelay7 = state.facts['evidence.relay_7'] !== undefined;
+  const hasRelayChoice = state.facts['story.relay_choice_resolved'] !== undefined;
+  const hasTestimony = state.facts['evidence.vendor_testimony'] !== undefined;
+  const hasVendorChoice = state.facts['story.vendor_choice_resolved'] !== undefined;
+
+  const discrepancies: DiscrepancyView[] = [
+    {
+      id: 'discrepancy_clock',
+      title: 'Hardware Count vs City Clock Reset',
+      claim: 'Ward authority records show all Aster district clocks synchronized and reset at midnight.',
+      contradiction: 'Relay 7 hardware counter continuously logged 8 uncounted minutes during blackout.',
+      status: hasRelay7 ? (hasRelayChoice ? 'resolved' : 'active') : 'pending',
+    },
+    {
+      id: 'discrepancy_runner',
+      title: 'Authorized Dispatch vs Unsealed Courier',
+      claim: 'Handwritten dispatch slip states an authorized sealed courier left for Relay 7 at 03:14.',
+      contradiction: 'Ivo testified the runner had torn clothing, no sealed pouch, and was fleeing in panic.',
+      status: hasTestimony ? (hasVendorChoice ? 'resolved' : 'active') : 'pending',
+    },
+  ];
 
   const choices = content.choices.map((node) => choiceView(state, node));
   const choiceNode = choices[0] ?? null;
@@ -183,11 +278,6 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
       }
     : null;
 
-  const activeBranch = state.branches.find((branch) => branch.branchId === state.branchId);
-  const parentBranch = activeBranch?.parentBranchId
-    ? state.branches.find((branch) => branch.branchId === activeBranch.parentBranchId)
-    : undefined;
-
   return {
     district: asString(factValue(state, 'world.district')),
     curfew: asString(factValue(state, 'world.curfew')),
@@ -205,6 +295,7 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
     collectedEvidence: evidence.filter((item) => item.collected),
     objectives,
     currentObjective: objectives.find((objective) => !objective.done) ?? null,
+    discrepancies,
     choices,
     choice: choiceNode,
     choiceResolved: committed !== undefined,
@@ -215,7 +306,7 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
       branchId: state.branchId,
       index: activeBranch?.timelineIndex ?? 0,
       total: state.branches.length,
-      label: activeBranch?.label ?? 'Original timeline',
+      label: branchLabel,
       parentLabel: parentBranch?.label ?? null,
       forkedFromAnchorId: activeBranch?.forkedAtAnchorId ?? null,
     },

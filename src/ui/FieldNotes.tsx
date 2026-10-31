@@ -28,11 +28,23 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
   return (
     <aside className="field-notes" aria-label="Field notes">
       <header className="notes-head">
-        <p className="micro">FIELD NOTES</p>
+        <p className="micro">FIELD NOTES // DOSSIER</p>
         <span className="mono notes-count">
-          {view.evidenceFound}/{view.evidenceTotal}
+          {view.evidenceFound}/{view.evidenceTotal} LOGGED
         </span>
       </header>
+
+      <section className="note-block current-lead-card" aria-label="Active Objective">
+        <p className="micro lead-micro">ACTIVE INVESTIGATIVE LEAD</p>
+        <p className="lead-text">{objective}</p>
+        {view.currentObjective ? (
+          <p className="lead-condition mono">
+            Target condition: {view.currentObjective.completionCondition}
+          </p>
+        ) : (
+          <p className="lead-condition mono">All active street objectives completed.</p>
+        )}
+      </section>
 
       <section className="note-block" aria-labelledby="note-timeline">
         <h2 id="note-timeline" className="note-title">
@@ -64,6 +76,9 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
               <span>
                 <span className="objective-label">{item.label}</span>
                 <span className="objective-detail">{item.detail}</span>
+                <span className="objective-rule-hint mono">
+                  {item.done ? '✓ Met in canon' : `Condition: ${item.completionCondition}`}
+                </span>
               </span>
             </li>
           ))}
@@ -72,7 +87,7 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
 
       <section className="note-block" aria-labelledby="note-evidence">
         <h2 id="note-evidence" className="note-title">
-          Evidence
+          Evidence & Claims
         </h2>
         {view.evidence.map((item) => (
           <article
@@ -87,8 +102,22 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
                 <p className="evidence-label">{item.label}</p>
                 <p className="mono evidence-key">{item.factKey}</p>
               </div>
-              <span className={`state-chip${item.collected ? ' state-verified' : ''}`}>
-                {item.collected ? 'VERIFIED' : item.available ? 'NEW' : 'SEALED'}
+              <span
+                className={`state-chip${
+                  item.verificationStatus === 'verified_record'
+                    ? ' state-verified'
+                    : item.verificationStatus === 'unverified_claim'
+                      ? ' state-claim'
+                      : ''
+                }`}
+              >
+                {item.collected
+                  ? item.verificationStatus === 'verified_record'
+                    ? 'VERIFIED RECORD'
+                    : 'UNVERIFIED CLAIM'
+                  : item.available
+                    ? 'AVAILABLE'
+                    : 'SEALED'}
               </span>
             </div>
             <p className="evidence-summary">
@@ -98,11 +127,36 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
                   ? `Requires ${item.requires.join(', ')}.`
                   : 'Not yet inspected. The street is still holding this one.'}
             </p>
+            {item.contradictionNote ? (
+              <p className="evidence-contradiction mono">
+                ⚡ {item.contradictionNote}
+              </p>
+            ) : null}
             <p className="mono provenance-line">
-              {item.sourceKind.toUpperCase()} · {item.provenance} ·{' '}
-              {Math.round(item.confidence * 100)}% confidence
+              {item.sourceKind.toUpperCase()} · {item.discoveryContext} ·{' '}
+              {Math.round(item.confidence * 100)}% conf · {item.timelineBranch}
             </p>
           </article>
+        ))}
+      </section>
+
+      <section className="note-block" aria-labelledby="note-discrepancies">
+        <h2 id="note-discrepancies" className="note-title">
+          Contradictions & Anomalies
+        </h2>
+        {view.discrepancies.map((d) => (
+          <div key={d.id} className={`discrepancy-card discrepancy-${d.status}`}>
+            <div className="discrepancy-top">
+              <span className={`discrepancy-status mono status-${d.status}`}>{d.status}</span>
+              <p className="discrepancy-title">{d.title}</p>
+            </div>
+            <p className="discrepancy-claim">
+              <span className="discrepancy-tag mono">OFFICIAL RECORD:</span> {d.claim}
+            </p>
+            <p className="discrepancy-contradiction">
+              <span className="discrepancy-tag mono">DISCOVERY:</span> {d.contradiction}
+            </p>
+          </div>
         ))}
       </section>
 
@@ -150,39 +204,28 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
         </section>
       ) : null}
 
-      <section className="note-block" aria-labelledby="note-anchor">
-        <h2 id="note-anchor" className="note-title">
-          Anchor
+      <section className="note-block" aria-labelledby="note-anchors">
+        <h2 id="note-anchors" className="note-title">
+          Anchors
         </h2>
-        {latestAnchor ? (
-          <div className="anchor-card">
-            <p className="anchor-ring" aria-hidden="true">
-              ◯
-            </p>
-            <div>
-              <p className="anchor-label">{latestAnchor.label}</p>
-              <p className="mono anchor-hash">
-                {latestAnchor.anchorId} · v{latestAnchor.stateVersion} · event{' '}
-                {latestAnchor.eventSequenceNo}
-              </p>
-              <p className="mono anchor-hash">{latestAnchor.stateHash}</p>
-              {latestAnchor.forkedInto ? (
-                <p className="mono anchor-forked">forked into {latestAnchor.forkedInto}</p>
-              ) : null}
-            </div>
-          </div>
-        ) : (
+        {view.anchors.length === 0 ? (
           <p className="note-muted">
-            No anchor set. The cyan lamp post by the south walk checkpoints canonical state.
+            No anchor set. Visit the Cyan lamp post to record a checkpoint for BLINK.
           </p>
+        ) : (
+          <ul className="anchor-list">
+            {view.anchors.map((anchor) => (
+              <li key={anchor.anchorId} className="mono">
+                {anchor.anchorId} · {anchor.label} (tick {anchor.tick})
+              </li>
+            ))}
+          </ul>
         )}
-      </section>
-
-      <section className="note-block note-objective" aria-labelledby="note-objective">
-        <h2 id="note-objective" className="note-title">
-          Objective
-        </h2>
-        <p className="note-muted">{objective}</p>
+        {latestAnchor ? (
+          <p className="note-muted">
+            Latest: {latestAnchor.label}. BLINK can fork a new timeline from this tick.
+          </p>
+        ) : null}
       </section>
     </aside>
   );

@@ -20,8 +20,7 @@ import { STAGE5_CONTENT } from './content/stage5Content.js';
 import { STAGE9_NPC_LIST } from './content/npcContent.js';
 import {
   ANCHOR_LABEL,
-  DISTRICT_TITLE,
-  STAGE5_DIALOGUE,
+  getDialogueScript,
   type DialogueScript,
 } from './content/stage5Dialogue.js';
 import { PhaserHost, type WorldHandle } from './game/PhaserHost.js';
@@ -29,12 +28,16 @@ import { WORLD_TARGETS, type WorldTarget } from './world/district.js';
 import { deriveWorldView } from './world/worldView.js';
 import type { MoveInput } from './world/movement.js';
 import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
-import { FieldNotes } from './ui/FieldNotes.js';
 import { Ledger, type SaveState } from './ui/Ledger.js';
 import { BlinkPanel } from './ui/BlinkPanel.js';
 import { EchoPanel } from './ui/EchoPanel.js';
 import { NpcPanel } from './ui/NpcPanel.js';
 import { TouchControls } from './ui/TouchControls.js';
+import { HudTopBar } from './ui/hud/HudTopBar.js';
+import { ObjectivesCard } from './ui/hud/ObjectivesCard.js';
+import { MorrowCard } from './ui/hud/MorrowCard.js';
+import { EchoCard } from './ui/hud/EchoCard.js';
+import { BranchCard } from './ui/hud/BranchCard.js';
 
 type DialogueState =
   | { phase: 'closed' }
@@ -118,10 +121,16 @@ function GameScreen({
   const [blinkOpen, setBlinkOpen] = useState(false);
   const [echoOpen, setEchoOpen] = useState(false);
   const [npcOpen, setNpcOpen] = useState(false);
+  const [showObjectives, setShowObjectives] = useState(true);
+  const [showMorrow, setShowMorrow] = useState(true);
+  const [showEcho, setShowEcho] = useState(false);
+  const [showBranch] = useState(true);
   const [morrowNotice, setMorrowNotice] = useState<string | null>(null);
   const [npcNotice, setNpcNotice] = useState<string | null>(null);
   const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
+  const [quality, setQuality] = useState<'high' | 'low'>('high');
+  const [blinkGlitch, setBlinkGlitch] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>(initialRestored ? 'restored' : 'idle');
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastSaveId, setLastSaveId] = useState<string | null>(null);
@@ -141,7 +150,9 @@ function GameScreen({
 
   const promptTarget = WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
   const activeScript: DialogueScript | null =
-    dialogue.phase === 'closed' ? null : STAGE5_DIALOGUE[dialogue.scriptId] ?? null;
+    dialogue.phase === 'closed'
+      ? null
+      : getDialogueScript(dialogue.scriptId, state, view);
   const activeNode = activeScript
     ? view.choices.find((node) => node.nodeId === activeScript.choiceNodeId) ?? null
     : null;
@@ -173,6 +184,7 @@ function GameScreen({
     (eventId?: GameEventId) => {
       const turn = morrow.run({ triggerEventId: eventId ?? null });
       if (!turn) return;
+      worldRef.current?.playSfx('ui-error');
       if (turn.result.status === 'accepted') {
         setMorrowNotice(
           `MORROW ${turn.proposal.response.toUpperCase()} · ${turn.proposal.reasonCodes.join(', ')}.`,
@@ -194,16 +206,20 @@ function GameScreen({
   const runNpcs = useCallback(() => {
     const lines: string[] = [];
     for (const definition of STAGE9_NPC_LIST) {
-      const turn = npc.run(definition.npcId);
-      if (!turn || !turn.proposal) continue;
-      if (turn.result?.status === 'accepted') {
-        lines.push(
-          `${definition.displayName}: ${turn.proposal.rationale} (${turn.fallback ? 'fallback' : 'accepted'})`,
-        );
-      } else {
-        lines.push(
-          `${definition.displayName}: proposal refused (${turn.result?.rejection?.code ?? 'unknown'}).`,
-        );
+      try {
+        const turn = npc.run(definition.npcId);
+        if (!turn || !turn.proposal) continue;
+        if (turn.result?.status === 'accepted') {
+          lines.push(
+            `${definition.displayName}: ${turn.proposal.rationale} (${turn.fallback ? 'fallback' : 'accepted'})`,
+          );
+        } else {
+          lines.push(
+            `${definition.displayName}: proposal refused (${turn.result?.rejection?.code ?? 'unknown'}).`,
+          );
+        }
+      } catch (cause) {
+        console.warn(`[last-blink] NPC turn error for ${definition.displayName}:`, cause);
       }
     }
     if (lines.length > 0) setNpcNotice(lines.join(' '));
@@ -249,7 +265,7 @@ function GameScreen({
 
   const openDialogue = useCallback(
     (scriptId: string) => {
-      const script = STAGE5_DIALOGUE[scriptId];
+      const script = getDialogueScript(scriptId, session.getState(), viewRef.current);
       if (!script) return;
 
       if (script.grantsEvidenceId) {
@@ -288,6 +304,7 @@ function GameScreen({
 
       if (target.kind === 'evidence') {
         collectEvidence(target.id);
+        openDialogue(target.id);
       } else if (target.kind === 'anchor') {
         recordAnchor();
       } else {
@@ -299,7 +316,7 @@ function GameScreen({
 
   const advanceDialogue = useCallback(() => {
     if (dialogue.phase !== 'lines') return;
-    const script = STAGE5_DIALOGUE[dialogue.scriptId];
+    const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
     if (!script) return;
     if (dialogue.index + 1 < script.lines.length) {
       setDialogue({ phase: 'lines', scriptId: dialogue.scriptId, index: dialogue.index + 1 });
@@ -318,12 +335,12 @@ function GameScreen({
     } else {
       setDialogue({ phase: 'blocked', scriptId: dialogue.scriptId });
     }
-  }, [dialogue]);
+  }, [dialogue, session]);
 
   const choose = useCallback(
     (optionId: string) => {
       if (dialogue.phase !== 'choice') return;
-      const script = STAGE5_DIALOGUE[dialogue.scriptId];
+      const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
       if (!script) return;
       const result = session.dispatch({
         actionType: 'choice.make',
@@ -374,7 +391,9 @@ function GameScreen({
       setCompareTargetId(fork.branchId);
       morrow.reset(fork.branchId);
       setMorrowNotice(null);
-      worldRef.current?.playSfx('blink');
+      worldRef.current?.triggerBlinkWarp();
+      setBlinkGlitch(true);
+      window.setTimeout(() => setBlinkGlitch(false), 420);
       showToast(
         `BLINK complete. New timeline active from ${anchor?.label ?? 'the checkpoint'}. V1 is preserved.`,
       );
@@ -392,11 +411,16 @@ function GameScreen({
       setCompareTargetId(null);
       morrow.reset(branchId as BranchId);
       setMorrowNotice(null);
-      worldRef.current?.playSfx('timeline-shift');
+      worldRef.current?.triggerTimelineShift();
       showToast(`Timeline switched. Canonical hash ${result.stateHash}.`);
     },
     [morrow, session, showToast],
   );
+
+  const triggerPulse = useCallback(() => {
+    worldRef.current?.triggerInvestigativePulse();
+    showToast('Investigative Pulse: Scanning district frequencies for MORROW surveillance overrides...');
+  }, [showToast]);
 
   const toggleMute = useCallback(() => {
     setMuted((current) => {
@@ -405,6 +429,15 @@ function GameScreen({
       return next;
     });
   }, []);
+
+  const toggleQuality = useCallback(() => {
+    setQuality((current) => {
+      const next = current === 'high' ? 'low' : 'high';
+      worldRef.current?.setQuality(next);
+      showToast(`Atmosphere visual effects: ${next.toUpperCase()}`);
+      return next;
+    });
+  }, [showToast]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -448,8 +481,9 @@ function GameScreen({
 
         if (dialogue.phase === 'choice') {
           const scriptId = dialogue.scriptId;
+          const currentScript = getDialogueScript(scriptId, session.getState(), viewRef.current);
           const options = viewRef.current.choices.find(
-            (candidate) => candidate.nodeId === STAGE5_DIALOGUE[scriptId]?.choiceNodeId,
+            (candidate) => candidate.nodeId === currentScript?.choiceNodeId,
           )?.options ?? [];
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
@@ -487,7 +521,10 @@ function GameScreen({
       // Hotkeys when exploration is active
       if (!onControl && !blinkOpen && !echoOpen && !npcOpen && !ledgerOpen) {
         const k = event.key.toLowerCase();
-        if (k === 'b') {
+        if (k === 'q') {
+          event.preventDefault();
+          triggerPulse();
+        } else if (k === 'b') {
           event.preventDefault();
           setBlinkOpen(true);
         } else if (k === 'c') {
@@ -519,6 +556,7 @@ function GameScreen({
     ledgerOpen,
     npcOpen,
     toggleMute,
+    triggerPulse,
   ]);
 
   const setTouch = useCallback((direction: keyof MoveInput, pressed: boolean) => {
@@ -551,147 +589,146 @@ function GameScreen({
     }
   };
 
-  const objective = view.ending
-    ? `The account is closed: ${view.ending.title}.`
-    : view.currentObjective
-      ? `${view.currentObjective.label} — ${view.currentObjective.detail}`
-      : 'The record is complete. Set an anchor or open the ledger to inspect canonical state.';
-
   return (
     <div className="game-shell">
-      <header className="topbar">
-        <div className="brand">
-          <p className="micro">THE LAST BLINK / SECOND SETTLEMENT</p>
-          <h1>Relay Street</h1>
-        </div>
-        <div className="topbar-right">
-          <button
-            type="button"
-            className="timeline-chip timeline-button"
-            onClick={() => setBlinkOpen(true)}
-            aria-label={`BLINK — open timeline control. Active timeline V${view.timeline.index + 1}.`}
-          >
-            <span className="timeline-shape" aria-hidden="true" />
-            V{view.timeline.index + 1}
-            <span className="timeline-count mono">/{view.timeline.total}</span>
-          </button>
-          <span className="mono curfew">CURFEW {view.curfew?.toUpperCase() ?? '—'}</span>
-          <span className="mono phase-chip">PHASE {view.phase?.toUpperCase() ?? '—'}</span>
-          <button
-            type="button"
-            className="icon-btn sound-btn"
-            onClick={toggleMute}
-            aria-pressed={muted}
-          >
-            {muted ? 'Sound off' : 'Sound on'}
-          </button>
-          <button type="button" className="btn btn-quiet blink-btn" onClick={() => setBlinkOpen(true)}>
-            BLINK
-          </button>
-          <button type="button" className="btn btn-quiet echo-btn" onClick={() => setEchoOpen(true)}>
-            ECHO
-          </button>
-          <button type="button" className="btn btn-quiet npc-btn" onClick={() => setNpcOpen(true)}>
-            NPCs
-          </button>
-          <button type="button" className="btn btn-quiet ledger-btn" onClick={() => setLedgerOpen(true)}>
-            Ledger
-          </button>
-        </div>
-      </header>
+      <HudTopBar
+        view={view}
+        showObjectives={showObjectives}
+        showMorrow={showMorrow}
+        showEcho={showEcho}
+        showLedger={ledgerOpen}
+        quality={quality}
+        muted={muted}
+        saveState={saveState}
+        lastSavedAt={lastSavedAt}
+        onToggleObjectives={() => setShowObjectives((v) => !v)}
+        onToggleMorrow={() => setShowMorrow((v) => !v)}
+        onToggleEcho={() => setShowEcho((v) => !v)}
+        onToggleLedger={() => setLedgerOpen((v) => !v)}
+        onToggleQuality={toggleQuality}
+        onToggleMute={toggleMute}
+        onSave={() => void save()}
+        onOpenBlink={() => setBlinkOpen(true)}
+        onPulse={triggerPulse}
+      />
 
-      <main className="play-layout">
-        <section className="stage" aria-label="Playable district">
-          <div className="world-frame">
-            <PhaserHost
-              getView={() => viewRef.current}
-              isPaused={() => pausedRef.current}
-              getTouchInput={() => touchRef.current}
-              onPrompt={setPromptTargetId}
-              onInteract={handleTarget}
-              onReady={() => setWorldReady(true)}
-              worldRef={worldRef}
-            />
-
-            {!worldReady ? (
-              <div className="world-loading" role="status">
-                <p className="micro">ASTER / RELAY STREET</p>
-                <p>Baking the district…</p>
-              </div>
-            ) : null}
-
-            {worldReady && promptTarget && !paused ? (
-              <button
-                type="button"
-                className="interact-prompt"
-                onClick={() => handleTarget(promptTarget.id)}
-              >
-                <span className="prompt-dot" aria-hidden="true" />
-                <span>{promptTarget.prompt}</span>
-                <kbd>E</kbd>
-              </button>
-            ) : null}
-
-            {view.ending && dialogue.phase === 'closed' ? (
-              <div className="ending-stage-banner" role="status">
-                <p className="micro">INVESTIGATION CONCLUDED</p>
-                <h2>{view.ending.title}</h2>
-                <p>{view.ending.summary}</p>
-                <div className="ending-stage-actions">
-                  <button type="button" className="btn btn-quiet" onClick={() => setBlinkOpen(true)}>
-                    BLINK Timeline (Fork / Rewind)
-                  </button>
-                  <button type="button" className="btn btn-quiet" onClick={() => setEchoOpen(true)}>
-                    ECHO Provenance
-                  </button>
-                  <button type="button" className="btn btn-quiet" onClick={() => setLedgerOpen(true)}>
-                    Save to Ledger
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {toast ? (
-              <p className="toast" role="status">
-                {toast}
-              </p>
-            ) : null}
-
-            {morrowNotice ? (
-              <p className="morrow-callout" role="status">
-                <span className="micro">MORROW</span>
-                <span>{morrowNotice}</span>
-              </p>
-            ) : null}
-
-            {npcNotice ? (
-              <p className="npc-callout" role="status">
-                <span className="micro">NPC</span>
-                <span>{npcNotice}</span>
-              </p>
-            ) : null}
-
-            <p className="sr-only" role="status" aria-live="polite">
-              {announcement}
-            </p>
-          </div>
-
-          <TouchControls
-            active={touchActive}
-            onPress={setTouch}
-            onInteract={() => promptTarget && handleTarget(promptTarget.id)}
-            interactDisabled={!promptTarget || paused}
+      <div className="game-viewport">
+        <div className={`world-frame${blinkGlitch ? ' world-frame-blink-glitch' : ''}`}>
+          <PhaserHost
+            getView={() => viewRef.current}
+            isPaused={() => pausedRef.current}
+            getTouchInput={() => touchRef.current}
+            onPrompt={setPromptTargetId}
+            onInteract={handleTarget}
+            onReady={() => setWorldReady(true)}
+            worldRef={worldRef}
+            quality={quality}
           />
 
-          <p className="world-caption mono">
-            V{view.timeline.index + 1} · {DISTRICT_TITLE.toUpperCase()} · STATE v{state.stateVersion} ·
-            TICK {state.tick} · {hash}
+          {!worldReady ? (
+            <div className="world-loading" role="status">
+              <p className="micro">ASTER / RELAY STREET</p>
+              <p>Baking the district…</p>
+            </div>
+          ) : null}
+
+          {worldReady && promptTarget && !paused ? (
+            <button
+              type="button"
+              className="interact-prompt"
+              onClick={() => handleTarget(promptTarget.id)}
+            >
+              <span className="prompt-dot" aria-hidden="true" />
+              <span>{promptTarget.prompt}</span>
+              <kbd>E</kbd>
+            </button>
+          ) : null}
+
+          {view.ending && dialogue.phase === 'closed' ? (
+            <div className="ending-stage-banner" role="status">
+              <p className="micro">INVESTIGATION CONCLUDED</p>
+              <h2>{view.ending.title}</h2>
+              <p>{view.ending.summary}</p>
+              <div className="ending-stage-actions">
+                <button type="button" className="btn btn-quiet" onClick={() => setBlinkOpen(true)}>
+                  BLINK Timeline (Fork / Rewind)
+                </button>
+                <button type="button" className="btn btn-quiet" onClick={() => setEchoOpen(true)}>
+                  ECHO Provenance
+                </button>
+                <button type="button" className="btn btn-quiet" onClick={() => setLedgerOpen(true)}>
+                  Save to Ledger
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {toast ? (
+            <p className="toast" role="status">
+              {toast}
+            </p>
+          ) : null}
+
+          {morrowNotice ? (
+            <div className="morrow-callout-banner" role="alert">
+              <div className="morrow-tape" aria-hidden="true" />
+              <div className="morrow-content">
+                <div className="morrow-badge">
+                  <span className="morrow-icon" aria-hidden="true">▲</span>
+                  <span className="micro morrow-tag">SURVEILLANCE DIRECTIVE // MORROW OVERSIGHT</span>
+                </div>
+                <p className="morrow-message">{morrowNotice}</p>
+              </div>
+            </div>
+          ) : null}
+
+          {npcNotice ? (
+            <p className="npc-callout" role="status">
+              <span className="micro">NPC</span>
+              <span>{npcNotice}</span>
+            </p>
+          ) : null}
+
+          <p className="sr-only" role="status" aria-live="polite">
+            {announcement}
           </p>
-        </section>
+        </div>
 
-        <FieldNotes view={view} objective={objective} />
-      </main>
+        <TouchControls
+          active={touchActive}
+          onPress={setTouch}
+          onInteract={() => promptTarget && handleTarget(promptTarget.id)}
+          interactDisabled={!promptTarget || paused}
+        />
+      </div>
 
+      {/* ---- Floating HUD Cards ---- */}
+      {showObjectives ? <ObjectivesCard view={view} /> : null}
+
+      {showMorrow ? (
+        <MorrowCard
+          view={view}
+          notice={morrowNotice}
+          onTriggerReview={() => {
+            runMorrow();
+            worldRef.current?.playSfx('ui-error');
+          }}
+        />
+      ) : null}
+
+      {showEcho ? (
+        <EchoCard view={view} onOpenEcho={() => setEchoOpen(true)} />
+      ) : null}
+
+      {showBranch ? (
+        <BranchCard
+          view={view}
+          totalBranches={branches.length}
+          onOpenBlink={() => setBlinkOpen(true)}
+        />
+      ) : null}
+
+      {/* ---- Dialogue overlay ---- */}
       {dialogue.phase !== 'closed' && activeScript ? (
         <DialogueSheet
           phase={dialogue.phase as DialoguePhase}
@@ -709,6 +746,7 @@ function GameScreen({
         />
       ) : null}
 
+      {/* ---- Full-screen modal panels ---- */}
       <BlinkPanel
         open={blinkOpen}
         onClose={() => setBlinkOpen(false)}
@@ -755,14 +793,10 @@ function GameScreen({
         onRestart={restart}
       />
 
-      <footer className="statusbar">
-        <p className="mono">
-          WASD/Arrows move · E/Space interact · 1/2 choose · B BLINK · C ECHO · N NPCs · L Ledger · Esc close
-        </p>
-        <p className="mono memory-note">
-          Durable persistence (IndexedDB) — progress and BLINK branches survive reload.
-        </p>
-      </footer>
+      {/* ---- Keyboard hints overlay ---- */}
+      <div className="hud-keyhints mono" aria-hidden="true">
+        WASD move · E interact · Q Pulse Scan · B BLINK · C ECHO · N NPCs · L Ledger · Esc close
+      </div>
     </div>
   );
 }
