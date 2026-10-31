@@ -204,7 +204,7 @@ Deferred beyond Stage 6:
 - [x] 12 Stage 9 tests in `tests/stage9Npc.test.ts`; 140 total checks in 16 files
 - [x] `npm run verify` green (typecheck, tests, production build)
 - [x] `docs/STAGE_9_REPORT.md`
-- [x] Implementation `175985d`; remote CI `41211874808` green
+- [x] Implementation `175985d`; docs `96c47a1`; CI runs `41211874808` and `41211994166` green
 - [ ] Automated NPC screenshots (tooling not installed in this environment)
 
 Deferred beyond Stage 9:

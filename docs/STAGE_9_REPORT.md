@@ -74,7 +74,9 @@ Remote CI run `41211874808` on `175985d`:
 - `Typecheck, tests and build`: success
 - `Asset pipeline integrity`: success
 
-The docs-only commit for this report is verified separately after push.
+Docs commit: `96c47a1`. Remote CI run `41211994166` on that commit is green
+for both jobs:
+<https://github.com/demonstrikkk/last_blink/actions/runs/41211994166>.
 
 ## 5. Implemented vs not verified
 
