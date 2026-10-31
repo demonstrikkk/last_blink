@@ -53,6 +53,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
+      - name: Materialise raw packs from committed archives
+        run: python tools/assets/prepare/extract_cached.py
+
       - name: Rebuild register and prove idempotence
         run: |
           python tools/assets/validate/build_register.py

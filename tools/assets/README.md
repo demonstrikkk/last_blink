@@ -19,6 +19,7 @@ tools/assets/
   common.py             manifest loading, hashing, media probing, staging
   discover/             live source + licence verification
   download/             idempotent fetchers
+  prepare/              restore gitignored extracted packs from committed archives
   validate/             register builder, validator, contrast report, link check
   catalogue/            HTML catalogue and reference board renderers
 ```
@@ -31,6 +32,7 @@ Run from the repository root.
 python tools/assets/discover/verify_sources.py       # live pages + licence wording
 python tools/assets/download/fetch_kenney.py         # Kenney (signed-URL flow)
 python tools/assets/download/fetch_direct.py         # OpenGameArt zip, Google Fonts
+python tools/assets/prepare/extract_cached.py        # restore gitignored extracted packs (no network)
 python tools/assets/validate/build_register.py       # stage + rebuild register
 python tools/assets/validate/validate_assets.py      # blocking checks, exit code 1 on failure
 python tools/assets/validate/contrast_report.py      # palette contrast table
