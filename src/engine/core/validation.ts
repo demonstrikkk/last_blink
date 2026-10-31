@@ -11,6 +11,7 @@ import {
   gameActionSchema,
   morrowInterveneParamsSchema,
   noopParamsSchema,
+  npcProposeParamsSchema,
   type GameAction,
   type ParsedAction,
 } from './actions.js';
@@ -272,6 +273,66 @@ export function validateAction(
       return {
         ok: true,
         action: { actionType: 'morrow.intervene', actorId: action.actorId, params: proposal },
+      };
+    }
+
+    case 'npc.propose': {
+      const params = npcProposeParamsSchema.safeParse(action.params);
+      if (!params.success) {
+        return fail('invalid_action', 'npc.propose requires a complete, typed proposal');
+      }
+      const proposal = params.data.proposal;
+      if (String(action.actorId) !== String(proposal.npcId)) {
+        return fail('invalid_action', 'an NPC may only submit its own proposal', {
+          actorId: action.actorId,
+          npcId: proposal.npcId,
+        });
+      }
+      if (proposal.sessionId !== state.sessionId) {
+        return fail('invalid_action', 'the proposal belongs to another session', {
+          proposalId: proposal.proposalId,
+        });
+      }
+      if (proposal.branchId !== state.branchId) {
+        return fail('invalid_action', 'the proposal belongs to another branch', {
+          proposalId: proposal.proposalId,
+          branchId: proposal.branchId,
+        });
+      }
+      if (proposal.tick !== state.tick) {
+        return fail('stale_state', 'the proposal was decided at an older tick', {
+          proposalId: proposal.proposalId,
+          tick: proposal.tick,
+          stateTick: state.tick,
+        });
+      }
+      if (params.data.basedOnStateVersion !== state.stateVersion) {
+        return fail('stale_state', 'the proposal was decided against an older state version', {
+          proposalId: proposal.proposalId,
+          basedOnStateVersion: params.data.basedOnStateVersion,
+          stateVersion: state.stateVersion,
+        });
+      }
+      if (proposal.observationId !== `obs_${params.data.observationHash}`) {
+        return fail('invalid_action', 'the proposal is not bound to its observation hash', {
+          proposalId: proposal.proposalId,
+          observationId: proposal.observationId,
+        });
+      }
+      if (
+        proposal.proposedActions.some(
+          (proposed) => proposed.actionType !== 'session.noop',
+        )
+      ) {
+        return fail(
+          'invalid_action',
+          'Stage 9 NPC proposals may only carry a session.noop action',
+          { proposalId: proposal.proposalId },
+        );
+      }
+      return {
+        ok: true,
+        action: { actionType: 'npc.propose', actorId: action.actorId, params: params.data },
       };
     }
 

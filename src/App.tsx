@@ -8,6 +8,7 @@ import {
 } from 'react';
 import {
   MorrowController,
+  NpcCognitionController,
   createSystemClock,
   type ActionResult,
   type BranchId,
@@ -16,6 +17,7 @@ import {
 } from './engine/index.js';
 import { createBrowserSession } from './session/runtime.js';
 import { STAGE5_CONTENT } from './content/stage5Content.js';
+import { STAGE9_NPC_LIST } from './content/npcContent.js';
 import {
   ANCHOR_LABEL,
   DISTRICT_TITLE,
@@ -31,6 +33,7 @@ import { FieldNotes } from './ui/FieldNotes.js';
 import { Ledger, type SaveState } from './ui/Ledger.js';
 import { BlinkPanel } from './ui/BlinkPanel.js';
 import { EchoPanel } from './ui/EchoPanel.js';
+import { NpcPanel } from './ui/NpcPanel.js';
 import { TouchControls } from './ui/TouchControls.js';
 
 type DialogueState =
@@ -105,7 +108,9 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [blinkOpen, setBlinkOpen] = useState(false);
   const [echoOpen, setEchoOpen] = useState(false);
+  const [npcOpen, setNpcOpen] = useState(false);
   const [morrowNotice, setMorrowNotice] = useState<string | null>(null);
+  const [npcNotice, setNpcNotice] = useState<string | null>(null);
   const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -169,6 +174,29 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     [morrow],
   );
 
+  const npc = useMemo(
+    () => new NpcCognitionController(session, { clock: createSystemClock() }),
+    [session],
+  );
+
+  const runNpcs = useCallback(() => {
+    const lines: string[] = [];
+    for (const definition of STAGE9_NPC_LIST) {
+      const turn = npc.run(definition.npcId);
+      if (!turn || !turn.proposal) continue;
+      if (turn.result?.status === 'accepted') {
+        lines.push(
+          `${definition.displayName}: ${turn.proposal.rationale} (${turn.fallback ? 'fallback' : 'accepted'})`,
+        );
+      } else {
+        lines.push(
+          `${definition.displayName}: proposal refused (${turn.result?.rejection?.code ?? 'unknown'}).`,
+        );
+      }
+    }
+    if (lines.length > 0) setNpcNotice(lines.join(' '));
+  }, [npc]);
+
   const describeRejection = (result: ActionResult): string => {
     const code = result.rejection?.code ?? 'engine_error';
     if (code === 'duplicate') return 'Already recorded. The engine refused a second write.';
@@ -193,7 +221,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         showToast(describeRejection(result));
       }
     },
-    [runMorrow, session, showToast],
+    [runMorrow, runNpcs, session, showToast],
   );
 
   const recordAnchor = useCallback(() => {
@@ -235,7 +263,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
       setDialogue({ phase: 'lines', scriptId, index: 0 });
       worldRef.current?.playSfx('ui-open');
     },
-    [runMorrow, session, showToast],
+    [runMorrow, runNpcs, session, showToast],
   );
 
   const handleTarget = useCallback(
@@ -303,7 +331,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         showToast(describeRejection(result));
       }
     },
-    [dialogue, runMorrow, session, showToast],
+    [dialogue, runMorrow, runNpcs, session, showToast],
   );
 
   const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
@@ -486,6 +514,9 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           <button type="button" className="btn btn-quiet echo-btn" onClick={() => setEchoOpen(true)}>
             ECHO
           </button>
+          <button type="button" className="btn btn-quiet npc-btn" onClick={() => setNpcOpen(true)}>
+            NPCs
+          </button>
           <button type="button" className="btn btn-quiet ledger-btn" onClick={() => setLedgerOpen(true)}>
             Ledger
           </button>
@@ -534,6 +565,13 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
               <p className="morrow-callout" role="status">
                 <span className="micro">MORROW</span>
                 <span>{morrowNotice}</span>
+              </p>
+            ) : null}
+
+            {npcNotice ? (
+              <p className="npc-callout" role="status">
+                <span className="micro">NPC</span>
+                <span>{npcNotice}</span>
               </p>
             ) : null}
 
@@ -595,6 +633,14 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         content={STAGE5_CONTENT}
         branches={branches}
         activeBranchId={state.branchId}
+      />
+
+      <NpcPanel
+        open={npcOpen}
+        onClose={() => setNpcOpen(false)}
+        controller={npc}
+        definitions={STAGE9_NPC_LIST}
+        activeBranchId={String(state.branchId)}
       />
 
       <Ledger

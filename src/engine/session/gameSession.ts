@@ -1,4 +1,4 @@
-﻿import {
+import {
   CONTRACT_NAMES,
   CONTRACT_VERSION,
   CONTRACT_VERSIONS,
@@ -32,6 +32,7 @@
   type MorrowIntervenedEvent,
   type MorrowProposalEvaluatedEvent,
   type MorrowResponse,
+  type NpcProposalEvaluatedEvent,
   type PlayerProfile,
   type RuleEvaluatedEvent,
   type SaveEnvelope,
@@ -41,7 +42,11 @@
   type TickAdvancedEvent,
 } from '../contracts/index.js';
 import { morrowEscalationOf, nextMorrowEscalation } from '../morrow/fairness.js';
-import { morrowInterveneParamsSchema, type ParsedAction } from '../core/actions.js';
+import {
+  morrowInterveneParamsSchema,
+  npcProposeParamsSchema,
+  type ParsedAction,
+} from '../core/actions.js';
 import { hashCanonical } from '../core/hash.js';
 import { createDeterministicIdFactory, type IdFactory } from '../core/ids.js';
 import { reduceGameState } from '../core/reducer.js';
@@ -175,6 +180,20 @@ function morrowRejectionContext(raw: unknown): MorrowRejectionContext | null {
     observationId: parsed.data.observationId,
     response: parsed.data.response,
     reasonCodes: parsed.data.reasonCodes,
+  };
+}
+
+interface NpcRejectionContext {
+  readonly proposalId: NonNullable<NpcProposalEvaluatedEvent['payload']['proposalId']>;
+  readonly npcId: NpcProposalEvaluatedEvent['payload']['npcId'];
+}
+
+function npcRejectionContext(raw: unknown): NpcRejectionContext | null {
+  const parsed = npcProposeParamsSchema.safeParse(rawField(raw, 'params'));
+  if (!parsed.success) return null;
+  return {
+    proposalId: parsed.data.proposal.proposalId,
+    npcId: parsed.data.proposal.npcId,
   };
 }
 
@@ -494,6 +513,34 @@ export class DeterministicGameSession implements GameSession {
       });
     }
 
+    if (action.actionType === 'npc.propose') {
+      const proposal = action.params.proposal;
+      const evaluated = this.getLineageEvents().filter(
+        (event): event is NpcProposalEvaluatedEvent =>
+          event.type === 'npc.proposal.evaluated' &&
+          event.branchId === this.state.branchId,
+      );
+      if (evaluated.some((event) => event.payload.proposalId === proposal.proposalId)) {
+        return this.reject(raw, actionId, 'duplicate', 'this proposal has already been evaluated', {
+          proposalId: proposal.proposalId,
+        });
+      }
+      if (
+        evaluated.some(
+          (event) =>
+            event.payload.npcId === proposal.npcId && event.tick === this.state.tick,
+        )
+      ) {
+        return this.reject(
+          raw,
+          actionId,
+          'duplicate',
+          'this NPC has already made a proposal this tick',
+          { npcId: proposal.npcId, tick: this.state.tick },
+        );
+      }
+    }
+
     const source = sourceForActor(action.actorId);
     const produced: GameEventId[] = [];
     let state = this.state;
@@ -755,6 +802,31 @@ export class DeterministicGameSession implements GameSession {
         const ruled = this.runRules(state, actionId);
         state = ruled.state;
         produced.push(...ruled.eventIds);
+        break;
+      }
+
+      case 'npc.propose': {
+        const proposal = action.params.proposal;
+        const evaluatedEventId = this.ids.next('evt_') as GameEventId;
+        const evaluated: NpcProposalEvaluatedEvent = {
+          ...this.envelope(
+            state,
+            evaluatedEventId,
+            state.tick,
+            action.actorId,
+            'policy.npc' as SourceId,
+            actionId,
+          ),
+          type: 'npc.proposal.evaluated',
+          payload: {
+            proposalId: proposal.proposalId,
+            npcId: proposal.npcId,
+            status: 'accepted',
+            reasonCode: 'no_effect',
+          },
+        };
+        state = this.apply(state, evaluated);
+        produced.push(evaluatedEventId);
         break;
       }
 
@@ -1086,11 +1158,17 @@ export class DeterministicGameSession implements GameSession {
     const actionType: ActionType = parsedType.success ? parsedType.data : 'session.noop';
 
     const context = actionType === 'morrow.intervene' ? morrowRejectionContext(raw) : null;
+    const npcContext = actionType === 'npc.propose' ? npcRejectionContext(raw) : null;
     const eventId = this.ids.next('evt_') as GameEventId;
     const event: ActionRejectedEvent = {
       ...this.envelope(this.state, eventId, this.state.tick, actorId, 'engine.validation' as SourceId, actionId),
       type: 'action.rejected',
-      payload: { actionType, code, message, proposalId: context?.proposalId ?? null },
+      payload: {
+        actionType,
+        code,
+        message,
+        proposalId: context?.proposalId ?? npcContext?.proposalId ?? null,
+      },
     };
     let state = this.apply(this.state, event);
     const eventIds: GameEventId[] = [eventId];
@@ -1124,6 +1202,29 @@ export class DeterministicGameSession implements GameSession {
       eventIds.push(proposalEventId);
     }
 
+    if (npcContext) {
+      const proposalEventId = this.ids.next('evt_') as GameEventId;
+      const proposalEvent: NpcProposalEvaluatedEvent = {
+        ...this.envelope(
+          state,
+          proposalEventId,
+          state.tick,
+          npcContext.npcId as unknown as ActorId,
+          'engine.validation' as SourceId,
+          actionId,
+        ),
+        type: 'npc.proposal.evaluated',
+        payload: {
+          proposalId: npcContext.proposalId,
+          npcId: npcContext.npcId,
+          status: 'rejected',
+          reasonCode: code,
+        },
+      };
+      state = this.apply(state, proposalEvent);
+      eventIds.push(proposalEventId);
+    }
+
     this.commit(state);
     this.deps.logger.warn('action rejected', { sessionId: this.sessionId, code, message });
 
@@ -1135,7 +1236,7 @@ export class DeterministicGameSession implements GameSession {
       actorId,
       sourceId: 'engine.validation',
       actionType,
-      proposalId: context?.proposalId ?? null,
+      proposalId: context?.proposalId ?? npcContext?.proposalId ?? null,
       status: 'rejected',
       tick: state.tick,
       stateVersion: state.stateVersion,
@@ -1161,7 +1262,10 @@ export class DeterministicGameSession implements GameSession {
       actorId: action.actorId,
       sourceId,
       actionType: action.actionType,
-      proposalId: null,
+      proposalId:
+        action.actionType === 'npc.propose'
+          ? action.params.proposal.proposalId
+          : null,
       status: 'accepted',
       tick: state.tick,
       stateVersion: state.stateVersion,

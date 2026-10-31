@@ -14,6 +14,7 @@ import {
   versionSchema,
 } from '../contracts/primitives.js';
 import { morrowReasonCodeSchema, morrowResponseSchema } from '../contracts/morrow.js';
+import { npcDecisionProposalSchema } from '../contracts/npcDecisionProposal.js';
 
 /** The untrusted shape a caller may submit to GameSession.dispatch. */
 export const gameActionSchema = z.strictObject({
@@ -73,6 +74,12 @@ export const morrowInterveneParamsSchema = z.strictObject({
   reasonCodes: z.array(morrowReasonCodeSchema).min(1).max(8),
 });
 
+export const npcProposeParamsSchema = z.strictObject({
+  proposal: npcDecisionProposalSchema,
+  observationHash: hashSchema,
+  basedOnStateVersion: stateVersionSchema,
+});
+
 export type ParsedAction =
   | { actionType: 'session.noop'; actorId: z.infer<typeof actorIdSchema>; params: Record<string, never> }
   | {
@@ -109,4 +116,9 @@ export type ParsedAction =
       actionType: 'morrow.intervene';
       actorId: z.infer<typeof actorIdSchema>;
       params: z.infer<typeof morrowInterveneParamsSchema>;
+    }
+  | {
+      actionType: 'npc.propose';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof npcProposeParamsSchema>;
     };

@@ -1835,3 +1835,83 @@ kbd {
   font-size: 12px;
   color: var(--text-primary);
 }
+
+.npc-panel {
+  width: min(560px, 100%);
+}
+
+.npc-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--ink-600);
+  background: rgb(4 6 9 / 40%);
+}
+
+.npc-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.npc-card-head h3 {
+  font-size: 16px;
+}
+
+.npc-role,
+.npc-scope,
+.npc-memory-count,
+.npc-memory-id,
+.npc-confidence {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.npc-scope {
+  word-break: break-word;
+}
+
+.npc-proposal {
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ink-700);
+}
+
+.npc-proposal p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.npc-status {
+  color: var(--cyan);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.npc-action {
+  color: var(--text-secondary);
+}
+
+.npc-fallback {
+  color: var(--warning, #e8c86a);
+}
+
+.npc-memory-last {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.npc-callout {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--cyan);
+  background: rgb(4 6 9 / 62%);
+  font-size: 12px;
+  color: var(--text-primary);
+}
