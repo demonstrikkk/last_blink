@@ -1,0 +1,4 @@
+﻿Source: https://kenney.nl/assets/roguelike-characters
+License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+Verified from the asset page on 2026-10-31.
+

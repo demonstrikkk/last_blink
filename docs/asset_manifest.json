@@ -1,0 +1,532 @@
+{
+  "schemaVersion": 1,
+  "project": "The Last Blink: Second Settlement",
+  "notes": "Single source of truth for curated shipped assets. Originals stay in assets/raw; licence texts are copied into assets/licenses. Nothing here is downloaded at build time of the game.",
+  "packs": [
+    {
+      "id": "kenney-modern-city",
+      "name": "Roguelike Modern City",
+      "version": "2.0",
+      "creator": "Kenney",
+      "sourcePage": "https://kenney.nl/assets/roguelike-modern-city",
+      "downloadUrl": "https://kenney.nl/download-link/<signed>",
+      "licence": "CC0-1.0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false,
+      "attributionText": "Kenney (www.kenney.nl) - optional credit",
+      "rawArchive": "assets/raw/roguelike-modern-city.zip",
+      "archiveSha256": "2a3f36b1bc3a3d1cb4b9da051c493d163c493fe54adc66e78e76b3fb4abcfc56",
+      "extractedDir": "assets/raw/extracted/roguelike-modern-city",
+      "licenceFile": "assets/licenses/LICENSE-kenney-roguelike-modern-city.txt",
+      "licenceEvidence": [
+        "CC0"
+      ]
+    },
+    {
+      "id": "ansimuz-topdown",
+      "name": "Top Down Adventure Assets (A Meta Data Game)",
+      "version": "1.0",
+      "creator": "Luis Zuno (ansimuz)",
+      "sourcePage": "https://opengameart.org/content/top-down-adventure-assets",
+      "downloadUrl": "https://opengameart.org/sites/default/files/meta_data_assets_files_1.zip",
+      "licence": "CC0-1.0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false,
+      "attributionText": "Luis Zuno (@ansimuz) - optional credit",
+      "rawArchive": "assets/raw/ansimuz-topdown.zip",
+      "archiveSha256": "ad5c1c799d2ad40d381d6d797a8c1feecef20cb33a4b2b7027224383a3e5441e",
+      "extractedDir": "assets/raw/extracted/ansimuz-topdown",
+      "licenceFile": "assets/licenses/LICENSE-ansimuz-topdown.txt",
+      "licenceEvidence": [
+        "personal or commercial",
+        "modify",
+        "re-distribute"
+      ]
+    },
+    {
+      "id": "kenney-interface-sounds",
+      "name": "Interface Sounds",
+      "version": "1.0",
+      "creator": "Kenney",
+      "sourcePage": "https://kenney.nl/assets/interface-sounds",
+      "downloadUrl": "https://kenney.nl/download-link/<signed>",
+      "licence": "CC0-1.0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false,
+      "attributionText": "Kenney (www.kenney.nl) - optional credit",
+      "rawArchive": "assets/raw/interface-sounds.zip",
+      "archiveSha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+      "extractedDir": "assets/raw/extracted/interface-sounds",
+      "licenceFile": "assets/licenses/LICENSE-kenney-interface-sounds.txt",
+      "licenceEvidence": [
+        "CC0"
+      ]
+    },
+    {
+      "id": "kenney-sci-fi-sounds",
+      "name": "Sci-Fi Sounds",
+      "version": "1.0",
+      "creator": "Kenney",
+      "sourcePage": "https://kenney.nl/assets/sci-fi-sounds",
+      "downloadUrl": "https://kenney.nl/download-link/<signed>",
+      "licence": "CC0-1.0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false,
+      "attributionText": "Kenney (www.kenney.nl) - optional credit",
+      "rawArchive": "assets/raw/sci-fi-sounds.zip",
+      "archiveSha256": "119340f351a5098ad814f78719438c0da355a9ce8a4c8a3af6a8d48aa3d49e04",
+      "extractedDir": "assets/raw/extracted/sci-fi-sounds",
+      "licenceFile": "assets/licenses/LICENSE-kenney-sci-fi-sounds.txt",
+      "licenceEvidence": [
+        "CC0"
+      ]
+    },
+    {
+      "id": "google-fonts-space-grotesk",
+      "name": "Space Grotesk",
+      "version": "variable (main branch snapshot 2026-10-31)",
+      "creator": "Florian Karsten",
+      "sourcePage": "https://github.com/google/fonts/tree/main/ofl/spacegrotesk",
+      "downloadUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
+      "licence": "OFL-1.1",
+      "licenceUrl": "https://openfontlicense.org/",
+      "attributionRequired": true,
+      "attributionText": "Space Grotesk, Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk), licensed under the SIL Open Font License 1.1.",
+      "rawArchive": null,
+      "archiveSha256": null,
+      "extractedDir": "assets/raw/fonts",
+      "licenceFile": "assets/licenses/LICENSE-SpaceGrotesk-OFL.txt",
+      "licenceEvidence": [
+        "SIL OPEN FONT LICENSE"
+      ],
+      "licenceEvidenceUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt"
+    },
+    {
+      "id": "google-fonts-ibm-plex-mono",
+      "name": "IBM Plex Mono",
+      "version": "Regular (main branch snapshot 2026-10-31)",
+      "creator": "IBM / Bold Monday",
+      "sourcePage": "https://github.com/google/fonts/tree/main/ofl/ibmplexmono",
+      "downloadUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexmono/IBMPlexMono-Regular.ttf",
+      "licence": "OFL-1.1",
+      "licenceUrl": "https://openfontlicense.org/",
+      "attributionRequired": true,
+      "attributionText": "IBM Plex Mono, Copyright 2017 IBM Corp. with Reserved Font Name \"Plex\", licensed under the SIL Open Font License 1.1.",
+      "rawArchive": null,
+      "archiveSha256": null,
+      "extractedDir": "assets/raw/fonts",
+      "licenceFile": "assets/licenses/LICENSE-IBMPlexMono-OFL.txt",
+      "licenceEvidence": [
+        "SIL OPEN FONT LICENSE"
+      ],
+      "licenceEvidenceUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexmono/OFL.txt"
+    }
+  ],
+  "assets": [
+    {
+      "id": "env-modern-city-tilemap",
+      "kind": "tileset",
+      "pack": "kenney-modern-city",
+      "source": "assets/raw/extracted/roguelike-modern-city/Tilemap/tilemap_packed.png",
+      "dest": "public/assets/environment/modern-city/tilemap.png",
+      "usage": "Ground, roads, building facades, interiors, props, vehicles for the whole district.",
+      "tileSize": 16,
+      "margin": 0,
+      "spacing": 0,
+      "notes": "Packed variant chosen over tilemap.png: no gutters, exact 37x28 grid, simpler frame math."
+    },
+    {
+      "id": "char-girl-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/Girl/1.png",
+      "dest": "public/assets/characters/girl/1.png",
+      "usage": "Tessa (child NPC, idle step A).",
+      "tileSize": 16,
+      "notes": "Single-frame 16x16 NPC art; pairs with 2.png for a 2-frame step cycle."
+    },
+    {
+      "id": "char-girl-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/Girl/2.png",
+      "dest": "public/assets/characters/girl/2.png",
+      "usage": "Tessa (child NPC, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-woman-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/Woman/1.png",
+      "dest": "public/assets/characters/woman/1.png",
+      "usage": "Jaya (first agentic NPC, idle step A).",
+      "tileSize": 16,
+      "notes": "Frame 1 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-woman-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/Woman/2.png",
+      "dest": "public/assets/characters/woman/2.png",
+      "usage": "Jaya (first agentic NPC, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-oldwoman-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/OldWoman/1.png",
+      "dest": "public/assets/characters/oldwoman/1.png",
+      "usage": "Sable (ward elder, idle step A).",
+      "tileSize": 16,
+      "notes": "Frame 1 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-oldwoman-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/OldWoman/2.png",
+      "dest": "public/assets/characters/oldwoman/2.png",
+      "usage": "Sable (ward elder, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-sage-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/Sage/1.png",
+      "dest": "public/assets/characters/sage/1.png",
+      "usage": "Okonkwo (archivist NPC, idle step A).",
+      "tileSize": 16,
+      "notes": "Frame 1 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-sage-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/Sage/2.png",
+      "dest": "public/assets/characters/sage/2.png",
+      "usage": "Okonkwo (archivist NPC, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-miner-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/miner/1.png",
+      "dest": "public/assets/characters/miner/1.png",
+      "usage": "Dax (shift mechanic NPC, idle step A).",
+      "tileSize": 16,
+      "notes": "Frame 1 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-miner-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/miner/2.png",
+      "dest": "public/assets/characters/miner/2.png",
+      "usage": "Dax (shift mechanic NPC, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-kid-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/kid/1.png",
+      "dest": "public/assets/characters/kid/1.png",
+      "usage": "Pip (messenger kid NPC, idle step A).",
+      "tileSize": 16,
+      "notes": "Frame 1 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-kid-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/kid/2.png",
+      "dest": "public/assets/characters/kid/2.png",
+      "usage": "Pip (messenger kid NPC, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-cap-1",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/cap/1.png",
+      "dest": "public/assets/characters/cap/1.png",
+      "usage": "Rin (player silhouette, idle step A).",
+      "tileSize": 16,
+      "notes": "Frame 1 of the authored 2-frame cycle."
+    },
+    {
+      "id": "char-cap-2",
+      "kind": "sprite",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/Visuals/CHARACTERS/npc/cap/2.png",
+      "dest": "public/assets/characters/cap/2.png",
+      "usage": "Rin (player silhouette, idle step B).",
+      "tileSize": 16,
+      "notes": "Frame 2 of the authored 2-frame cycle."
+    },
+    {
+      "id": "music-district-night",
+      "kind": "audio-music",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/sounds/music/ghost-town.ogg",
+      "dest": "public/assets/audio/music/district-night.ogg",
+      "usage": "Default district loop (exterior, night).",
+      "notes": "Loop point at track end; crossfade handled by the audio bus."
+    },
+    {
+      "id": "music-interior",
+      "kind": "audio-music",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/sounds/music/Sun Tribe interior.ogg",
+      "dest": "public/assets/audio/music/interior.ogg",
+      "usage": "Interior loop (archive, workshop, ward).",
+      "notes": "Loop point at track end."
+    },
+    {
+      "id": "music-tension",
+      "kind": "audio-music",
+      "pack": "ansimuz-topdown",
+      "source": "assets/raw/extracted/ansimuz-topdown/Meta data assets files/sounds/music/determination.ogg",
+      "dest": "public/assets/audio/music/tension.ogg",
+      "usage": "Choice, BLINK and ECHO sequence loop.",
+      "notes": "Loop point at track end."
+    },
+    {
+      "id": "sfx-ui-hover",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/click_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-hover.ogg",
+      "usage": "Pointer hover / focus on an interactive element."
+    },
+    {
+      "id": "sfx-ui-click",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/select_004.ogg",
+      "dest": "public/assets/audio/sfx/ui-click.ogg",
+      "usage": "Primary button activation."
+    },
+    {
+      "id": "sfx-ui-confirm",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/confirmation_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-confirm.ogg",
+      "usage": "Confirmed action / accepted dialogue choice."
+    },
+    {
+      "id": "sfx-ui-back",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/back_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-back.ogg",
+      "usage": "Cancel / leave panel."
+    },
+    {
+      "id": "sfx-ui-open",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/open_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-open.ogg",
+      "usage": "Panel, evidence board or dialogue sheet opens."
+    },
+    {
+      "id": "sfx-ui-close",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/close_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-close.ogg",
+      "usage": "Panel or dialogue sheet closes."
+    },
+    {
+      "id": "sfx-ui-error",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/error_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-error.ogg",
+      "usage": "Blocked action, invalid target, failed check."
+    },
+    {
+      "id": "sfx-ui-question",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/question_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-question.ogg",
+      "usage": "New question available / NPC prompt."
+    },
+    {
+      "id": "sfx-ui-scroll",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/scroll_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-scroll.ogg",
+      "usage": "List scroll step in the evidence and log panels."
+    },
+    {
+      "id": "sfx-ui-memory-glitch",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/glitch_001.ogg",
+      "dest": "public/assets/audio/sfx/ui-memory-glitch.ogg",
+      "usage": "Memory corruption, ECHO interference in the HUD."
+    },
+    {
+      "id": "sfx-door-open",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/doorOpen_000.ogg",
+      "dest": "public/assets/audio/sfx/door-open.ogg",
+      "usage": "Bulkhead / service door opening in the world."
+    },
+    {
+      "id": "sfx-door-close",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/doorClose_000.ogg",
+      "dest": "public/assets/audio/sfx/door-close.ogg",
+      "usage": "Bulkhead / service door closing in the world."
+    },
+    {
+      "id": "sfx-terminal-hum",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/computerNoise_000.ogg",
+      "dest": "public/assets/audio/sfx/terminal-hum.ogg",
+      "usage": "Terminal activation, MORROW interface boot."
+    },
+    {
+      "id": "sfx-metal-impact",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/impactMetal_000.ogg",
+      "dest": "public/assets/audio/sfx/metal-impact.ogg",
+      "usage": "Object interaction, crate, shutter, collision feedback."
+    },
+    {
+      "id": "sfx-field-hum",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/forceField_000.ogg",
+      "dest": "public/assets/audio/sfx/field-hum.ogg",
+      "usage": "Containment field, sealed ward, evidence barrier."
+    },
+    {
+      "id": "sfx-engine-low",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/spaceEngineLow_000.ogg",
+      "dest": "public/assets/audio/sfx/engine-low.ogg",
+      "usage": "Generator room ambience cue, proximity to power core."
+    },
+    {
+      "id": "sfx-thruster",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/thrusterFire_000.ogg",
+      "dest": "public/assets/audio/sfx/thruster.ogg",
+      "usage": "Steam vent, pressure release."
+    },
+    {
+      "id": "sfx-blast",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/explosionCrunch_000.ogg",
+      "dest": "public/assets/audio/sfx/blast.ogg",
+      "usage": "Timeline break, structural failure, MORROW refusal."
+    },
+    {
+      "id": "sfx-evidence-found",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/confirmation_002.ogg",
+      "dest": "public/assets/audio/sfx/evidence-found.ogg",
+      "usage": "Evidence item added to the case file."
+    },
+    {
+      "id": "sfx-timeline-shift",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/glitch_002.ogg",
+      "dest": "public/assets/audio/sfx/timeline-shift.ogg",
+      "usage": "BLINK branch commit, state version bump."
+    },
+    {
+      "id": "sfx-blink",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/maximize_001.ogg",
+      "dest": "public/assets/audio/sfx/blink.ogg",
+      "usage": "BLINK wind-up before a jump."
+    },
+    {
+      "id": "sfx-choice-lock",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/drop_001.ogg",
+      "dest": "public/assets/audio/sfx/choice-lock.ogg",
+      "usage": "Choice committed and written to the decision table."
+    },
+    {
+      "id": "sfx-anchor-set",
+      "kind": "audio-sfx",
+      "pack": "kenney-sci-fi-sounds",
+      "source": "assets/raw/extracted/sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg",
+      "dest": "public/assets/audio/sfx/anchor-set.ogg",
+      "usage": "Anchor point registered in the timeline."
+    },
+    {
+      "id": "sfx-ending-sting",
+      "kind": "audio-sfx",
+      "pack": "kenney-interface-sounds",
+      "source": "assets/raw/extracted/interface-sounds/Audio/confirmation_003.ogg",
+      "dest": "public/assets/audio/sfx/ending-sting.ogg",
+      "usage": "Ending announced, end card reveal."
+    },
+    {
+      "id": "font-space-grotesk",
+      "kind": "font",
+      "pack": "google-fonts-space-grotesk",
+      "source": "assets/raw/fonts/SpaceGrotesk-VariableFont_wght.ttf",
+      "dest": "public/assets/fonts/SpaceGrotesk-VariableFont_wght.ttf",
+      "usage": "Display and UI headings (variable weight 300-700)."
+    },
+    {
+      "id": "font-ibm-plex-mono",
+      "kind": "font",
+      "pack": "google-fonts-ibm-plex-mono",
+      "source": "assets/raw/fonts/IBMPlexMono-Regular.ttf",
+      "dest": "public/assets/fonts/IBMPlexMono-Regular.ttf",
+      "usage": "Terminal, MORROW, evidence codes and numeric readouts."
+    },
+    {
+      "id": "licence-space-grotesk-ofl",
+      "kind": "licence",
+      "pack": "google-fonts-space-grotesk",
+      "source": "assets/raw/fonts/LICENSE-SpaceGrotesk-OFL.txt",
+      "dest": "public/assets/fonts/OFL-SpaceGrotesk.txt",
+      "usage": "SIL OFL 1.1 text shipped beside the font, as the licence requires.",
+      "notes": "Verbatim copy of the upstream OFL.txt."
+    },
+    {
+      "id": "licence-ibm-plex-mono-ofl",
+      "kind": "licence",
+      "pack": "google-fonts-ibm-plex-mono",
+      "source": "assets/raw/fonts/LICENSE-IBMPlexMono-OFL.txt",
+      "dest": "public/assets/fonts/OFL-IBMPlexMono.txt",
+      "usage": "SIL OFL 1.1 text shipped beside the font, as the licence requires.",
+      "notes": "Verbatim copy of the upstream OFL.txt."
+    }
+  ]
+}

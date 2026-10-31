@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pages": [
+    {
+      "pack": "kenney-modern-city",
+      "sourcePage": "https://kenney.nl/assets/roguelike-modern-city",
+      "status": "ok",
+      "httpStatus": 200,
+      "missingTokens": [],
+      "kenneyDownloadId": true,
+      "bytes": 18492
+    },
+    {
+      "pack": "ansimuz-topdown",
+      "sourcePage": "https://opengameart.org/content/top-down-adventure-assets",
+      "status": "ok",
+      "httpStatus": 200,
+      "missingTokens": [],
+      "kenneyDownloadId": false,
+      "bytes": 42666
+    },
+    {
+      "pack": "kenney-interface-sounds",
+      "sourcePage": "https://kenney.nl/assets/interface-sounds",
+      "status": "ok",
+      "httpStatus": 200,
+      "missingTokens": [],
+      "kenneyDownloadId": true,
+      "bytes": 18710
+    },
+    {
+      "pack": "kenney-sci-fi-sounds",
+      "sourcePage": "https://kenney.nl/assets/sci-fi-sounds",
+      "status": "ok",
+      "httpStatus": 200,
+      "missingTokens": [],
+      "kenneyDownloadId": true,
+      "bytes": 17971
+    },
+    {
+      "pack": "google-fonts-space-grotesk",
+      "sourcePage": "https://github.com/google/fonts/tree/main/ofl/spacegrotesk",
+      "licenceEvidenceUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
+      "status": "ok",
+      "httpStatus": 200,
+      "missingTokens": [],
+      "kenneyDownloadId": false,
+      "bytes": 255317
+    },
+    {
+      "pack": "google-fonts-ibm-plex-mono",
+      "sourcePage": "https://github.com/google/fonts/tree/main/ofl/ibmplexmono",
+      "licenceEvidenceUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexmono/OFL.txt",
+      "status": "ok",
+      "httpStatus": 200,
+      "missingTokens": [],
+      "kenneyDownloadId": false,
+      "bytes": 290178
+    }
+  ],
+  "failures": 0
+}

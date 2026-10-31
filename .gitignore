@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Node / build output
+node_modules/
+dist/
+build/
+.vite/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Test and tooling artefacts
+coverage/
+playwright-report/
+test-results/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+
+# Downloaded archives are preserved on purpose, but temporary extraction
+# scratch space outside assets/raw must never be committed.
+tmp/
+
+# Extracted pack contents are derivable from the committed archives in
+# assets/raw/*.zip via tools/assets/download/*.py, so they are not versioned.
+assets/raw/extracted/

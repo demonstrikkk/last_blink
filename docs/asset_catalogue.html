@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset catalogue &middot; The Last Blink</title>
+<style>
+
+    @font-face { font-family: 'Space Grotesk'; src: url('../public/assets/fonts/SpaceGrotesk-VariableFont_wght.ttf') format('truetype'); font-weight: 300 700; }
+    @font-face { font-family: 'IBM Plex Mono'; src: url('../public/assets/fonts/IBMPlexMono-Regular.ttf') format('truetype'); }
+    
+:root {
+  --ink-900:#070A0F; --ink-800:#0D131B; --ink-700:#141C26; --ink-600:#1E2833;
+  --text-primary:#EAF1F8; --text-secondary:#A9B8C7; --text-muted:#7E8FA1;
+  --cyan:#38E1E8; --magenta:#FF5CC8; --amber:#FFB24D;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; padding:32px clamp(16px,4vw,56px) 96px;
+  background:var(--ink-900); color:var(--text-primary);
+  font-family:'Space Grotesk',system-ui,sans-serif; line-height:1.55;
+}
+h1 { font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; margin:0 0 8px; }
+h2 { font-size:20px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-secondary); margin:56px 0 20px; }
+h2 .count { color:var(--cyan); font-family:'IBM Plex Mono',monospace; font-size:14px; margin-left:8px; }
+.lede { color:var(--text-secondary); max-width:70ch; margin:0 0 4px; }
+.stats { display:flex; gap:28px; flex-wrap:wrap; margin:24px 0 8px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-muted); }
+.stats strong { color:var(--text-primary); display:block; font-size:20px; }
+.grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+.card { background:var(--ink-800); border:1px solid var(--ink-600); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.card header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.card code { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--cyan); word-break:break-all; }
+.preview { background:var(--ink-700); border-radius:6px; display:flex; align-items:center; justify-content:center; padding:10px; min-height:72px; overflow:hidden; }
+.preview img { display:block; max-width:100%; height:auto; }
+.preview.sprite img { width:96px; height:96px; }
+.specimen { background:var(--ink-700); border-radius:6px; padding:14px; font-size:22px; line-height:1.3; overflow-wrap:anywhere; }
+audio { width:100%; max-width:100%; }
+dl { margin:0; display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; font-size:13px; }
+dt { color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; padding-top:2px; }
+dd { margin:0; color:var(--text-secondary); overflow-wrap:anywhere; }
+.path { font-family:'IBM Plex Mono',monospace; font-size:11px; word-break:break-all; }
+.hash { color:var(--text-muted); }
+.badge { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid currentColor; white-space:nowrap; }
+.badge.cc0 { color:var(--cyan); }
+.badge.ofl { color:var(--amber); }
+.muted { color:var(--text-muted); }
+.table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { width:100%; border-collapse:collapse; font-size:13px; min-width:720px; }
+th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--ink-600); vertical-align:top; }
+th { color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; }
+a { color:var(--cyan); text-decoration:none; }
+a:hover { text-decoration:underline; }
+.toolbar { display:flex; gap:12px; flex-wrap:wrap; margin:28px 0 0; align-items:center; }
+input[type=search] { background:var(--ink-700); border:1px solid var(--ink-600); color:var(--text-primary); border-radius:8px; padding:10px 14px; font-family:inherit; font-size:14px; min-width:280px; }
+input[type=search]:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+.chip { background:var(--ink-700); border:1px solid var(--ink-600); color:var(--text-secondary); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; }
+.chip[aria-pressed=true] { border-color:var(--cyan); color:var(--cyan); }
+.notice { background:var(--ink-800); border-left:3px solid var(--amber); padding:14px 18px; border-radius:0 8px 8px 0; color:var(--text-secondary); margin-top:28px; }
+</style>
+</head>
+<body>
+<h1>Asset catalogue</h1>
+<p class="lede">Everything the game may ship, with preview, dimensions, licence, and the usage it is reserved for. Generated from <code>docs/asset_manifest.json</code>; originals and licence texts live under <code>assets/</code>.</p>
+<div class="stats">
+  <div><strong>46</strong>registered assets</div>
+  <div><strong>2.61 MiB</strong>shipped payload</div>
+  <div><strong>6</strong>source packs</div>
+  <div><strong>0</strong>unused files</div>
+</div>
+<div class="toolbar">
+  <input type="search" id="filter" placeholder="Filter by id, pack or usage" aria-label="Filter assets">
+  <button class="chip" data-kind="all" aria-pressed="true">All</button>
+  <button class="chip" data-kind="tileset" aria-pressed="false">Environment</button>
+  <button class="chip" data-kind="sprite" aria-pressed="false">Sprites</button>
+  <button class="chip" data-kind="audio-sfx" aria-pressed="false">SFX</button>
+  <button class="chip" data-kind="audio-music" aria-pressed="false">Music</button>
+  <button class="chip" data-kind="font" aria-pressed="false">Fonts</button>
+</div>
+
+<section id="tileset"><h2>Environment tileset <span class="count">1</span></h2><div class="grid">
+    <article class="card" data-kind="tileset" data-search="env-modern-city-tilemap ground, roads, building facades, interiors, props, vehicles for the whole district. kenney-modern-city tileset">
+      <header>
+        <code>env-modern-city-tilemap</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview wide"><img src="../public/assets/environment/modern-city/tilemap.png" alt="tileset preview" style="width:100%;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Ground, roads, building facades, interiors, props, vehicles for the whole district.</dd>
+        <dt>Source</dt><dd>Roguelike Modern City</dd>
+        <dt>Details</dt><dd>592&times;448 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/environment/modern-city/tilemap.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">e8b653bd3f32a537&hellip;</dd>
+      </dl>
+    </article></div></section><section id="sprite"><h2>Character sprites <span class="count">14</span></h2><div class="grid">
+    <article class="card" data-kind="sprite" data-search="char-cap-1 rin (player silhouette, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-cap-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/cap/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Rin (player silhouette, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/cap/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">368fe0eb19d0b18a&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-cap-2 rin (player silhouette, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-cap-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/cap/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Rin (player silhouette, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/cap/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">a777f003f3f880ce&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-girl-1 tessa (child npc, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-girl-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/girl/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Tessa (child NPC, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/girl/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">cc4f0940f6b00770&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-girl-2 tessa (child npc, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-girl-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/girl/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Tessa (child NPC, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/girl/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">b7c92fffd90fa7b1&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-kid-1 pip (messenger kid npc, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-kid-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/kid/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Pip (messenger kid NPC, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/kid/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">f50c1d485c5ba621&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-kid-2 pip (messenger kid npc, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-kid-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/kid/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Pip (messenger kid NPC, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/kid/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">c9e6e2f582db1c5d&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-miner-1 dax (shift mechanic npc, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-miner-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/miner/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Dax (shift mechanic NPC, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/miner/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">ec6d53324207e07e&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-miner-2 dax (shift mechanic npc, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-miner-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/miner/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Dax (shift mechanic NPC, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/miner/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">6355dd1141cb563c&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-oldwoman-1 sable (ward elder, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-oldwoman-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/oldwoman/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Sable (ward elder, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/oldwoman/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">e31f11ec974ea01b&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-oldwoman-2 sable (ward elder, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-oldwoman-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/oldwoman/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Sable (ward elder, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/oldwoman/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">e7d3623064c286e1&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-sage-1 okonkwo (archivist npc, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-sage-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/sage/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Okonkwo (archivist NPC, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/sage/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">d1531d7cac28cdb4&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-sage-2 okonkwo (archivist npc, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-sage-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/sage/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Okonkwo (archivist NPC, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/sage/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">06c09cc0e5f6090f&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-woman-1 jaya (first agentic npc, idle step a). ansimuz-topdown sprite">
+      <header>
+        <code>char-woman-1</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/woman/1.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Jaya (first agentic NPC, idle step A).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/woman/1.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">2c4770a129a494c2&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="sprite" data-search="char-woman-2 jaya (first agentic npc, idle step b). ansimuz-topdown sprite">
+      <header>
+        <code>char-woman-2</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <div class="preview sprite"><img src="../public/assets/characters/woman/2.png" alt="sprite preview" style="width:96px;image-rendering:pixelated"></div>
+      <dl>
+        <dt>Usage</dt><dd>Jaya (first agentic NPC, idle step B).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>16&times;16 px</dd>
+        <dt>Path</dt><dd class="path">public/assets/characters/woman/2.png</dd>
+        <dt>SHA-256</dt><dd class="path hash">06c32878ab396aa1&hellip;</dd>
+      </dl>
+    </article></div></section><section id="audio-sfx"><h2>Sound effects <span class="count">24</span></h2><div class="grid">
+    <article class="card" data-kind="audio-sfx" data-search="sfx-anchor-set anchor point registered in the timeline. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-anchor-set</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/anchor-set.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Anchor point registered in the timeline.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>2.00 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/anchor-set.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">3cb48d86dab63140&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-blast timeline break, structural failure, morrow refusal. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-blast</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/blast.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Timeline break, structural failure, MORROW refusal.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>0.78 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/blast.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">4b597d658d0ae101&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-blink blink wind-up before a jump. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-blink</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/blink.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>BLINK wind-up before a jump.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.26 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/blink.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">fd3e75e1de2f2fda&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-choice-lock choice committed and written to the decision table. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-choice-lock</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/choice-lock.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Choice committed and written to the decision table.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.11 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/choice-lock.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">692ee3a6f1821402&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-door-close bulkhead / service door closing in the world. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-door-close</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/door-close.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Bulkhead / service door closing in the world.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>0.53 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/door-close.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">c9134651ebbd7c01&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-door-open bulkhead / service door opening in the world. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-door-open</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/door-open.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Bulkhead / service door opening in the world.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>0.53 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/door-open.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">5b7e07eccd4413ad&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ending-sting ending announced, end card reveal. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ending-sting</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ending-sting.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Ending announced, end card reveal.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.32 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ending-sting.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">3091bf0be0497f82&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-engine-low generator room ambience cue, proximity to power core. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-engine-low</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/engine-low.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Generator room ambience cue, proximity to power core.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>5.00 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/engine-low.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">d7deee8d7217ce63&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-evidence-found evidence item added to the case file. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-evidence-found</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/evidence-found.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Evidence item added to the case file.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.54 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/evidence-found.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">33b17a9a9a2397c6&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-field-hum containment field, sealed ward, evidence barrier. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-field-hum</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/field-hum.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Containment field, sealed ward, evidence barrier.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>0.95 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/field-hum.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">c2916f2a062c8ddd&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-metal-impact object interaction, crate, shutter, collision feedback. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-metal-impact</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/metal-impact.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Object interaction, crate, shutter, collision feedback.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>0.63 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/metal-impact.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">956c6612a256aa1a&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-terminal-hum terminal activation, morrow interface boot. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-terminal-hum</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/terminal-hum.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Terminal activation, MORROW interface boot.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>5.00 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/terminal-hum.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">1527944e16eb14b4&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-thruster steam vent, pressure release. kenney-sci-fi-sounds audio-sfx">
+      <header>
+        <code>sfx-thruster</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/thruster.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Steam vent, pressure release.</dd>
+        <dt>Source</dt><dd>Sci-Fi Sounds</dd>
+        <dt>Details</dt><dd>5.00 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/thruster.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">0fdc474d93f209de&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-timeline-shift blink branch commit, state version bump. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-timeline-shift</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/timeline-shift.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>BLINK branch commit, state version bump.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.03 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/timeline-shift.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">1da06a2e63ce131f&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-back cancel / leave panel. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-back</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-back.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Cancel / leave panel.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.06 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-back.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">07db973f79f6ae0f&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-click primary button activation. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-click</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-click.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Primary button activation.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.38 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-click.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">eb6cb435f3f2ab14&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-close panel or dialogue sheet closes. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-close</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-close.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Panel or dialogue sheet closes.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.15 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-close.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">44af8249b933e0fd&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-confirm confirmed action / accepted dialogue choice. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-confirm</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-confirm.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Confirmed action / accepted dialogue choice.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.29 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-confirm.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">063564703b6094d7&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-error blocked action, invalid target, failed check. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-error</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-error.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Blocked action, invalid target, failed check.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.16 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-error.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">46e67425d1633977&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-hover pointer hover / focus on an interactive element. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-hover</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-hover.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Pointer hover / focus on an interactive element.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.10 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-hover.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">ccfb7fa0cccdd9fa&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-memory-glitch memory corruption, echo interference in the hud. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-memory-glitch</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-memory-glitch.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Memory corruption, ECHO interference in the HUD.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.02 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-memory-glitch.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">da78c642bbd95da2&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-open panel, evidence board or dialogue sheet opens. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-open</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-open.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Panel, evidence board or dialogue sheet opens.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.15 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-open.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">a27c6bb0df7da1e6&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-question new question available / npc prompt. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-question</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-question.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>New question available / NPC prompt.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>0.49 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-question.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">abb8f9e4eb207149&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-sfx" data-search="sfx-ui-scroll list scroll step in the evidence and log panels. kenney-interface-sounds audio-sfx">
+      <header>
+        <code>sfx-ui-scroll</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/sfx/ui-scroll.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>List scroll step in the evidence and log panels.</dd>
+        <dt>Source</dt><dd>Interface Sounds</dd>
+        <dt>Details</dt><dd>1.00 s &middot; 44100 Hz &middot; 1 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/sfx/ui-scroll.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">320c6aafb2c7a503&hellip;</dd>
+      </dl>
+    </article></div></section><section id="audio-music"><h2>Music loops <span class="count">3</span></h2><div class="grid">
+    <article class="card" data-kind="audio-music" data-search="music-district-night default district loop (exterior, night). ansimuz-topdown audio-music">
+      <header>
+        <code>music-district-night</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/music/district-night.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Default district loop (exterior, night).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>36.00 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/music/district-night.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">37df6bf64ef05403&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-music" data-search="music-interior interior loop (archive, workshop, ward). ansimuz-topdown audio-music">
+      <header>
+        <code>music-interior</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/music/interior.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Interior loop (archive, workshop, ward).</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>15.75 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/music/interior.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">10a9f1c17a76b61e&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="audio-music" data-search="music-tension choice, blink and echo sequence loop. ansimuz-topdown audio-music">
+      <header>
+        <code>music-tension</code>
+        <span class="badge cc0">CC0-1.0</span>
+      </header>
+      <audio controls preload="none" src="../public/assets/audio/music/tension.ogg"></audio>
+      <dl>
+        <dt>Usage</dt><dd>Choice, BLINK and ECHO sequence loop.</dd>
+        <dt>Source</dt><dd>Top Down Adventure Assets (A Meta Data Game)</dd>
+        <dt>Details</dt><dd>21.66 s &middot; 44100 Hz &middot; 2 ch</dd>
+        <dt>Path</dt><dd class="path">public/assets/audio/music/tension.ogg</dd>
+        <dt>SHA-256</dt><dd class="path hash">0609466828d34baa&hellip;</dd>
+      </dl>
+    </article></div></section><section id="font"><h2>Fonts <span class="count">2</span></h2><div class="grid">
+    <article class="card" data-kind="font" data-search="font-ibm-plex-mono terminal, morrow, evidence codes and numeric readouts. google-fonts-ibm-plex-mono font">
+      <header>
+        <code>font-ibm-plex-mono</code>
+        <span class="badge ofl">OFL-1.1</span>
+      </header>
+      <div class="specimen" style="font-family:'IBM Plex Mono'">Aa Bb Cc 0123456789 &mdash; the district keeps its lights on</div>
+      <dl>
+        <dt>Usage</dt><dd>Terminal, MORROW, evidence codes and numeric readouts.</dd>
+        <dt>Source</dt><dd>IBM Plex Mono</dd>
+        <dt>Details</dt><dd>132 KiB TTF</dd>
+        <dt>Path</dt><dd class="path">public/assets/fonts/IBMPlexMono-Regular.ttf</dd>
+        <dt>SHA-256</dt><dd class="path hash">6a3412f058c7d8df&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="font" data-search="font-space-grotesk display and ui headings (variable weight 300-700). google-fonts-space-grotesk font">
+      <header>
+        <code>font-space-grotesk</code>
+        <span class="badge ofl">OFL-1.1</span>
+      </header>
+      <div class="specimen" style="font-family:'Space Grotesk'">Aa Bb Cc 0123456789 &mdash; the district keeps its lights on</div>
+      <dl>
+        <dt>Usage</dt><dd>Display and UI headings (variable weight 300-700).</dd>
+        <dt>Source</dt><dd>Space Grotesk</dd>
+        <dt>Details</dt><dd>133 KiB TTF</dd>
+        <dt>Path</dt><dd class="path">public/assets/fonts/SpaceGrotesk-VariableFont_wght.ttf</dd>
+        <dt>SHA-256</dt><dd class="path hash">acad6de1fc93436f&hellip;</dd>
+      </dl>
+    </article></div></section><section id="licence"><h2>Licence texts shipped with assets <span class="count">2</span></h2><div class="grid">
+    <article class="card" data-kind="licence" data-search="licence-ibm-plex-mono-ofl sil ofl 1.1 text shipped beside the font, as the licence requires. google-fonts-ibm-plex-mono licence">
+      <header>
+        <code>licence-ibm-plex-mono-ofl</code>
+        <span class="badge ofl">OFL-1.1</span>
+      </header>
+      <div class="preview wide"><a href="../public/assets/fonts/OFL-IBMPlexMono.txt">Open licence text</a></div>
+      <dl>
+        <dt>Usage</dt><dd>SIL OFL 1.1 text shipped beside the font, as the licence requires.</dd>
+        <dt>Source</dt><dd>IBM Plex Mono</dd>
+        <dt>Details</dt><dd>4456 bytes of plain text</dd>
+        <dt>Path</dt><dd class="path">public/assets/fonts/OFL-IBMPlexMono.txt</dd>
+        <dt>SHA-256</dt><dd class="path hash">7e6b2818edbd8f6a&hellip;</dd>
+      </dl>
+    </article>
+
+    <article class="card" data-kind="licence" data-search="licence-space-grotesk-ofl sil ofl 1.1 text shipped beside the font, as the licence requires. google-fonts-space-grotesk licence">
+      <header>
+        <code>licence-space-grotesk-ofl</code>
+        <span class="badge ofl">OFL-1.1</span>
+      </header>
+      <div class="preview wide"><a href="../public/assets/fonts/OFL-SpaceGrotesk.txt">Open licence text</a></div>
+      <dl>
+        <dt>Usage</dt><dd>SIL OFL 1.1 text shipped beside the font, as the licence requires.</dd>
+        <dt>Source</dt><dd>Space Grotesk</dd>
+        <dt>Details</dt><dd>4495 bytes of plain text</dd>
+        <dt>Path</dt><dd class="path">public/assets/fonts/OFL-SpaceGrotesk.txt</dd>
+        <dt>SHA-256</dt><dd class="path hash">564ce565c371c5e5&hellip;</dd>
+      </dl>
+    </article></div></section>
+
+<h2>Source packs and licences</h2>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Pack</th><th>Creator</th><th>Source</th><th>Licence</th><th>Attribution</th><th>Licence evidence</th><th>Preserved file</th></tr></thead>
+  <tbody><tr>
+              <td><strong>Roguelike Modern City</strong><br><span class="muted">v2.0</span></td>
+              <td>Kenney</td>
+              <td><a href="https://kenney.nl/assets/roguelike-modern-city">https://kenney.nl/assets/roguelike-modern-city</a></td>
+              <td><span class="badge cc0">CC0-1.0</span></td>
+              <td>not required</td>
+              <td class="path">CC0</td>
+              <td class="path">assets/licenses/LICENSE-kenney-roguelike-modern-city.txt</td>
+            </tr><tr>
+              <td><strong>Top Down Adventure Assets (A Meta Data Game)</strong><br><span class="muted">v1.0</span></td>
+              <td>Luis Zuno (ansimuz)</td>
+              <td><a href="https://opengameart.org/content/top-down-adventure-assets">https://opengameart.org/content/top-down-adventure-assets</a></td>
+              <td><span class="badge cc0">CC0-1.0</span></td>
+              <td>not required</td>
+              <td class="path">personal or commercial, modify, re-distribute</td>
+              <td class="path">assets/licenses/LICENSE-ansimuz-topdown.txt</td>
+            </tr><tr>
+              <td><strong>Interface Sounds</strong><br><span class="muted">v1.0</span></td>
+              <td>Kenney</td>
+              <td><a href="https://kenney.nl/assets/interface-sounds">https://kenney.nl/assets/interface-sounds</a></td>
+              <td><span class="badge cc0">CC0-1.0</span></td>
+              <td>not required</td>
+              <td class="path">CC0</td>
+              <td class="path">assets/licenses/LICENSE-kenney-interface-sounds.txt</td>
+            </tr><tr>
+              <td><strong>Sci-Fi Sounds</strong><br><span class="muted">v1.0</span></td>
+              <td>Kenney</td>
+              <td><a href="https://kenney.nl/assets/sci-fi-sounds">https://kenney.nl/assets/sci-fi-sounds</a></td>
+              <td><span class="badge cc0">CC0-1.0</span></td>
+              <td>not required</td>
+              <td class="path">CC0</td>
+              <td class="path">assets/licenses/LICENSE-kenney-sci-fi-sounds.txt</td>
+            </tr><tr>
+              <td><strong>Space Grotesk</strong><br><span class="muted">vvariable (main branch snapshot 2026-10-31)</span></td>
+              <td>Florian Karsten</td>
+              <td><a href="https://github.com/google/fonts/tree/main/ofl/spacegrotesk">https://github.com/google/fonts/tree/main/ofl/spacegrotesk</a></td>
+              <td><span class="badge ofl">OFL-1.1</span></td>
+              <td>required</td>
+              <td class="path">SIL OPEN FONT LICENSE</td>
+              <td class="path">assets/licenses/LICENSE-SpaceGrotesk-OFL.txt</td>
+            </tr><tr>
+              <td><strong>IBM Plex Mono</strong><br><span class="muted">vRegular (main branch snapshot 2026-10-31)</span></td>
+              <td>IBM / Bold Monday</td>
+              <td><a href="https://github.com/google/fonts/tree/main/ofl/ibmplexmono">https://github.com/google/fonts/tree/main/ofl/ibmplexmono</a></td>
+              <td><span class="badge ofl">OFL-1.1</span></td>
+              <td>required</td>
+              <td class="path">SIL OPEN FONT LICENSE</td>
+              <td class="path">assets/licenses/LICENSE-IBMPlexMono-OFL.txt</td>
+            </tr></tbody>
+</table>
+</div>
+<div class="notice">Every shipped file is CC0 or OFL-1.1. OFL fonts require the licence text to stay with the font file, which is why <code>THIRD_PARTY_NOTICES.md</code> ships alongside them. Nothing in this catalogue requires a paid licence.</div>
+
+<script>
+const cards = [...document.querySelectorAll('.card')];
+const chips = [...document.querySelectorAll('.chip')];
+const search = document.getElementById('filter');
+let activeKind = 'all';
+
+function apply() {
+  const term = search.value.trim().toLowerCase();
+  for (const card of cards) {
+    const kindOk = activeKind === 'all' || card.dataset.kind === activeKind;
+    const termOk = !term || card.dataset.search.includes(term);
+    card.hidden = !(kindOk && termOk);
+  }
+}
+search.addEventListener('input', apply);
+for (const chip of chips) {
+  chip.addEventListener('click', () => {
+    activeKind = chip.dataset.kind;
+    for (const other of chips) other.setAttribute('aria-pressed', String(other === chip));
+    apply();
+  });
+}
+</script>
+</body>
+</html>
