@@ -98,6 +98,7 @@ export const actionTypeSchema = z.enum([
   'branch.fork',
   'evidence.collect',
   'choice.make',
+  'morrow.intervene',
 ]);
 
 export type ActionType = z.infer<typeof actionTypeSchema>;

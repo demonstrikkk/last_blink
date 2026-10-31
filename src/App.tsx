@@ -1,14 +1,18 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
 import {
+  MorrowController,
+  createSystemClock,
   type ActionResult,
   type BranchId,
   type DeterministicGameSession,
+  type GameEventId,
 } from './engine/index.js';
 import { createBrowserSession } from './session/runtime.js';
 import { STAGE5_CONTENT } from './content/stage5Content.js';
@@ -26,6 +30,7 @@ import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
 import { FieldNotes } from './ui/FieldNotes.js';
 import { Ledger, type SaveState } from './ui/Ledger.js';
 import { BlinkPanel } from './ui/BlinkPanel.js';
+import { EchoPanel } from './ui/EchoPanel.js';
 import { TouchControls } from './ui/TouchControls.js';
 
 type DialogueState =
@@ -99,6 +104,8 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
   const [worldReady, setWorldReady] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [blinkOpen, setBlinkOpen] = useState(false);
+  const [echoOpen, setEchoOpen] = useState(false);
+  const [morrowNotice, setMorrowNotice] = useState<string | null>(null);
   const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -140,6 +147,28 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     toastTimer.current = window.setTimeout(() => setToast(null), 5200);
   }, []);
 
+  const morrow = useMemo(
+    () => new MorrowController(session, { clock: createSystemClock() }),
+    [session],
+  );
+
+  const runMorrow = useCallback(
+    (eventId?: GameEventId) => {
+      const turn = morrow.run({ triggerEventId: eventId ?? null });
+      if (!turn) return;
+      if (turn.result.status === 'accepted') {
+        setMorrowNotice(
+          `MORROW ${turn.proposal.response.toUpperCase()} · ${turn.proposal.reasonCodes.join(', ')}.`,
+        );
+      } else {
+        setMorrowNotice(
+          `MORROW ${turn.proposal.response.toUpperCase()} · refused by the engine (${turn.result.rejection?.code ?? 'unknown'}).`,
+        );
+      }
+    },
+    [morrow],
+  );
+
   const describeRejection = (result: ActionResult): string => {
     const code = result.rejection?.code ?? 'engine_error';
     if (code === 'duplicate') return 'Already recorded. The engine refused a second write.';
@@ -157,13 +186,14 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         params: { evidenceId },
       });
       if (result.status === 'accepted') {
+        runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
         worldRef.current?.playSfx('evidence-found');
         showToast(`Evidence logged: ${label ?? evidenceId}.`);
       } else {
         showToast(describeRejection(result));
       }
     },
-    [session, showToast],
+    [runMorrow, session, showToast],
   );
 
   const recordAnchor = useCallback(() => {
@@ -192,6 +222,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
             params: { evidenceId: script.grantsEvidenceId },
           });
           if (result.status === 'accepted') {
+            runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
             worldRef.current?.playSfx('evidence-found');
             showToast(`Testimony recorded: ${evidence.label}.`);
           } else {
@@ -204,7 +235,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
       setDialogue({ phase: 'lines', scriptId, index: 0 });
       worldRef.current?.playSfx('ui-open');
     },
-    [session, showToast],
+    [runMorrow, session, showToast],
   );
 
   const handleTarget = useCallback(
@@ -258,6 +289,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         params: { nodeId: script.choiceNodeId, optionId },
       });
       if (result.status === 'accepted') {
+        runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
         setDialogue({ phase: 'resolved', scriptId: dialogue.scriptId });
         const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
         if (fresh.ending) {
@@ -271,7 +303,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         showToast(describeRejection(result));
       }
     },
-    [dialogue, session, showToast],
+    [dialogue, runMorrow, session, showToast],
   );
 
   const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
@@ -297,12 +329,14 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         return;
       }
       setCompareTargetId(fork.branchId);
+      morrow.reset(fork.branchId);
+      setMorrowNotice(null);
       worldRef.current?.playSfx('blink');
       showToast(
         `BLINK complete. New timeline active from ${anchor?.label ?? 'the checkpoint'}. V1 is preserved.`,
       );
     },
-    [session, showToast],
+    [morrow, session, showToast],
   );
 
   const switchBranch = useCallback(
@@ -313,10 +347,12 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         return;
       }
       setCompareTargetId(null);
+      morrow.reset(branchId as BranchId);
+      setMorrowNotice(null);
       worldRef.current?.playSfx('timeline-shift');
       showToast(`Timeline switched. Canonical hash ${result.stateHash}.`);
     },
-    [session, showToast],
+    [morrow, session, showToast],
   );
 
   useEffect(() => {
@@ -447,6 +483,9 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           <button type="button" className="btn btn-quiet blink-btn" onClick={() => setBlinkOpen(true)}>
             BLINK
           </button>
+          <button type="button" className="btn btn-quiet echo-btn" onClick={() => setEchoOpen(true)}>
+            ECHO
+          </button>
           <button type="button" className="btn btn-quiet ledger-btn" onClick={() => setLedgerOpen(true)}>
             Ledger
           </button>
@@ -488,6 +527,13 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
             {toast ? (
               <p className="toast" role="status">
                 {toast}
+              </p>
+            ) : null}
+
+            {morrowNotice ? (
+              <p className="morrow-callout" role="status">
+                <span className="micro">MORROW</span>
+                <span>{morrowNotice}</span>
               </p>
             ) : null}
 
@@ -542,6 +588,15 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         onSwitch={switchBranch}
       />
 
+      <EchoPanel
+        open={echoOpen}
+        onClose={() => setEchoOpen(false)}
+        session={session}
+        content={STAGE5_CONTENT}
+        branches={branches}
+        activeBranchId={state.branchId}
+      />
+
       <Ledger
         open={ledgerOpen}
         onClose={() => setLedgerOpen(false)}
@@ -565,3 +620,4 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     </div>
   );
 }
+

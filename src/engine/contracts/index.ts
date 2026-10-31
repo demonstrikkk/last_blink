@@ -9,6 +9,7 @@ export * from './playerProfile.js';
 export * from './npcDefinition.js';
 export * from './npcObservation.js';
 export * from './npcDecisionProposal.js';
+export * from './morrow.js';
 export * from './actionResult.js';
 export * from './gameEvent.js';
 export * from './gameState.js';

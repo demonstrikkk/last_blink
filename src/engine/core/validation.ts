@@ -9,11 +9,21 @@ import {
   factAssertParamsSchema,
   forkParamsSchema,
   gameActionSchema,
+  morrowInterveneParamsSchema,
   noopParamsSchema,
   type GameAction,
   type ParsedAction,
 } from './actions.js';
 import { canonicalJson } from './canonicalJson.js';
+import {
+  MAX_MORROW_ESCALATION,
+  type MorrowResponse,
+} from '../contracts/morrow.js';
+import {
+  isMorrowTransitionAllowed,
+  morrowEscalationOf,
+  morrowResponseOf,
+} from '../morrow/fairness.js';
 
 export type RejectionCode = Rejection['code'];
 
@@ -203,6 +213,65 @@ export function validateAction(
       return {
         ok: true,
         action: { actionType: 'choice.make', actorId: action.actorId, params: params.data },
+      };
+    }
+
+    case 'morrow.intervene': {
+      const params = morrowInterveneParamsSchema.safeParse(action.params);
+      if (!params.success) {
+        return fail('invalid_action', 'morrow.intervene requires a complete, typed proposal');
+      }
+      if (action.actorId !== 'system_morrow') {
+        return fail('invalid_action', 'only system_morrow may submit MORROW proposals', {
+          actorId: action.actorId,
+        });
+      }
+      const proposal = params.data;
+      if (proposal.basedOnStateVersion !== state.stateVersion) {
+        return fail('stale_state', 'the proposal was decided against an older state version', {
+          proposalId: proposal.proposalId,
+          basedOnStateVersion: proposal.basedOnStateVersion,
+          stateVersion: state.stateVersion,
+        });
+      }
+      const recorded = state.facts['morrow.last_proposal']?.value;
+      if (recorded === proposal.proposalId) {
+        return fail('duplicate', 'this proposal has already been recorded on the branch', {
+          proposalId: proposal.proposalId,
+        });
+      }
+
+      const current = morrowResponseOf(state);
+      if (!isMorrowTransitionAllowed(current, proposal.response as MorrowResponse)) {
+        return fail('policy_denied', 'the response is not reachable from the current posture', {
+          proposalId: proposal.proposalId,
+          from: current,
+          to: proposal.response,
+        });
+      }
+
+      const escalation = morrowEscalationOf(state);
+      if (proposal.response === 'escalate' && escalation >= MAX_MORROW_ESCALATION) {
+        return fail('policy_denied', 'the escalation ceiling has been reached', {
+          proposalId: proposal.proposalId,
+          escalation,
+          ceiling: MAX_MORROW_ESCALATION,
+        });
+      }
+
+      // Fairness: once the story has committed an ending, MORROW may only stand
+      // down. It can never keep the player locked in a punitive posture.
+      if (state.endingId !== null && proposal.response !== 'release' && proposal.response !== 'observe') {
+        return fail('policy_denied', 'no new escalation is permitted after an ending', {
+          proposalId: proposal.proposalId,
+          response: proposal.response,
+          endingId: state.endingId,
+        });
+      }
+
+      return {
+        ok: true,
+        action: { actionType: 'morrow.intervene', actorId: action.actorId, params: proposal },
       };
     }
 

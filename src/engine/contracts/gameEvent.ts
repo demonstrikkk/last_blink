@@ -12,13 +12,20 @@ import {
   idempotencyKeySchema,
   isoTimestampSchema,
   npcIdSchema,
+  observationIdSchema,
   proposalIdSchema,
   ruleIdSchema,
   sessionIdSchema,
   sourceIdSchema,
   stateVersionSchema,
   tickSchema,
+  versionSchema,
 } from './primitives.js';
+import {
+  MAX_MORROW_ESCALATION,
+  morrowReasonCodeSchema,
+  morrowResponseSchema,
+} from './morrow.js';
 import { factSchema } from './fact.js';
 import { choiceSchema } from './choice.js';
 import { anchorSchema } from './anchor.js';
@@ -97,6 +104,26 @@ export const endingReachedEventSchema = event('ending.reached', {
   factKeys: z.array(factKeySchema).max(64),
 });
 
+export const morrowProposalEvaluatedEventSchema = event('morrow.proposal.evaluated', {
+  proposalId: proposalIdSchema,
+  policyId: z.string().trim().min(1).max(80),
+  policyVersion: versionSchema,
+  observationId: observationIdSchema,
+  response: morrowResponseSchema,
+  status: z.enum(['accepted', 'rejected']),
+  reasonCodes: z.array(morrowReasonCodeSchema).max(8),
+  reason: z.string().trim().min(1).max(280).nullable(),
+});
+
+export const morrowIntervenedEventSchema = event('morrow.intervened', {
+  proposalId: proposalIdSchema,
+  policyId: z.string().trim().min(1).max(80),
+  policyVersion: versionSchema,
+  response: morrowResponseSchema,
+  reasonCodes: z.array(morrowReasonCodeSchema).min(1).max(8),
+  escalation: z.number().int().min(0).max(MAX_MORROW_ESCALATION),
+});
+
 export const actionRejectedEventSchema = event('action.rejected', {
   actionType: actionTypeSchema,
   code: z.string().trim().min(1).max(40),
@@ -113,6 +140,8 @@ export const gameEventSchema = z.discriminatedUnion('type', [
   anchorRecordedEventSchema,
   branchForkedEventSchema,
   npcProposalEvaluatedEventSchema,
+  morrowProposalEvaluatedEventSchema,
+  morrowIntervenedEventSchema,
   endingReachedEventSchema,
   actionRejectedEventSchema,
 ]);
@@ -127,6 +156,8 @@ export type RuleEvaluatedEvent = z.infer<typeof ruleEvaluatedEventSchema>;
 export type AnchorRecordedEvent = z.infer<typeof anchorRecordedEventSchema>;
 export type BranchForkedEvent = z.infer<typeof branchForkedEventSchema>;
 export type NpcProposalEvaluatedEvent = z.infer<typeof npcProposalEvaluatedEventSchema>;
+export type MorrowProposalEvaluatedEvent = z.infer<typeof morrowProposalEvaluatedEventSchema>;
+export type MorrowIntervenedEvent = z.infer<typeof morrowIntervenedEventSchema>;
 export type EndingReachedEvent = z.infer<typeof endingReachedEventSchema>;
 export type ActionRejectedEvent = z.infer<typeof actionRejectedEventSchema>;
 
@@ -139,6 +170,8 @@ export const EVENT_TYPES: readonly GameEventType[] = [
   'anchor.recorded',
   'branch.forked',
   'npc.proposal.evaluated',
+  'morrow.proposal.evaluated',
+  'morrow.intervened',
   'ending.reached',
   'action.rejected',
 ] as const;

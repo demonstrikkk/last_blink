@@ -4,10 +4,16 @@ import {
   actorIdSchema,
   anchorIdSchema,
   factKeySchema,
+  hashSchema,
   jsonObjectSchema,
   jsonValueSchema,
   labelSchema,
+  observationIdSchema,
+  proposalIdSchema,
+  stateVersionSchema,
+  versionSchema,
 } from '../contracts/primitives.js';
+import { morrowReasonCodeSchema, morrowResponseSchema } from '../contracts/morrow.js';
 
 /** The untrusted shape a caller may submit to GameSession.dispatch. */
 export const gameActionSchema = z.strictObject({
@@ -51,6 +57,22 @@ export const choiceMakeParamsSchema = z.strictObject({
   optionId: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/),
 });
 
+/**
+ * A MORROW proposal submitted to the engine. This carries no capability to
+ * write state directly: the engine validates the response, the transition and
+ * the freshness before it records anything.
+ */
+export const morrowInterveneParamsSchema = z.strictObject({
+  proposalId: proposalIdSchema,
+  policyId: z.string().trim().min(1).max(80),
+  policyVersion: versionSchema,
+  observationId: observationIdSchema,
+  observationHash: hashSchema,
+  basedOnStateVersion: stateVersionSchema,
+  response: morrowResponseSchema,
+  reasonCodes: z.array(morrowReasonCodeSchema).min(1).max(8),
+});
+
 export type ParsedAction =
   | { actionType: 'session.noop'; actorId: z.infer<typeof actorIdSchema>; params: Record<string, never> }
   | {
@@ -82,4 +104,9 @@ export type ParsedAction =
       actionType: 'choice.make';
       actorId: z.infer<typeof actorIdSchema>;
       params: z.infer<typeof choiceMakeParamsSchema>;
+    }
+  | {
+      actionType: 'morrow.intervene';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof morrowInterveneParamsSchema>;
     };

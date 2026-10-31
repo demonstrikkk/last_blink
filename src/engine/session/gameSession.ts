@@ -29,6 +29,9 @@
   type GameState,
   type JsonObject,
   type JsonValue,
+  type MorrowIntervenedEvent,
+  type MorrowProposalEvaluatedEvent,
+  type MorrowResponse,
   type PlayerProfile,
   type RuleEvaluatedEvent,
   type SaveEnvelope,
@@ -37,7 +40,8 @@
   type SourceId,
   type TickAdvancedEvent,
 } from '../contracts/index.js';
-import type { ParsedAction } from '../core/actions.js';
+import { morrowEscalationOf, nextMorrowEscalation } from '../morrow/fairness.js';
+import { morrowInterveneParamsSchema, type ParsedAction } from '../core/actions.js';
 import { hashCanonical } from '../core/hash.js';
 import { createDeterministicIdFactory, type IdFactory } from '../core/ids.js';
 import { reduceGameState } from '../core/reducer.js';
@@ -149,7 +153,30 @@ interface EventEnvelope {
 
 const SYSTEM_ACTOR = 'system_engine' as ActorId;
 const PLAYER_ACTOR = 'player_local' as ActorId;
+const MORROW_ACTOR = 'system_morrow' as ActorId;
 const MAX_RECENT_EVENTS = 50;
+
+interface MorrowRejectionContext {
+  readonly proposalId: NonNullable<MorrowProposalEvaluatedEvent['payload']['proposalId']>;
+  readonly policyId: string;
+  readonly policyVersion: string;
+  readonly observationId: MorrowProposalEvaluatedEvent['payload']['observationId'];
+  readonly response: MorrowResponse;
+  readonly reasonCodes: readonly string[];
+}
+
+function morrowRejectionContext(raw: unknown): MorrowRejectionContext | null {
+  const parsed = morrowInterveneParamsSchema.safeParse(rawField(raw, 'params'));
+  if (!parsed.success) return null;
+  return {
+    proposalId: parsed.data.proposalId,
+    policyId: parsed.data.policyId,
+    policyVersion: parsed.data.policyVersion,
+    observationId: parsed.data.observationId,
+    response: parsed.data.response,
+    reasonCodes: parsed.data.reasonCodes,
+  };
+}
 
 function sourceForActor(actorId: ActorId): SourceId {
   if (actorId.startsWith('player_')) return 'input.player' as SourceId;
@@ -654,6 +681,83 @@ export class DeterministicGameSession implements GameSession {
         break;
       }
 
+      case 'morrow.intervene': {
+        const proposal = action.params;
+        const evaluatedEventId = this.ids.next('evt_') as GameEventId;
+        const evaluated: MorrowProposalEvaluatedEvent = {
+          ...this.envelope(
+            state,
+            evaluatedEventId,
+            state.tick,
+            action.actorId,
+            'policy.morrow' as SourceId,
+            actionId,
+          ),
+          type: 'morrow.proposal.evaluated',
+          payload: {
+            proposalId: proposal.proposalId,
+            policyId: proposal.policyId,
+            policyVersion: proposal.policyVersion,
+            observationId: proposal.observationId,
+            response: proposal.response,
+            status: 'accepted',
+            reasonCodes: [...proposal.reasonCodes],
+            reason: null,
+          },
+        };
+        state = this.apply(state, evaluated);
+        produced.push(evaluatedEventId);
+
+        const escalation = nextMorrowEscalation(
+          morrowEscalationOf(state),
+          proposal.response,
+        );
+        const intervenedEventId = this.ids.next('evt_') as GameEventId;
+        const intervened: MorrowIntervenedEvent = {
+          ...this.envelope(
+            state,
+            intervenedEventId,
+            state.tick,
+            action.actorId,
+            'policy.morrow' as SourceId,
+            actionId,
+          ),
+          type: 'morrow.intervened',
+          payload: {
+            proposalId: proposal.proposalId,
+            policyId: proposal.policyId,
+            policyVersion: proposal.policyVersion,
+            response: proposal.response,
+            reasonCodes: [...proposal.reasonCodes],
+            escalation,
+          },
+        };
+        state = this.apply(state, intervened);
+        produced.push(intervenedEventId);
+
+        for (const [key, value] of [
+          ['morrow.response', proposal.response],
+          ['morrow.last_proposal', proposal.proposalId],
+          ['morrow.escalation', escalation],
+        ] as const) {
+          const asserted = this.assertFact(state, actionId, action.actorId, source, {
+            key: key as Fact['key'],
+            value,
+            kind: 'derived',
+            sourceRef: `morrow.policy:${proposal.policyId}`,
+            sourceKind: 'derived',
+            confidence: 1,
+          });
+          state = asserted.state;
+          produced.push(asserted.eventId);
+        }
+
+        const ruled = this.runRules(state, actionId);
+        state = ruled.state;
+        produced.push(...ruled.eventIds);
+        break;
+      }
+
       default: {
         const exhaustive: never = action;
         throw new Error(`unhandled action ${String(exhaustive)}`);
@@ -981,13 +1085,45 @@ export class DeterministicGameSession implements GameSession {
     const parsedType = actionTypeSchema.safeParse(rawField(raw, 'actionType'));
     const actionType: ActionType = parsedType.success ? parsedType.data : 'session.noop';
 
+    const context = actionType === 'morrow.intervene' ? morrowRejectionContext(raw) : null;
     const eventId = this.ids.next('evt_') as GameEventId;
     const event: ActionRejectedEvent = {
       ...this.envelope(this.state, eventId, this.state.tick, actorId, 'engine.validation' as SourceId, actionId),
       type: 'action.rejected',
-      payload: { actionType, code, message, proposalId: null },
+      payload: { actionType, code, message, proposalId: context?.proposalId ?? null },
     };
-    const state = this.apply(this.state, event);
+    let state = this.apply(this.state, event);
+    const eventIds: GameEventId[] = [eventId];
+
+    // A rejected MORROW proposal is still a recorded proposal: ECHO must be able
+    // to explain that the engine refused it and why.
+    if (context) {
+      const proposalEventId = this.ids.next('evt_') as GameEventId;
+      const proposalEvent: MorrowProposalEvaluatedEvent = {
+        ...this.envelope(
+          state,
+          proposalEventId,
+          state.tick,
+          MORROW_ACTOR,
+          'engine.validation' as SourceId,
+          actionId,
+        ),
+        type: 'morrow.proposal.evaluated',
+        payload: {
+          proposalId: context.proposalId,
+          policyId: context.policyId,
+          policyVersion: context.policyVersion,
+          observationId: context.observationId,
+          response: context.response,
+          status: 'rejected',
+          reasonCodes: [...context.reasonCodes],
+          reason: message,
+        },
+      };
+      state = this.apply(state, proposalEvent);
+      eventIds.push(proposalEventId);
+    }
+
     this.commit(state);
     this.deps.logger.warn('action rejected', { sessionId: this.sessionId, code, message });
 
@@ -999,11 +1135,11 @@ export class DeterministicGameSession implements GameSession {
       actorId,
       sourceId: 'engine.validation',
       actionType,
-      proposalId: null,
+      proposalId: context?.proposalId ?? null,
       status: 'rejected',
       tick: state.tick,
       stateVersion: state.stateVersion,
-      eventIds: [eventId],
+      eventIds,
       rejection: { code, message, details: details as JsonObject },
       resultingStateHash: hashCanonical(state),
       createdAt: this.deps.clock.nowIso(),

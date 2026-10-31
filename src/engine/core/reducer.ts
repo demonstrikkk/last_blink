@@ -236,6 +236,16 @@ export function reduceGameState(state: GameState, event: GameEvent): GameState {
       return base;
     }
 
+    case 'morrow.proposal.evaluated': {
+      invariant(event.tick === state.tick, 'invalid_tick', 'MORROW proposal must use the current tick');
+      return base;
+    }
+
+    case 'morrow.intervened': {
+      invariant(event.tick === state.tick, 'invalid_tick', 'MORROW intervention must use the current tick');
+      return base;
+    }
+
     case 'ending.reached': {
       invariant(event.tick === state.tick, 'invalid_tick', 'ending must use the current tick');
       invariant(

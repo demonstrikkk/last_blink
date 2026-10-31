@@ -1655,3 +1655,183 @@ kbd {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- ECHO ---------- */
+
+.echo-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.echo-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(600px, 100%);
+  height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+  border-left: 1px solid rgb(56 225 232 / 35%);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-900));
+}
+
+.echo-intro {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.echo-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.echo-mode-active {
+  border-color: var(--cyan);
+  background: rgb(56 225 232 / 12%);
+}
+
+.echo-field {
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.echo-field input,
+.echo-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-600);
+  border-radius: 2px;
+  background: var(--ink-900);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.echo-ask {
+  align-self: flex-start;
+}
+
+.echo-empty,
+.echo-error {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.echo-error {
+  color: var(--danger, #ff6b6b);
+}
+
+.echo-answer {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ink-600);
+  background: rgb(4 6 9 / 40%);
+}
+
+.echo-answer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.echo-scope {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.echo-summary {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.echo-claim {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ink-700);
+}
+
+.echo-claim-kind {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.echo-claim-unavailable .echo-claim-kind {
+  color: var(--text-secondary);
+}
+
+.echo-claim p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.echo-citations {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.echo-citations li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.echo-citation-kind {
+  padding: 0 4px;
+  border: 1px solid var(--ink-600);
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+
+.echo-citation-id {
+  color: var(--text-primary);
+}
+
+.echo-missing {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.echo-status-grounded {
+  color: var(--cyan);
+}
+
+.echo-status-partial {
+  color: var(--warning, #e8c86a);
+}
+
+.echo-status-unknown {
+  color: var(--text-secondary);
+}
+
+.morrow-callout {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--danger, #ff6b6b);
+  background: rgb(4 6 9 / 62%);
+  font-size: 12px;
+  color: var(--text-primary);
+}
