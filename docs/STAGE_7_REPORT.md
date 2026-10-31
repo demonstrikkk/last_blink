@@ -65,6 +65,11 @@ npm run verify      # typecheck + tests + build
 The frozen registry still reports fifteen contracts and version `1.0.0`. The
 event vocabulary is asserted at twelve. Stage 3-6 suites remain unchanged.
 
+Commits: implementation `867dff1`, docs `89a34e4`. Remote CI run
+[41210187574](https://github.com/demonstrikkk/last_blink/actions/runs/41210187574)
+passed typecheck/build and both jobs (`Typecheck, tests and build`, `Asset
+pipeline integrity`).
+
 ## 5. Limits
 
 - MORROW facts live on the branch that accepted them; they do not cross a fork.

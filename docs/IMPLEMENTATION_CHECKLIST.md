@@ -184,6 +184,7 @@ Deferred beyond Stage 6:
 - [x] `docs/ECHO_RETRIEVAL_MODEL.md`
 - [x] 128 Vitest checks across 15 files; Stage 3-6 suites unchanged and green
 - [x] `npm run verify` green (typecheck, tests, production build)
+- [x] Implementation `867dff1`, docs `89a34e4`; remote CI `41210187574` green
 - [ ] Combined Stage 7-8 gate sign-off
 - [ ] Automated ECHO/MORROW screenshots (tooling not installed in this environment)
 

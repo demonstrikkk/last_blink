@@ -72,5 +72,8 @@ npm run verify      # typecheck + tests + build
 
 ## 6. Combined Stage 7-8 gate
 
-Implementation and internal verification are complete. Remote CI and push are
-performed only after the user authorises the gate step in this environment.
+Implementation and internal verification are complete. Commits: implementation
+`867dff1`, docs `89a34e4`; both were pushed to `main`. Remote CI run
+[41210187574](https://github.com/demonstrikkk/last_blink/actions/runs/41210187574)
+completed with `Typecheck, tests and build` and `Asset pipeline integrity`
+green. The combined Stage 7-8 gate awaits user sign-off.
