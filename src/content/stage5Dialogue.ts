@@ -173,6 +173,24 @@ export function getDialogueScript(
   if (scriptId === 'clue_locker') {
     return resolveClueLockerDialogue(state, view);
   }
+  if (scriptId === 'mara') {
+    return resolveMaraDialogue(state, view);
+  }
+  if (scriptId === 'archive_record') {
+    return resolveArchiveRecordDialogue(state, view);
+  }
+  if (scriptId === 'ren') {
+    return resolveRenDialogue(state, view);
+  }
+  if (scriptId === 'nia') {
+    return resolveNiaDialogue(state, view);
+  }
+  if (scriptId === 'human_cost') {
+    return resolveHumanCostDialogue(state, view);
+  }
+  if (scriptId === 'vale') {
+    return resolveValeDialogue(state, view);
+  }
   return STAGE5_DIALOGUE[scriptId] ?? STAGE5_DIALOGUE.sable!;
 }
 
@@ -1020,7 +1038,7 @@ function resolveFreightLogDialogue(_state: GameState, _view: WorldView): Dialogu
     scriptId: 'freight_log',
     displayName: 'Freight Manifest Board',
     role: 'Municipal Depot Archive, South Yard',
-    choiceNodeId: 'node.ivo.account',
+    choiceNodeId: 'node.sable.relay',
     lines: [
       {
         speaker: 'Depot Board',
@@ -1035,7 +1053,7 @@ function resolveFreightLogDialogue(_state: GameState, _view: WorldView): Dialogu
         text: 'Manifest discrepancy noted: Optical drive cylinder removed at Relay Street intersection during signal blackout.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'The missing eight minutes matches the freight delay. The blackout was timed specifically to intercept that optical drive.',
       },
     ],
@@ -1044,3 +1062,227 @@ function resolveFreightLogDialogue(_state: GameState, _view: WorldView): Dialogu
     stanceNote: 'Depot record recorded.',
   };
 }
+
+function resolveMaraDialogue(state: GameState, view: WorldView): DialogueScript {
+  const hasArchiveRecord = view.evidence.some((e) => e.evidenceId === 'archive_record' && e.collected);
+  const relayShared = state.facts['story.relay_choice']?.value === 'share';
+
+  if (!hasArchiveRecord) {
+    return {
+      scriptId: 'mara',
+      displayName: 'Mara',
+      role: 'Archive Keeper, Veyra Historical Records',
+      choiceNodeId: 'node.sable.relay',
+      lines: [
+        {
+          speaker: 'Mara',
+          text: 'Welcome to the records repository, investigator. What Veyra records is preserved; what it deletes is forgotten.',
+        },
+        {
+          speaker: 'Aster',
+          text: 'I am comparing the physical terminal counters at Relay 7 with the municipal archive log.',
+        },
+        {
+          speaker: 'Mara',
+          text: 'The municipal log was synchronized at 03:20 under administrative classification. The terminal ledger is in the vault behind me.',
+        },
+        {
+          speaker: 'Mara',
+          text: 'Inspect the Archival Incident Ledger yourself. You will see that the eight missing minutes were manually overwritten.',
+        },
+      ],
+      gate: 'Mara gestures to the ledger vault. “Examine the physical ledger before you draw conclusions on administrative classification.”',
+      contextNote: 'Archival Inquiry: Mara grants access to historical records comparison.',
+      stanceNote: 'Mara protects archival veracity.',
+    };
+  }
+
+  return {
+    scriptId: 'mara',
+    displayName: 'Mara',
+    role: 'Archive Keeper, Veyra Historical Records',
+    choiceNodeId: 'node.sable.relay',
+    lines: [
+      {
+        speaker: 'Mara',
+        text: 'You have seen the raw erasure. The system claimed continuous transmission, but the ledger shows thirty-two erased packets.',
+      },
+      {
+        speaker: 'Aster',
+        text: relayShared
+          ? 'We shared the raw log with the Ward. The discrepancy is already breaking into public channels.'
+          : 'The log is currently concealed. The city still believes the official record is intact.',
+      },
+      {
+        speaker: 'Mara',
+        text: 'Every decision leaves a trace in these ledgers. Even when an entry is stricken, the blank lines remain.',
+      },
+    ],
+    gate: 'Archival comparison complete. Discrepancy between raw hardware and municipal archive established.',
+    contextNote: 'Verification: Institutional discrepancy documented in archival ledger.',
+    stanceNote: 'Mara acknowledges evidence of administrative alteration.',
+  };
+}
+
+function resolveArchiveRecordDialogue(_state: GameState, _view: WorldView): DialogueScript {
+  return {
+    scriptId: 'archive_record',
+    displayName: 'Archival Incident Ledger',
+    role: 'Archive Vault, Central Connector',
+    choiceNodeId: 'node.sable.relay',
+    lines: [
+      {
+        speaker: 'Archive Vault',
+        text: '[HISTORICAL LOG ENTRY // RELAY INCIDENT CYCLE 03:14]',
+      },
+      {
+        speaker: 'Archive Vault',
+        text: 'Official Classification: "Transient grid synchronization fault. Zero loss of telemetry."',
+      },
+      {
+        speaker: 'Aster',
+        text: 'The margin note in blue grease pencil: "Raw buffer counter holds 480 seconds unaccounted. Directive 12-A applied: suppress alert to avoid district panic."',
+      },
+      {
+        speaker: 'Aster',
+        text: 'The erasure was premeditated. The administration knew the network had gone blind, and ordered silence.',
+      },
+    ],
+    gate: 'Archival Incident Ledger inspected. Proof of premeditated suppression added to findings.',
+    contextNote: 'Historical Record: Official suppression directive identified.',
+    stanceNote: 'Archival record documented.',
+  };
+}
+
+function resolveRenDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const relayChoice = state.facts['story.relay_choice']?.value;
+  return {
+    scriptId: 'ren',
+    displayName: 'Operator Ren',
+    role: 'Ward Dispatch Operator',
+    choiceNodeId: 'node.vendor.silence',
+    lines: [
+      {
+        speaker: 'Ren',
+        text: 'Keep your voice down near the junction. The dispatch consoles have been recording audio since the blackout.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'Was the 03:14 dispatch runner sent out with or without encrypted authorization?',
+      },
+      {
+        speaker: 'Ren',
+        text: 'Without. The digital line was severed at Relay 7. The desk had to send an unsealed paper slip by hand to freeze the freight terminal.',
+      },
+      {
+        speaker: 'Ren',
+        text: relayChoice === 'share'
+          ? 'Because you shared the log, the dispatch desk could not hide the hand-off. The continuity is unbroken.'
+          : 'Without the raw log, the desk denied the runner ever left. The dispatch continuity is severed.',
+      },
+    ],
+    gate: 'Dispatch routing confirmed. Ren explains the delayed causal chain connecting Relay 7 to the Ward.',
+    contextNote: 'Causal Link: Dispatch operator verifies the mechanism of delayed consequences.',
+    stanceNote: 'Ren risks job to explain dispatch mechanics.',
+  };
+}
+
+function resolveNiaDialogue(_state: GameState, view: WorldView): DialogueScript {
+  const wardAlert = view.wardAlert;
+  return {
+    scriptId: 'nia',
+    displayName: 'Nia',
+    role: 'Affected Ward Resident',
+    choiceNodeId: 'node.vendor.silence',
+    lines: [
+      {
+        speaker: 'Nia',
+        text: 'Are you with the Ward administration? Our clinic refrigeration went dark three hours ago.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'I am investigating the Relay 7 failure and the communication delay.',
+      },
+      {
+        speaker: 'Nia',
+        text: wardAlert === 'raised'
+          ? 'At least with the alert raised, people know why the emergency transport was held. We organized backup power.'
+          : 'They told us nothing. The system displayed "normal operations" while the insulin and blood units sat frozen in the freight depot.',
+      },
+      {
+        speaker: 'Nia',
+        text: 'When systems hide failure to protect their reputation, ordinary residents pay the price.',
+      },
+    ],
+    gate: 'Human impact documented. Nia demonstrates the human cost of delayed alerts.',
+    contextNote: 'Stakeholder Impact: Resident testimony exposes real-world consequences of suppressed information.',
+    stanceNote: 'Nia demands civic transparency.',
+  };
+}
+
+function resolveHumanCostDialogue(_state: GameState, _view: WorldView): DialogueScript {
+  return {
+    scriptId: 'human_cost',
+    displayName: 'Delayed Medical Dispatch',
+    role: 'Ward Clinic Loading Dock',
+    choiceNodeId: 'node.vendor.silence',
+    lines: [
+      {
+        speaker: 'Clinic Manifest',
+        text: '[URGENT REFRIGERATED CARGO // SHIPMENT #CL-902]',
+      },
+      {
+        speaker: 'Clinic Manifest',
+        text: 'Contents: Emergency pediatric temperature-controlled vaccines. Held at Freight Bay 4 due to automated cluster freeze.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'MORROW\'s broad risk hold froze legitimate medical transports along with the suspect freight. The collateral damage is real.',
+      },
+    ],
+    gate: 'Medical shipment delay verified. Collateral impact of automated hold recorded.',
+    contextNote: 'Operational Reality: The human cost of algorithmic risk amplification.',
+    stanceNote: 'Clinic order documented.',
+  };
+}
+
+function resolveValeDialogue(_state: GameState, view: WorldView): DialogueScript {
+  const endingId = view.endingId;
+  const dispatchUnbroken = view.dispatchContinuity === 'unbroken';
+  const ivoProtected = view.ivoStance === 'protected';
+
+  return {
+    scriptId: 'vale',
+    displayName: 'Director Vale',
+    role: 'Civic Authority Administrator',
+    choiceNodeId: 'node.ward.call',
+    lines: [
+      {
+        speaker: 'Director Vale',
+        text: 'Investigator Aster. I have followed your trajectory through Relay Street. You have been thorough.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'Director Vale. The administration intentionally suppressed the Relay 7 outage and let MORROW freeze essential services.',
+      },
+      {
+        speaker: 'Director Vale',
+        text: 'Veyra is a city of millions living on a knife-edge. An unverified truth creates panic, runs on supply lines, and civil chaos.',
+      },
+      {
+        speaker: 'Director Vale',
+        text: endingId === 'ending.open_record'
+          ? 'You chose to file the full account with an intact chain. The city will face the uncertainty of public truth.'
+          : endingId === 'ending.sealed_street'
+            ? 'You buried the account. The street stays quiet, and the civic illusion holds.'
+            : dispatchUnbroken && ivoProtected
+              ? 'The call-box is open. You hold the pieces: file the full account, or close the line.'
+              : 'Your evidence chain is fractured or a witness is compromised. Any filing now triggers an administrative inquiry.',
+      },
+    ],
+    gate: 'Civic authority confronted. Director Vale embodies the institutional dilemma of truth versus control.',
+    contextNote: 'Climactic Encounter: The ethical confrontation between truth, stability, and human responsibility.',
+    stanceNote: 'Director Vale defends civic stability over unfiltered transparency.',
+  };
+}
+

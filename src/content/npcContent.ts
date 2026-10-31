@@ -157,11 +157,136 @@ export const VANE = npcDefinitionSchema.parse({
   voice: { register: 'clipped', speechRate: 1.1 },
 });
 
+export const MARA = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_mara',
+  displayName: 'Mara',
+  role: 'Archive Keeper & Records Specialist',
+  goals: [
+    {
+      goalId: 'preserve_integrity',
+      description: 'Prevent falsification of archival municipal records.',
+      priority: 5,
+    },
+    {
+      goalId: 'verify_chronology',
+      description: 'Authenticate discrepancy between raw hardware counter and civic record.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: ['evidence.', 'story.', 'npc.mara.', 'world.archive'],
+  permissions: {
+    observableFactPrefixes: ['evidence.', 'story.', 'npc.mara.', 'world.archive'],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'mara_archive',
+  modelManifestId: null,
+  voice: { register: 'warm', speechRate: 0.95 },
+});
+
+export const REN = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_ren',
+  displayName: 'Ren',
+  role: 'Ward Dispatch Operator',
+  goals: [
+    {
+      goalId: 'route_emergency_traffic',
+      description: 'Uncover why emergency warnings were intentionally delayed.',
+      priority: 5,
+    },
+    {
+      goalId: 'expose_timing_gap',
+      description: 'Prove the 03:14 dispatch runner was dispatched without an encrypted token.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: ['evidence.', 'story.', 'npc.ren.', 'world.dispatch_continuity'],
+  permissions: {
+    observableFactPrefixes: ['evidence.', 'story.', 'npc.ren.', 'world.dispatch_continuity'],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'ren_dispatch',
+  modelManifestId: null,
+  voice: { register: 'clipped', speechRate: 1.05 },
+});
+
+export const DIRECTOR_VALE = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_vale',
+  displayName: 'Director Vale',
+  role: 'Civic Authority Administrator',
+  goals: [
+    {
+      goalId: 'prevent_public_panic',
+      description: 'Maintain institutional stability and contain civic panic across Veyra.',
+      priority: 5,
+    },
+    {
+      goalId: 'justify_containment',
+      description: 'Defend information restrictions as an operational necessity.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: [
+    'evidence.',
+    'story.',
+    'npc.vale.',
+    'world.morrow_scrutiny',
+    'world.ward_alert',
+  ],
+  permissions: {
+    observableFactPrefixes: [
+      'evidence.',
+      'story.',
+      'npc.vale.',
+      'world.morrow_scrutiny',
+      'world.ward_alert',
+    ],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'vale_authority',
+  modelManifestId: null,
+  voice: { register: 'clipped', speechRate: 0.88 },
+});
+
+export const NIA = npcDefinitionSchema.parse({
+  schemaVersion: CONTRACT_VERSION,
+  npcId: 'npc_nia',
+  displayName: 'Nia',
+  role: 'Affected Ward Resident',
+  goals: [
+    {
+      goalId: 'secure_clinic_relief',
+      description: 'Secure urgent medical deliveries delayed by the network hold.',
+      priority: 5,
+    },
+    {
+      goalId: 'demand_accountability',
+      description: 'Confront the Ward desk over suppressed emergency warnings.',
+      priority: 4,
+    },
+  ],
+  knowledgeScopes: ['evidence.', 'story.', 'npc.nia.', 'world.ward_alert'],
+  permissions: {
+    observableFactPrefixes: ['evidence.', 'story.', 'npc.nia.', 'world.ward_alert'],
+    allowedActionTypes: ['session.noop'],
+    mayProposeOnly: true,
+  },
+  memoryNamespace: 'nia_resident',
+  modelManifestId: null,
+  voice: { register: 'warm', speechRate: 1.0 },
+});
+
 export const STAGE9_NPC_DEFINITIONS: Record<NpcId, NpcDefinition> = {
   [SABLE.npcId]: SABLE,
   [IVO.npcId]: IVO,
 };
 
 export const STAGE9_NPC_LIST: readonly NpcDefinition[] = [SABLE, IVO];
-export const EXPANDED_CITY_NPCS: readonly NpcDefinition[] = [LYRA, CASTOR, VANE];
-export const ALL_CITY_NPCS: readonly NpcDefinition[] = [SABLE, IVO, LYRA, CASTOR, VANE];
+export const EXPANDED_CITY_NPCS: readonly NpcDefinition[] = [LYRA, CASTOR, VANE, MARA, REN, DIRECTOR_VALE, NIA];
+export const ALL_CITY_NPCS: readonly NpcDefinition[] = [SABLE, IVO, LYRA, CASTOR, VANE, MARA, REN, DIRECTOR_VALE, NIA];
+
