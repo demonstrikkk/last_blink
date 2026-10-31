@@ -215,6 +215,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
       });
       if (result.status === 'accepted') {
         runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
+        runNpcs();
         worldRef.current?.playSfx('evidence-found');
         showToast(`Evidence logged: ${label ?? evidenceId}.`);
       } else {
@@ -251,6 +252,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           });
           if (result.status === 'accepted') {
             runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
+            runNpcs();
             worldRef.current?.playSfx('evidence-found');
             showToast(`Testimony recorded: ${evidence.label}.`);
           } else {
@@ -318,6 +320,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
       });
       if (result.status === 'accepted') {
         runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
+        runNpcs();
         setDialogue({ phase: 'resolved', scriptId: dialogue.scriptId });
         const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
         if (fresh.ending) {

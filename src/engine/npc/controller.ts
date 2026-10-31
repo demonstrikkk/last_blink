@@ -129,6 +129,7 @@ export class NpcCognitionController {
         proposal,
         observationHash: observation.perceptionHash,
         basedOnStateVersion: observation.stateVersion,
+        fallbackReason,
       },
     });
 

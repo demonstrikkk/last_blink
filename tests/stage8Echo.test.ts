@@ -93,6 +93,11 @@ describe('stage 8 - ECHO grounded retrieval', () => {
     expect(answer.status).toBe('partial');
     expect(answer.summary).toContain('not on the record');
     expect(answer.claims.some((claim) => claim.kind === 'recorded_event')).toBe(false);
+    expect(
+      answer.claims
+        .flatMap((claim) => claim.citations)
+        .every((citation) => citation.kind === 'branch'),
+    ).toBe(true);
     expectSubstantiveClaimsCited(answer);
   });
 

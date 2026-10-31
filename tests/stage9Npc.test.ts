@@ -165,6 +165,30 @@ describe('Stage 9 NPC cognition', () => {
     expect(malformed.rejection?.code).toBe('invalid_action');
   });
 
+  it('rejects a proposal bound to a different observation hash', async () => {
+    const harness = await stage5Harness();
+    collect(harness.session, 'relay_7_log');
+    const factsBefore = structuredClone(harness.session.getState().facts);
+    const controller = new NpcCognitionController(harness.session, {
+      clock: new FixedClock('2026-02-01T00:00:00.000Z'),
+    });
+    const turn = controller.run(SABLE_ID);
+    expect(turn?.result?.status).toBe('accepted');
+
+    const mismatched = submit(
+      harness.session,
+      {
+        ...turn!.proposal!,
+        proposalId: `prp_${'d'.repeat(16)}`,
+      } as NpcDecisionProposal,
+      'fedcba9876543210',
+      harness.session.getState().stateVersion,
+    );
+    expect(mismatched.status).toBe('rejected');
+    expect(mismatched.rejection?.code).toBe('invalid_action');
+    expect(harness.session.getState().facts).toEqual(factsBefore);
+  });
+
   it('rejects duplicate proposals and a second proposal in the same tick', async () => {
     const harness = await stage5Harness();
     collect(harness.session, 'relay_7_log');
@@ -294,6 +318,10 @@ describe('Stage 9 NPC cognition', () => {
     expect(turn?.proposal?.rationale).toContain('fallback');
     expect(turn?.result?.status).toBe('accepted');
     expect(turn?.memory?.tags).toContain('fallback_proposal');
+    const evaluated = harness.session
+      .getLineageEvents()
+      .filter((event) => event.type === 'npc.proposal.evaluated');
+    expect(evaluated[0]?.payload.reasonCode).toBe('fallback_policy_exception');
   });
 
   it('falls back deterministically when a policy returns an invalid proposal', async () => {

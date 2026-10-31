@@ -322,34 +322,19 @@ export class EchoService {
     const choice = scope.state.choices.find((candidate) => candidate.nodeId === nodeId);
     if (!choice) {
       const missing = node.requires.filter((key) => scope.state.facts[key] === undefined);
+      const scopeCitations = scope.summary ? [branchCitation(scope.summary)] : [];
       const claims: EchoClaim[] = [
         {
           kind: 'unavailable',
           text: `No decision has been committed at ${nodeId} on ${this.branchLabel(scope)}.`,
-          citations: [
-            {
-              kind: 'choice',
-              id: nodeId,
-              label: node.prompt,
-              branchId: String(scope.branchId),
-              sequenceNo: null,
-            },
-          ],
+          citations: scopeCitations,
         },
       ];
       if (missing.length > 0) {
         claims.push({
           kind: 'inference',
           text: `The engine would refuse it until these facts exist: ${missing.join(', ')}.`,
-          citations: [
-            {
-              kind: 'choice',
-              id: nodeId,
-              label: node.prompt,
-              branchId: String(scope.branchId),
-              sequenceNo: null,
-            },
-          ],
+          citations: scopeCitations,
         });
       }
       return this.answer(

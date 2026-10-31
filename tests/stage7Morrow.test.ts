@@ -218,6 +218,17 @@ describe('stage 7 - MORROW deterministic policy loop', () => {
     expect(rejected.some((event) => event.payload.proposalId === 'prp_over_ceiling')).toBe(true);
   });
 
+  it('refuses to reuse a proposal id after a rejection', async () => {
+    const harness = await streetHarness();
+    const rejected = intervene(harness, 'escalate', 'prp_rejected_replay');
+    expect(rejected.status).toBe('rejected');
+    expect(rejected.rejection?.code).toBe('policy_denied');
+
+    const replay = intervene(harness, 'warn', 'prp_rejected_replay');
+    expect(replay.status).toBe('rejected');
+    expect(replay.rejection?.code).toBe('duplicate');
+  });
+
   it('releases immediately when the story has already reached an ending', async () => {
     const harness = await streetHarness();
     await playToOpenRecord(harness);

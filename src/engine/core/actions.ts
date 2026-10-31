@@ -78,6 +78,7 @@ export const npcProposeParamsSchema = z.strictObject({
   proposal: npcDecisionProposalSchema,
   observationHash: hashSchema,
   basedOnStateVersion: stateVersionSchema,
+  fallbackReason: z.enum(['policy_exception', 'invalid_output']).nullable().default(null),
 });
 
 export type ParsedAction =

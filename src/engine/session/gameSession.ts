@@ -186,6 +186,7 @@ function morrowRejectionContext(raw: unknown): MorrowRejectionContext | null {
 interface NpcRejectionContext {
   readonly proposalId: NonNullable<NpcProposalEvaluatedEvent['payload']['proposalId']>;
   readonly npcId: NpcProposalEvaluatedEvent['payload']['npcId'];
+  readonly fallbackReason: 'policy_exception' | 'invalid_output' | null;
 }
 
 function npcRejectionContext(raw: unknown): NpcRejectionContext | null {
@@ -194,6 +195,7 @@ function npcRejectionContext(raw: unknown): NpcRejectionContext | null {
   return {
     proposalId: parsed.data.proposal.proposalId,
     npcId: parsed.data.proposal.npcId,
+    fallbackReason: parsed.data.fallbackReason,
   };
 }
 
@@ -513,6 +515,20 @@ export class DeterministicGameSession implements GameSession {
       });
     }
 
+    if (action.actionType === 'morrow.intervene') {
+      const proposalId = action.params.proposalId;
+      const evaluated = this.getLineageEvents().filter(
+        (event): event is MorrowProposalEvaluatedEvent =>
+          event.type === 'morrow.proposal.evaluated' &&
+          event.branchId === this.state.branchId,
+      );
+      if (evaluated.some((event) => event.payload.proposalId === proposalId)) {
+        return this.reject(raw, actionId, 'duplicate', 'this proposal has already been evaluated', {
+          proposalId,
+        });
+      }
+    }
+
     if (action.actionType === 'npc.propose') {
       const proposal = action.params.proposal;
       const evaluated = this.getLineageEvents().filter(
@@ -822,7 +838,9 @@ export class DeterministicGameSession implements GameSession {
             proposalId: proposal.proposalId,
             npcId: proposal.npcId,
             status: 'accepted',
-            reasonCode: 'no_effect',
+            reasonCode: action.params.fallbackReason
+              ? `fallback_${action.params.fallbackReason}`
+              : 'no_effect',
           },
         };
         state = this.apply(state, evaluated);
@@ -1218,7 +1236,9 @@ export class DeterministicGameSession implements GameSession {
           proposalId: npcContext.proposalId,
           npcId: npcContext.npcId,
           status: 'rejected',
-          reasonCode: code,
+          reasonCode: npcContext.fallbackReason
+            ? `fallback_${npcContext.fallbackReason}_${code}`
+            : code,
         },
       };
       state = this.apply(state, proposalEvent);
