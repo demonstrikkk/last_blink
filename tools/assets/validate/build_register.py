@@ -80,7 +80,13 @@ def main() -> int:
         "schemaVersion": 1,
         "manifest": rel(MANIFEST_PATH),
         "packs": manifest.raw["packs"],
-        "assets": records,
+        # `action` describes what this particular run did, so it stays out of
+        # the committed index: including it would make the regenerated file
+        # depend on local run history instead of on repo content.
+        "assets": [
+            {key: value for key, value in record.items() if key != "action"}
+            for record in records
+        ],
     }
     if not args.dry_run:
         write_json(INDEX_PATH, payload)

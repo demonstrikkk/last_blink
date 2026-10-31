@@ -39,12 +39,48 @@ def abspath(relative: str) -> Path:
     return (ROOT / relative).resolve()
 
 
+# Assets whose bytes are canonicalised before they are hashed and staged.
+# Git normalises text to LF in the repository (see .gitattributes), so a
+# Windows checkout with core.autocrlf=true would otherwise produce CRLF bytes
+# and a different digest from a Linux CI checkout. Licence texts are the only
+# text assets that ship today.
+TEXT_SUFFIXES = frozenset({".txt"})
+
+
+def is_text_asset(path: Path) -> bool:
+    return path.suffix.lower() in TEXT_SUFFIXES
+
+
+def read_asset_bytes(path: Path) -> bytes:
+    """Return the platform-independent bytes of an asset.
+
+    Text assets are normalised to LF; binary assets are read verbatim.
+    """
+    data = path.read_bytes()
+    if is_text_asset(path):
+        return data.replace(b"\r\n", b"\n")
+    return data
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
 def sha256_file(path: Path, chunk: int = 1 << 20) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(chunk), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def sha256_asset(path: Path) -> str:
+    """SHA-256 of an asset after `read_asset_bytes` canonicalisation.
+
+    Use this for anything that lands in the register; use `sha256_file` only
+    for opaque byte streams such as the source archives.
+    """
+    return sha256_bytes(read_asset_bytes(path))
 
 
 @dataclass
@@ -130,7 +166,9 @@ def stage_asset(asset: dict[str, Any], *, dry_run: bool = False) -> dict[str, An
     """Copy one manifest asset into public/ and return its index record.
 
     Idempotent: an identical destination is left untouched, a drifted
-    destination is replaced, and a missing destination is created.
+    destination is replaced, and a missing destination is created. Text assets
+    are written with LF endings so the shipped bytes, the register hash and a
+    CI checkout all agree regardless of the local `core.autocrlf` setting.
     """
     source = abspath(asset["source"])
     dest = abspath(asset["dest"])
@@ -139,19 +177,28 @@ def stage_asset(asset: dict[str, Any], *, dry_run: bool = False) -> dict[str, An
     if not source.exists():
         raise FileNotFoundError(f"missing source for {asset['id']}: {rel(source)}")
 
-    source_hash = sha256_file(source)
+    canonical = read_asset_bytes(source)
+    source_hash = sha256_bytes(canonical)
     action = "unchanged"
 
+    def install() -> None:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if is_text_asset(source):
+            dest.write_bytes(canonical)
+        else:
+            shutil.copy2(source, dest)
+
     if dest.exists():
-        dest_hash = sha256_file(dest)
-        if dest_hash != source_hash:
+        # Compare raw bytes: a CRLF working copy of a text asset must be
+        # rewritten to the canonical LF form even though its normalised hash
+        # already matches.
+        if dest.read_bytes() != canonical:
             if not dry_run:
-                shutil.copy2(source, dest)
+                install()
             action = "replaced"
     else:
         if not dry_run:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, dest)
+            install()
         action = "created"
 
     record: dict[str, Any] = {
@@ -160,7 +207,7 @@ def stage_asset(asset: dict[str, Any], *, dry_run: bool = False) -> dict[str, An
         "pack": asset["pack"],
         "source": asset["source"],
         "dest": asset["dest"],
-        "bytes": source.stat().st_size,
+        "bytes": len(canonical),
         "sha256": source_hash,
         "usage": asset.get("usage", ""),
         "notes": asset.get("notes", ""),

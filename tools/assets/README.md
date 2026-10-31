@@ -48,7 +48,8 @@ python tools/assets/catalogue/build_reference_board.py
 3. **Staging is idempotent.** A destination whose bytes match the preserved original is left alone; a drifted one is replaced; a missing one is created. A second run reports `0 changed`.
 4. **Hashes are pinned.** Pack archives are compared against `archiveSha256` in the manifest, so a changed upstream file fails loudly instead of silently shipping.
 5. **No orphans.** Any file under `public/assets/` that is not in the manifest fails validation.
-6. **Every asset declares usage.** An empty `usage` field fails validation, which is how "zero unused shipped assets" stays true.
+6. **Text assets are line-ending independent.** `.txt` assets are normalised to LF before hashing and staging (`common.read_asset_bytes`), so a Windows checkout with `core.autocrlf=true` records the same bytes and digest as CI. Only opaque streams such as `.zip` archives are hashed verbatim.
+7. **Every asset declares usage.** An empty `usage` field fails validation, which is how "zero unused shipped assets" stays true.
 
 ## Adding an asset
 

@@ -27,6 +27,7 @@ from common import (  # noqa: E402
     Manifest,
     abspath,
     rel,
+    sha256_asset,
     sha256_file,
 )
 
@@ -167,7 +168,7 @@ def check_shipped_files(report: Report, index: dict) -> None:
 
         if dest.stat().st_size != asset["bytes"]:
             report.fail("ship.size", asset["id"], "destination size differs from manifest record")
-        if source.exists() and sha256_file(dest) != sha256_file(source):
+        if source.exists() and sha256_asset(dest) != sha256_asset(source):
             report.fail("ship.hash", asset["id"], "destination bytes differ from preserved original")
 
     duplicate_groups = {h: ids for h, ids in hashes.items() if len(ids) > 1}
