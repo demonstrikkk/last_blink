@@ -417,6 +417,7 @@ this stage. `gameActionSchema` requires `actionType`, `actorId` and `params`.
 | `branch.fork` | `anchorId`, `label` | `branch.forked` (safe, unforked anchor) |
 | `evidence.collect` | `evidenceId` from trusted content | `fact.asserted` for the declared fact, then rules; `duplicate` on repeat |
 | `choice.make` | `nodeId`, `optionId` from trusted content | `choice.made` + declared `fact.asserted` effects, then rules; `duplicate` on repeat |
+| `npc.propose` | `proposal`, `observationHash`, `basedOnStateVersion` | accepted or rejected `npc.proposal.evaluated`; Stage 9 allows `session.noop` only |
 
 Stage 4 added the last two additively (ADR 0008): event payloads, contract
 versions and the fifteen frozen contracts are unchanged. `npcDefinition` and
@@ -441,6 +442,11 @@ version bump:
 All new fields have Zod defaults, so a Stage 4 content bundle still parses. The
 engine enforces `requires`; `objectives` and `endings` are read only by the
 projection. `story.*` and `npc.*` actions remain future work.
+
+Stage 9 adds no contract or event schema. It reuses `NpcDefinition`,
+`NpcObservation`, `NpcDecisionProposal`, `MemoryRecord` and
+`npc.proposal.evaluated`, and adds only the `npc.propose` action vocabulary.
+ADR 0017 records the decision and the advisory-only `session.noop` limit.
 
 ## Versioning rules
 

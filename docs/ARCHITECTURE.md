@@ -1,10 +1,11 @@
 # Architecture — The Last Blink: Second Settlement
 
-Status: Stages 7-8, version 0.5.0. This document describes what exists and what
+Status: Stages 7-9, version 0.5.0. This document describes what exists and what
 later stages are allowed to add. Stage 7 adds a deterministic, bounded MORROW
-policy loop; Stage 8 adds read-only, branch-scoped ECHO retrieval. Both build on
-the Stage 6 branch isolation, switching, ancestry and comparison, and on the
-unchanged Stage 3 authority and durable contracts.
+policy loop; Stage 8 adds read-only, branch-scoped ECHO retrieval; Stage 9 adds
+scripted, branch-scoped NPC cognition. All build on the Stage 6 branch
+isolation, switching, ancestry and comparison, and on the unchanged Stage 3
+authority and durable contracts.
 
 ## 1. Principles
 
@@ -272,6 +273,28 @@ The Stage 7-8 runtime schemas are deliberately not in the durable contract
 registry, so `CONTRACT_VERSION` and `SaveEnvelope` stay at Stage 6 compatibility.
 The two new MORROW event variants are additive members of the frozen event
 union.
+
+## 9d. Stage 9 NPC cognition
+
+`NpcCognitionController` builds a permission-filtered `NpcObservation` over the
+active branch, asks a scripted `NpcPolicy` for a proposal and submits it as
+`npc.propose`. The engine validates actor identity, session/branch ownership,
+tick and state freshness, observation binding, duplicate ids, one proposal per
+NPC per branch tick and the Stage 9 no-op allowlist. Accepted and refused
+proposals both reuse `npc.proposal.evaluated`; accepted proposals have no story
+effect. `InMemoryNpcMemory` is keyed by `(branchId, npcId)` and stores only
+records that cite engine event ids. A policy exception or invalid output yields
+a deterministic fallback no-op submitted through the same boundary. See
+`docs/NPC_COGNITION_MODEL.md` and ADR 0017.
+
+| Guard | Owner |
+|---|---|
+| NPC may not write state directly | `GameSession` action boundary |
+| NPC actor/branch/freshness/no-op checks | `core/validation.ts` and `GameSession.dispatch` |
+| Observation scope | `npc/observation.ts` (active branch + permitted prefixes) |
+| Proposal determinism | `npc/policy.ts` (no clock or randomness) |
+| Policy failure | controller deterministic fallback proposal |
+| Memory isolation | `InMemoryNpcMemory` keyed by branch and NPC |
 
 ## 10. Failure behaviour
 

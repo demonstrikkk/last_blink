@@ -152,7 +152,7 @@ Deferred beyond Stage 6:
 ## Later
 
 - [ ] YSQL/remote services behind ports
-- [ ] Remaining NPCs
+- [ ] NPCs beyond Sable and Ivo
 - [ ] PPO MORROW with parity and fairness gates
 - [ ] Stress, accessibility, performance, release
 
@@ -188,9 +188,29 @@ Deferred beyond Stage 6:
 - [ ] Combined Stage 7-8 gate sign-off
 - [ ] Automated ECHO/MORROW screenshots (tooling not installed in this environment)
 
-Deferred beyond Stage 8:
+## Stage 9 - NPC cognition runtime
+
+- [x] `docs/STAGE_9_PLAN.md`, `docs/NPC_COGNITION_MODEL.md` and ADR 0017
+- [x] Reuse `NpcDefinition`, `NpcObservation`, `NpcDecisionProposal`, `MemoryRecord`
+- [x] No contract/event additions; `CONTRACT_VERSION` remains `1.0.0`
+- [x] Additive `npc.propose` action accepted only from the proposing NPC
+- [x] Engine checks actor, session, branch, tick, state version, observation hash,
+      duplicate id, one proposal per NPC per branch tick and no-op allowlist
+- [x] Deterministic scripted policies for Sable and Ivo
+- [x] Permission-filtered observations over the active branch lineage only
+- [x] `InMemoryNpcMemory` keyed by `(branchId, npcId)` with event provenance
+- [x] Deterministic fallback for policy exceptions and invalid output
+- [x] NPC panel with proposal, status, fallback and memory views
+- [x] 12 Stage 9 tests in `tests/stage9Npc.test.ts`; 140 total checks in 16 files
+- [x] `npm run verify` green (typecheck, tests, production build)
+- [x] `docs/STAGE_9_REPORT.md`
+- [x] Implementation `175985d`; remote CI `41211874808` green
+- [ ] Automated NPC screenshots (tooling not installed in this environment)
+
+Deferred beyond Stage 9:
 
 - [ ] LLM-backed ECHO, embeddings/vector retrieval
 - [ ] Learned/PPO MORROW policy with parity and fairness evaluation
-- [ ] NPC cognition runtime, persistent per-branch saves, YugabyteDB and Meko
+- [ ] Durable NPC memory, persistent per-branch saves, YugabyteDB and Meko
+- [ ] Autonomous multi-NPC simulation and free-text NPC dialogue
 

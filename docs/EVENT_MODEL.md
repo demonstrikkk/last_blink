@@ -33,7 +33,7 @@ Every event has the same envelope, regardless of type:
 | sequenceNo | session-wide, strictly increasing, positive |
 | stateVersion | version produced by applying this event |
 | tick | game tick, injected and independent of wall time |
-| type | discriminator; ten variants in v1 |
+| type | discriminator; twelve variants in v1 |
 | actorId | player, NPC or system that caused the event |
 | sourceId | subsystem: `engine.core`, `engine.rules`, `input.player`, `policy.npc`… |
 | actionId | action that produced this event, or null for bootstrap/rule events |
@@ -86,16 +86,16 @@ code, not a player outcome, and is never silently repaired.
 | `rule.evaluated` | ruleId, matched, assertedFactKeys | rule pass |
 | `anchor.recorded` | Anchor | accepted `anchor.record` |
 | `branch.forked` | Branch, fromAnchorId | accepted `branch.fork` |
-| `npc.proposal.evaluated` | proposalId, npcId, status, reasonCode | future cognition runtime |
+| `npc.proposal.evaluated` | proposalId, npcId, status, reasonCode | accepted or rejected `npc.propose` |
 | `morrow.proposal.evaluated` | proposalId, policyId/version, observationId, response, status, reasonCodes, reason | accepted or rejected `morrow.intervene` |
 | `morrow.intervened` | proposalId, policyId/version, response, reasonCodes, escalation | accepted `morrow.intervene` |
 | `ending.reached` | endingId, summary, factKeys | rule `set_ending` effect |
 | `action.rejected` | actionType, code, message, proposalId | dispatch rejection audit |
 
 `choice.made` and `ending.reached` were frozen in Stage 3. Stage 4 exercised
-`choice.made`; Stage 5 exercises `ending.reached` through content rules.
-`npc.proposal.evaluated` is still not produced by gameplay; its schema and valid
-fixture are tested.
+`choice.made`; Stage 5 exercises `ending.reached` through content rules. Stage 9
+produces `npc.proposal.evaluated` for accepted and refused advisory proposals;
+it is not a story mutation.
 
 Stage 7 additively adds `morrow.proposal.evaluated` and `morrow.intervened` to
 the same discriminated union, bringing the vocabulary to twelve. A rejected

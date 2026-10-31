@@ -1,10 +1,10 @@
 # The Last Blink: Second Settlement
 
-Deterministic narrative investigation game. Stages 7-8 are the current slice:
+Deterministic narrative investigation game. Stages 7-9 are the current slice:
 one street in Aster, a three-act investigation with three evidence items, three
 consequential decisions and three reachable endings, real BLINK timeline
-branching, a bounded deterministic MORROW policy and read-only, branch-scoped
-ECHO retrieval.
+branching, a bounded deterministic MORROW policy, read-only branch-scoped ECHO
+retrieval and scripted NPC cognition for Sable and Ivo.
 
 ## Status
 
@@ -35,6 +35,10 @@ ECHO retrieval.
   claim and return `unknown` rather than inventing a value. Two timelines can be
   compared only through the explicit comparison query. Combined Stage 7-8 gate
   pending.
+- Stage 9: scripted NPC cognition for Sable and Ivo. Each NPC observes only
+  permitted fact prefixes on the active branch, submits a deterministic advisory
+  no-op proposal through engine validation, and keeps branch-scoped in-memory
+  memory with event provenance. No LLM, durable memory or story mutation.
 
 ## Quick start
 
@@ -78,6 +82,7 @@ Requirements: Node ≥ 22.12 (verified on 22.15.0), npm 11.
 | BLINK button | Open timeline control: fork, switch, compare |
 | Ledger button | Inspect facts, provenance, lineage, events, hash, save and restart |
 | ECHO button | Ask grounded questions over canonical records and citations |
+| NPCs button | Inspect Sable and Ivo proposals, fallbacks and branch-scoped memory |
 
 Touch D-pads appear at or below 820 px. The session is in memory: refreshing or
 restarting returns the street to its opening state, and the UI says so.
@@ -136,6 +141,8 @@ python tools/assets/validate/validate_assets.py
 python tools/assets/validate/check_catalogue_links.py
 ```
 
+Stage 9 evidence and limits: `docs/STAGE_9_REPORT.md`.
+Stage 9 model: `docs/NPC_COGNITION_MODEL.md`.
 Stage 8 evidence and limits: `docs/STAGE_8_REPORT.md`.
 Stage 7 evidence and limits: `docs/STAGE_7_REPORT.md`.
 MORROW model: `docs/MORROW_POLICY_MODEL.md`.
