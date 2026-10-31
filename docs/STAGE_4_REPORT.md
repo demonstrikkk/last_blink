@@ -205,3 +205,5 @@ Tests and docs:
 Requesting Stage 4 sign-off on the basis of the acceptance matrix, the 67 passing
 tests, the production build and the browser play-through above. No Stage 5 work
 will begin until this gate is accepted.
+
+Stage 4 implementation commit: `efe1c70`.
