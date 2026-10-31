@@ -87,15 +87,35 @@ code, not a player outcome, and is never silently repaired.
 | `anchor.recorded` | Anchor | accepted `anchor.record` |
 | `branch.forked` | Branch, fromAnchorId | accepted `branch.fork` |
 | `npc.proposal.evaluated` | proposalId, npcId, status, reasonCode | future cognition runtime |
+| `morrow.proposal.evaluated` | proposalId, policyId/version, observationId, response, status, reasonCodes, reason | accepted or rejected `morrow.intervene` |
+| `morrow.intervened` | proposalId, policyId/version, response, reasonCodes, escalation | accepted `morrow.intervene` |
 | `ending.reached` | endingId, summary, factKeys | rule `set_ending` effect |
 | `action.rejected` | actionType, code, message, proposalId | dispatch rejection audit |
 
 `choice.made` and `ending.reached` were frozen in Stage 3. Stage 4 exercised
-`choice.made`; Stage 5 now exercises `ending.reached` through content rules.
+`choice.made`; Stage 5 exercises `ending.reached` through content rules.
 `npc.proposal.evaluated` is still not produced by gameplay; its schema and valid
 fixture are tested.
 
-## 3a. Stage 4 action vocabulary
+Stage 7 additively adds `morrow.proposal.evaluated` and `morrow.intervened` to
+the same discriminated union, bringing the vocabulary to twelve. A rejected
+MORROW proposal emits only the evaluated event with `status: 'rejected'`; an
+accepted one emits evaluated, then intervened, then three derived facts. Neither
+event changes tick or branch state itself (see ADR 0016).
+
+## 3a. MORROW event invariants
+
+- `morrow.intervene` is accepted only from `system_morrow` and only when
+  `basedOnStateVersion` equals the current state version.
+- Proposed responses follow the ladder in `morrow/fairness.ts`; `escalate` is
+  refused at `MAX_MORROW_ESCALATION = 3`.
+- After `endingId` is set, only `release` and `observe` are allowed.
+- An accepted intervention writes `morrow.response`, `morrow.last_proposal` and
+  `morrow.escalation` as derived facts before the events are returned.
+- Rejections are audited with `morrow.proposal.evaluated(status: rejected)` and
+  do not alter facts, tick or branch state.
+
+## 3b. Stage 4 action vocabulary
 
 Stage 4 added two actions without changing any event payload or contract version
 (ADR 0008):
@@ -114,7 +134,7 @@ single `action.rejected` audit event and leaves world facts unchanged.
 carry path. Stage 6 widened its key allowance from `debug.*` to `debug.*` and
 `scar.*` only; every other namespace is still refused (ADR 0014).
 
-## 3b. Stage 5 content prerequisites and endings
+## 3c. Stage 5 content prerequisites and endings
 
 Stage 5 added no event, action or contract. Everything it needed fitted into
 existing content and existing rejection codes (ADR 0009).
@@ -287,5 +307,6 @@ randomness to reproduce a session.
 - Renames, removals, new required fields and incompatible enum changes require a
   major version and a tested migration.
 - Event model changes that alter ordering, payload meaning or branch semantics
-  require an ADR and a migration plan before implementation.
+  require an ADR and a migration plan before implementation. Additive event
+  variants (Stage 7) are recorded in ADR 0016.
 - No silent coercion, best-effort parsing or “fix up on load” is allowed.

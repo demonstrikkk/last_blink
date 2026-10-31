@@ -88,9 +88,9 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` complete and veri
 
 Deferred beyond Stage 4:
 
-- [ ] Persistent save/reload, BLINK branch switching, scar memory
-- [ ] ECHO retrieval/templates and the ending decision table
-- [ ] Heuristic MORROW, fairness guard, multiple NPCs
+- [x] BLINK branch switching and scar memory (Stage 6); persistent save/reload remains deferred
+- [x] ECHO retrieval/templates (Stage 8) and the ending decision table (Stage 5)
+- [x] Heuristic MORROW and fairness guard (Stage 7); multiple NPCs remain deferred
 - [ ] Branch isolation, replay and end-to-end suites beyond the current unit/runtime checks
 
 ## Stage 5 — Narrative and causal systems
@@ -120,7 +120,7 @@ Deferred beyond Stage 4:
 Deferred beyond Stage 5:
 
 - [ ] NPC cognition runtime, memory store and scripted/LLM policy pipeline (Jaya pipeline)
-- [ ] ECHO retrieval, MORROW adaptive policy
+- [x] ECHO retrieval and deterministic MORROW policy (Stages 7-8); learned policy remains deferred
 
 ## Stage 6 — Real timeline branching
 
@@ -145,7 +145,8 @@ Deferred beyond Stage 5:
 Deferred beyond Stage 6:
 
 - [ ] Persistent per-branch save/reload (current restore retains only the active branch)
-- [ ] ECHO retrieval, MORROW adaptive policy, PPO, NPC cognition runtime
+- [x] ECHO retrieval and deterministic MORROW policy (Stages 7-8)
+- [ ] Learned/PPO MORROW, LLM ECHO, NPC cognition runtime
 - [ ] YugabyteDB, Meko and remote services behind ports
 
 ## Later
@@ -154,3 +155,41 @@ Deferred beyond Stage 6:
 - [ ] Remaining NPCs
 - [ ] PPO MORROW with parity and fairness gates
 - [ ] Stress, accessibility, performance, release
+
+## Stage 7 - MORROW bounded policy
+
+- [x] `docs/STAGE_7_PLAN.md`: observation, policy, fairness, controller, acceptance tests
+- [x] Additive runtime MORROW contracts outside the save registry (ADR 0016)
+- [x] Additive `morrow.proposal.evaluated` and `morrow.intervened` event variants
+- [x] `morrow.intervene` action accepted only from `system_morrow`
+- [x] Engine-enforced freshness, duplicate, transition, ceiling and ending fairness
+- [x] Deterministic baseline policy plus throwing-policy fallback and posture skip
+- [x] Branch-scoped observation; no cross-timeline reads
+- [x] Three derived facts: `morrow.response`, `morrow.last_proposal`, `morrow.escalation`
+- [x] UI MORROW callout after accepted evidence and decision actions
+- [x] 10 Stage 7 tests in `tests/stage7Morrow.test.ts`
+- [x] `docs/MORROW_POLICY_MODEL.md`
+
+## Stage 8 - ECHO branch-aware retrieval
+
+- [x] `docs/STAGE_8_PLAN.md`: query model, citations, scope rule, acceptance tests
+- [x] `EchoService` read-only, typed queries, no dispatch and no fact writes
+- [x] Single-branch scope via `getBranchState` + `getLineageEvents`
+- [x] Comparison only through `compareBranches`
+- [x] Grounded/partial/unknown status; citations on every substantive claim
+- [x] Unknown facts, decisions and endings return explicit `missing` evidence
+- [x] Child branch cannot see parent post-fork discoveries
+- [x] ECHO panel with query controls and citation list
+- [x] 10 Stage 8 tests in `tests/stage8Echo.test.ts`
+- [x] `docs/ECHO_RETRIEVAL_MODEL.md`
+- [x] 128 Vitest checks across 15 files; Stage 3-6 suites unchanged and green
+- [x] `npm run verify` green (typecheck, tests, production build)
+- [ ] Combined Stage 7-8 gate sign-off
+- [ ] Automated ECHO/MORROW screenshots (tooling not installed in this environment)
+
+Deferred beyond Stage 8:
+
+- [ ] LLM-backed ECHO, embeddings/vector retrieval
+- [ ] Learned/PPO MORROW policy with parity and fairness evaluation
+- [ ] NPC cognition runtime, persistent per-branch saves, YugabyteDB and Meko
+

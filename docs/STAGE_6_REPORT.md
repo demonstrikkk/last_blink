@@ -1,6 +1,6 @@
 # Stage 6 Report - Real Timeline Branching
 
-Status: **complete, awaiting Stage 6 gate sign-off. Stage 7 has not started.**
+Status: **complete and gate accepted. Stages 7-8 were implemented separately.**
 Date: 2026-10-31
 Version: 0.4.0 (content bundle `content.stage5.aster`, unchanged)
 

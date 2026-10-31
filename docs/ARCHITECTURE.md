@@ -1,9 +1,10 @@
 # Architecture — The Last Blink: Second Settlement
 
-Status: Stage 6 timeline branching, version 0.4.0. This document describes what
-exists and what later stages are allowed to add. Stage 6 adds real branch
-isolation, switching, ancestry and comparison to the Stage 5 investigation, on
-top of the unchanged Stage 3 authority and event contracts.
+Status: Stages 7-8, version 0.5.0. This document describes what exists and what
+later stages are allowed to add. Stage 7 adds a deterministic, bounded MORROW
+policy loop; Stage 8 adds read-only, branch-scoped ECHO retrieval. Both build on
+the Stage 6 branch isolation, switching, ancestry and comparison, and on the
+unchanged Stage 3 authority and durable contracts.
 
 ## 1. Principles
 
@@ -136,9 +137,10 @@ same port later without touching the engine.
 `GamePolicyPort` receives the validated action and the current state. It returns
 `{ allowed }` plus an optional reason. It cannot mutate state, emit events or read
 hidden facts beyond the state it is given. Stage 3 ships `allowAllPolicy` and
-`createPrefixPolicy`, a deterministic stand-in for MORROW. NPC cognition in Stage
-9 will submit `NpcDecisionProposal` objects through `GameSession`, never direct
-writes.
+`createPrefixPolicy`; Stage 7 adds the separate `MorrowPolicy`/`MorrowController`
+loop, which submits `morrow.intervene` actions through `GameSession` and cannot
+write state directly. NPC cognition in Stage 9 will submit
+`NpcDecisionProposal` objects through `GameSession`, never direct writes.
 
 ## 8. Rendering boundary
 
@@ -241,6 +243,36 @@ operation cannot partially mutate either timeline.
 `BlinkPanel` presents the timelines, the anchor fork actions and the comparison.
 Every value it shows is an engine projection; it keeps no story state.
 
+## 9c. Stages 7-8 MORROW and ECHO
+
+MORROW is a bounded policy loop, not an author. It observes one branch through
+`buildMorrowObservation`, proposes one of six responses through a
+`MorrowPolicy`, and submits the proposal as `morrow.intervene` from
+`system_morrow`. The engine validates the actor, freshness, ladder, escalation
+ceiling and ending fairness; rejected proposals are audited but never write
+facts. See `docs/MORROW_POLICY_MODEL.md` and ADR 0016.
+
+ECHO is a read-only query service. Single-branch queries resolve through
+`getBranchState` and `getLineageEvents`, so the Stage 6 fork cutoff applies
+automatically. The only two-branch query delegates to `compareBranches`. Every
+substantive claim carries canonical citations; an absent record yields
+`unknown` rather than a plausible invention. See `docs/ECHO_RETRIEVAL_MODEL.md`.
+
+| Guard | Owner |
+|---|---|
+| MORROW may not write state directly | `GameSession` action boundary |
+| MORROW transition/ceiling/fairness | `core/validation.ts` |
+| Observation scope | `morrow/observation.ts` (active branch only) |
+| Proposal determinism | `morrow/policy.ts` (no clock or randomness) |
+| Policy failure | controller falls back to the baseline policy |
+| ECHO scope | `EchoService` (`getBranchState` + `getLineageEvents`) |
+| ECHO write isolation | `EchoService` has no dispatch and no fact write |
+
+The Stage 7-8 runtime schemas are deliberately not in the durable contract
+registry, so `CONTRACT_VERSION` and `SaveEnvelope` stay at Stage 6 compatibility.
+The two new MORROW event variants are additive members of the frozen event
+union.
+
 ## 10. Failure behaviour
 
 | Failure | Behaviour |
@@ -257,7 +289,7 @@ Every value it shows is an engine projection; it keeps no story state.
 | Model/agent failure (future) | scripted fallback proposal; engine still validates |
 | Listener exception | caught and logged; other subscribers still run |
 
-## 11. Deliberate limits at Stage 6
+## 11. Deliberate limits at Stages 7-8
 
 - Branch runtimes are in memory. Restoring a session reconstructs only the active
   branch, so switching to a known-but-not-materialised branch returns
@@ -274,6 +306,10 @@ Every value it shows is an engine projection; it keeps no story state.
   thresholds would need a content-schema change and a new ADR.
 - Persistence is in memory; reloading restarts the street. The UI states this
   plainly instead of implying a save.
-- Content is one street. ECHO retrieval, LLM dialogue, MORROW policy, YugabyteDB
-  and Meko do not exist yet.
+- Content is one street. ECHO is a typed-query service over canonical records,
+  not an LLM; MORROW is a deterministic baseline policy, not a learned or PPO
+  policy. YugabyteDB, Meko and remote services do not exist yet.
+- MORROW observations and ECHO answers are transient. Only accepted MORROW
+  events and the three derived facts are durable.
+- ECHO cannot answer for a branch the session has not materialised.
 - Player position is presentation state, not canonical and not saved.

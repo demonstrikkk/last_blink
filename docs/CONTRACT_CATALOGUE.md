@@ -1,10 +1,15 @@
 # Contract Catalogue — v1.0.0
 
-Fifteen contracts are frozen for Stage 3 and remain unchanged in Stages 4, 5 and
-6. Every contract has one TypeScript type, one Zod schema, one owner, one version
+Fifteen contracts are frozen for Stage 3 and remain unchanged in Stages 4 through
+8. Every contract has one TypeScript type, one Zod schema, one owner, one version
 and two fixtures (valid and invalid).
 `src/engine/contracts/registry.ts` is the executable source of truth; this
 document explains it for humans.
+
+Stage 7-8 runtime schemas (`src/engine/contracts/morrow.ts` and the EchoService
+answer types) are intentionally **not** in this registry: they are transient
+policy/retrieval shapes, not durable save fields. The two MORROW event variants
+are additive members of the GameEvent union. See ADR 0016.
 
 ## Conventions
 
@@ -79,6 +84,8 @@ A discriminated union on `type`. Ten variants exist in v1.
 | `anchor.recorded` | `anchor: Anchor` |
 | `branch.forked` | `branch: Branch`, `fromAnchorId` |
 | `npc.proposal.evaluated` | `proposalId`, `npcId`, `status`, `reasonCode` |
+| `morrow.proposal.evaluated` | `proposalId`, `policyId`, `policyVersion`, `observationId`, `response`, `status`, `reasonCodes[]`, `reason` |
+| `morrow.intervened` | `proposalId`, `policyId`, `policyVersion`, `response`, `reasonCodes[]`, `escalation` |
 | `ending.reached` | `endingId`, `summary`, `factKeys[]` |
 | `action.rejected` | `actionType`, `code`, `message`, `proposalId` |
 

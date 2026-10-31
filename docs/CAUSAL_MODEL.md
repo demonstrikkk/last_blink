@@ -226,6 +226,22 @@ A timeline is a branch, and every rule above is evaluated inside one branch.
   is its purpose. It cannot smuggle a derived outcome, because only `scar.*` keys
   cross.
 
+## 9a. MORROW and ECHO
+
+MORROW reads the same canonical facts the player sees, plus the branch event
+shape, and proposes a bounded response. It cannot assert facts directly: the
+engine validates the ladder and writes `morrow.response`,
+`morrow.last_proposal` and `morrow.escalation` only after an accepted
+intervention. Escalation is monotonic and capped at 3; an ending permits only
+release or observe. Rejected proposals are audited and are causally inert.
+
+ECHO adds no causal edges. It reads facts, events, choices, anchors, rules and
+branch summaries, and reports what they support. A claim without a citation is
+either `inference` (an expectation about a not-yet-recorded consequence) or
+`unavailable`; it is never presented as a recorded fact. ECHO cannot see a
+post-fork parent fact from a child branch, and comparison is an explicit read of
+two canonical states.
+
 ## 10. Adding a variable
 
 1. Add the initial fact (or the producer that writes it) to
