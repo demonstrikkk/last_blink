@@ -214,10 +214,21 @@ Tests and docs:
 
 ## 7. Limitations and open risks
 
-1. **CI not yet run for this commit.** `origin` exists and tracks `main`, and the
-   Stage 4 commits up to `96e627a` are pushed. The Stage 5 commits are local and
-   unpushed, so GitHub Actions has not run for them. Local typecheck, tests,
-   build and asset checks pass; pushing is left to the gate decision.
+1. **CI now passes, after two real failures were fixed.** GitHub Actions run
+   [41201157399](https://github.com/demonstrikkk/last_blink/actions/runs/41201157399)
+   is green on `6ecf9d8` for both jobs (`Typecheck, tests and build` and
+   `Asset pipeline integrity`). Getting there required two pipeline fixes that
+   local runs had masked:
+   - `assets/raw/extracted/` is gitignored, so a clean CI checkout had no source
+     tileset for `build_register.py`. Fixed by
+     `tools/assets/prepare/extract_cached.py`, a network-free, hash-checked
+     restore from the committed archives, now a CI step.
+   - Licence `.txt` assets were hashed as raw bytes, so a Windows checkout with
+     `core.autocrlf=true` recorded CRLF sizes (4495/4456) while Linux CI
+     regenerated LF sizes (4402/4363). Staging now normalises text assets to LF
+     before hashing and writing, and the generated index no longer stores the
+     per-run `action` field, so regeneration depends only on repository content.
+   Earlier failing runs: `41199555429`, `41199882930`.
 2. **Phaser bundle size.** The Phaser chunk is 1.37 MB (357 kB gzip). Acceptable
    for a single-page slice; code-splitting is future work.
 3. **Root-deployment assumption.** Fonts and Phaser assets are requested from
@@ -262,6 +273,8 @@ No Stage 6 work — ECHO, MORROW policy, BLINK switching, persistence or the NPC
 cognition runtime — will begin until this gate is accepted.
 
 Stage 5 implementation commit: `26b1b9d`. A follow-up documentation commit records
-this hash in the report. Nothing from Stage 5 has been pushed to `origin`; the
-remote is one commit behind, so CI has not seen Stage 5. Pushing is deferred to
-the gate decision.
+this hash in the report. Stage 5 and both CI fixes are pushed to `origin/main`;
+remote CI run
+[41201157399](https://github.com/demonstrikkk/last_blink/actions/runs/41201157399)
+passed on `6ecf9d8`, so the baseline that Stage 6 builds on is verified by the
+repository's own workflow, not only by a local run.
