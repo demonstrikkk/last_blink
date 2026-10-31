@@ -64,6 +64,8 @@ regression. It does not affect the engine tests or initial UI logic.
 
 - Branch: `main`.
 - Baseline commit: `2f3c710 chore: baseline Stages 0-2 (visual direction, assets, pipeline)`.
+- Stage 3 commit: `f991987 feat(stage3): deterministic engine, frozen contracts and React/Vite/Phaser scaffold`
+  (68 files; 163 tracked files total; working tree clean afterwards).
 - Stage 3 changes: scaffold, engine, contracts, tests, CI, docs, lockfile.
 - `.gitignore`: `node_modules/`, `dist/`, caches, `.env*`, `assets/raw/extracted/`.
 - `.gitattributes`: LF text, binary PNG/ZIP/OGG/TTF/WOFF/DOCX.
