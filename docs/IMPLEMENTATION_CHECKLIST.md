@@ -42,21 +42,31 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` complete and veri
 - [x] Re-running the pipeline does not duplicate or corrupt assets (`0 changed` on second run)
 - [x] Commands and results recorded
 
-## Gate 1 — awaiting inspection
+## Gate 1 — inspected and accepted
 
 - [x] Visual guide, asset register, licence notices, catalogue, validation results, acquisition report presented
 - [x] `docs/GATE_1_REPORT.md` summarises deliverables, commands and open items
-- [ ] Inspector sign-off
-- [ ] Authorisation to begin map production
+- [x] Inspector sign-off (Stages 0–2 accepted, subject to clean Git baseline)
+- [x] Clean foundation commit `2f3c710` with 95 tracked files
+- [ ] Authorisation to begin Stage 4
 
-## Stage 3 — Contracts and repository freeze (after gate 1)
+## Stage 3 — Engineering foundation
 
-- [ ] Vite + React + TypeScript scaffold
-- [ ] Zod schemas for event, fact, choice, rule, anchor, NPC, save, model manifest
-- [ ] `EVENT_CATALOG.md`
-- [ ] Ports: `NpcPolicy`, `MemoryStore`, `EventStore`
-- [ ] ADRs for runtime, persistence, determinism, branch model
-- [ ] CI skeleton
+- [x] Git baseline, `.gitignore`, `.gitattributes`, pinned dependencies and lockfile
+- [x] Strict TypeScript configuration (`tsc --noEmit` clean)
+- [x] Vite + React + Phaser scaffold; Phaser isolated behind a dynamic import
+- [x] Pure deterministic engine runnable in Node without a browser
+- [x] Fifteen frozen contracts with Zod schemas, owners, versions and fixtures (`docs/CONTRACT_CATALOGUE.md`)
+- [x] Runtime validation at every action, event, save and content boundary
+- [x] `GameSession` with dispatch, snapshots, anchors, forks, save and restore
+- [x] Ports and deterministic mocks: clock, policy, persistence, content, logger
+- [x] Event model and save checksum documented (`docs/EVENT_MODEL.md`)
+- [x] ADRs for authority, runtime, contracts, evidence, hashing, ports and UI state
+- [x] 36 Vitest checks: contracts, round-trip, determinism, session, saves, purity
+- [x] CI for install, type-check, tests, build and asset-pipeline integrity
+- [x] Asset pipeline re-run with 0 failures and 0 changed assets
+- [x] `docs/STAGE_3_REPORT.md` with commands, outputs and limitations
+- [x] Stage 3 acceptance gate reached; Stage 4 not started
 
 ## Stage 4 — Deterministic playable game (after gate 1)
 

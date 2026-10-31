@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+  assets:
+    name: Asset pipeline integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install asset tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install Pillow
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Rebuild register and prove idempotence
+        run: |
+          python tools/assets/validate/build_register.py
+          git diff --exit-code -- docs/ASSET_REGISTER.csv docs/asset_index.json public/assets
+
+      - name: Validate assets
+        run: python tools/assets/validate/validate_assets.py
+
+      - name: Rebuild contrast report
+        run: python tools/assets/validate/contrast_report.py
