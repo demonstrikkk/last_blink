@@ -1,120 +1,102 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import type * as PhaserTypes from 'phaser';
+import {
+  createDistrictScene,
+  type DistrictSceneApi,
+  type SfxName,
+} from './DistrictScene.js';
+import type { MoveInput } from '../world/movement.js';
+import type { WorldView } from '../world/worldView.js';
 
-export interface WorldStatus {
-  readonly tick: number;
-  readonly stateVersion: number;
-  readonly hash: string;
-  readonly branchLabel: string;
+export interface WorldHandle {
+  playSfx(name: SfxName): void;
+  setMuted(muted: boolean): void;
 }
 
 interface PhaserHostProps {
-  readonly readStatus: () => WorldStatus;
+  readonly getView: () => WorldView;
+  readonly isPaused: () => boolean;
+  readonly getTouchInput: () => MoveInput;
+  readonly onPrompt: (targetId: string | null) => void;
+  readonly onInteract: (targetId: string) => void;
+  readonly onReady: () => void;
+  readonly worldRef: RefObject<WorldHandle | null>;
 }
 
 /**
- * Thin rendering host. It owns no state: every frame it reads the latest engine
- * snapshot through a callback. Phaser is dynamically imported so the engine and
- * the initial UI do not pay for it, and so nothing outside this file needs it.
+ * Rendering host. Phaser owns movement and camera presentation only; it reads
+ * canonical state through `getView` and reports interaction intents upward. It
+ * never dispatches to GameSession and never writes a fact.
  */
-export function PhaserHost({ readStatus }: PhaserHostProps) {
+export function PhaserHost(props: PhaserHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const readRef = useRef(readStatus);
-  readRef.current = readStatus;
+  const liveRef = useRef(props);
+  liveRef.current = props;
 
   useEffect(() => {
     const parent = containerRef.current;
     if (!parent) return;
 
     let disposed = false;
-    let game: { destroy(removeCanvas: boolean): void } | undefined;
+    let game: PhaserTypes.Game | undefined;
 
     void (async () => {
       try {
         await document.fonts.ready;
       } catch {
-        // Fonts are cosmetic here; never block the world layer on them.
+        // Fonts are cosmetic; never block the world layer on them.
       }
 
       const Phaser = await import('phaser');
       if (disposed) return;
 
-      class StatusScene extends Phaser.Scene {
-        private statusText: PhaserTypes.GameObjects.Text | null = null;
-
-        constructor() {
-          super('StatusScene');
-        }
-
-        create(): void {
-          const grid = this.add.graphics();
-          grid.lineStyle(1, 0x1e2833, 0.8);
-          for (let x = 0; x <= 640; x += 32) grid.lineBetween(x, 0, x, 360);
-          for (let y = 0; y <= 360; y += 32) grid.lineBetween(0, y, 640, y);
-
-          grid.lineStyle(1, 0x38e1e8, 0.45);
-          grid.strokeRect(16.5, 16.5, 607, 327);
-          grid.lineStyle(2, 0x38e1e8, 0.9);
-          grid.lineBetween(16, 16, 56, 16);
-          grid.lineBetween(16, 16, 16, 56);
-          grid.lineBetween(624, 344, 584, 344);
-          grid.lineBetween(624, 344, 624, 304);
-
-          this.add
-            .text(32, 32, 'V1', {
-              fontFamily: 'IBM Plex Mono',
-              fontSize: '13px',
-              color: '#38e1e8',
-            })
-            .setAlpha(0.9);
-
-          this.add.text(32, 58, 'WORLD LAYER', {
-            fontFamily: 'Space Grotesk',
-            fontSize: '28px',
-            color: '#eaf1f8',
-          });
-
-          this.add.text(32, 96, 'Stage 3 boot scene — no map, no movement.', {
-            fontFamily: 'Space Grotesk',
-            fontSize: '16px',
-            color: '#a9b8c7',
-          });
-
-          this.statusText = this.add.text(32, 280, '', {
-            fontFamily: 'IBM Plex Mono',
-            fontSize: '13px',
-            color: '#a9b8c7',
-            lineSpacing: 6,
-          });
-        }
-
-        override update(): void {
-          const status = readRef.current();
-          this.statusText?.setText([
-            `TICK ${String(status.tick).padStart(3, '0')}   STATE v${status.stateVersion}`,
-            `BRANCH ${status.branchLabel}`,
-            `HASH ${status.hash}`,
-          ]);
-        }
-      }
+      const DistrictScene = createDistrictScene(Phaser, {
+        getView: () => liveRef.current.getView(),
+        isPaused: () => liveRef.current.isPaused(),
+        getTouchInput: () => liveRef.current.getTouchInput(),
+        onPrompt: (targetId) => liveRef.current.onPrompt(targetId),
+        onInteract: (targetId) => liveRef.current.onInteract(targetId),
+        onReady: () => {
+          if (!game) return;
+          const scene = game.scene.getScene('DistrictScene') as unknown as DistrictSceneApi;
+          liveRef.current.worldRef.current = {
+            playSfx: (name) => scene.playSfx(name),
+            setMuted: (muted) => scene.setMuted(muted),
+          };
+          liveRef.current.onReady();
+        },
+      });
 
       game = new Phaser.Game({
         type: Phaser.AUTO,
         parent,
         backgroundColor: '#070a0f',
-        width: 640,
-        height: 360,
+        width: 512,
+        height: 288,
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH,
         },
-        render: { antialias: false },
-        scene: [StatusScene],
+        render: {
+          pixelArt: true,
+          antialias: false,
+          roundPixels: true,
+        },
+        scene: [DistrictScene],
       });
+
+      // Opt-in inspection hook for automated verification (`?debug=1`).
+      if (
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).has('debug')
+      ) {
+        (window as unknown as { __lastBlinkGame?: PhaserTypes.Game }).__lastBlinkGame = game;
+      }
     })();
 
     return () => {
       disposed = true;
+      liveRef.current.worldRef.current = null;
       game?.destroy(true);
     };
   }, []);

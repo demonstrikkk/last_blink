@@ -1,8 +1,9 @@
 # Architecture — The Last Blink: Second Settlement
 
-Status: Stage 3 foundation, version 0.1.0. This document describes what exists and
-what later stages are allowed to add. It is deliberately narrower than the game
-design blueprint: Stage 3 establishes authority and contracts, not gameplay.
+Status: Stage 4 vertical slice, version 0.2.0. This document describes what exists
+and what later stages are allowed to add. It is deliberately narrower than the
+game design blueprint: Stage 4 adds one playable street on top of the Stage 3
+authority and contracts.
 
 ## 1. Principles
 
@@ -66,8 +67,10 @@ Future, behind the same boundary:
 | `src/engine/contracts` | schemas, versions, fixtures, registry | import UI, Phaser, network, database drivers |
 | `src/engine/core` | canonical JSON, hash, IDs, reducer, rules, action validation | read wall clock, `Math.random`, DOM, `fetch` |
 | `src/engine/session` | `GameSession`, ports, deterministic mocks | contain game rules or rendering |
-| `src/engine/content` | seed content for the scaffold | be treated as final story content |
-| `src/game` | Phaser boot and future scenes | store canonical state or write facts directly |
+| `src/engine/content` | seed content for the scaffold and Stage 4 story content | be treated as final story content |
+| `src/world` | map grid, movement, interaction range, canonical-to-view projection | import Phaser, React or DOM APIs |
+| `src/game` | Phaser scene, rendering, input presentation | store canonical state or write facts directly |
+| `src/ui` | dialogue sheet, field notes, ledger, touch controls | keep a competing copy of canonical facts |
 | `src/session/runtime.ts` | browser composition root | leak into engine imports |
 | `src/App.tsx` | presentation, input, aria live text | mutate snapshots or calculate game outcomes |
 | future backend | LLM calls, Meko, YSQL credentials, audit export | become a second source of game truth |
@@ -76,14 +79,15 @@ Future, behind the same boundary:
 
 1. UI, test or future agent submits an untrusted object to
    `GameSession.dispatch(raw)`. `gameActionSchema` parses it.
-2. `validateAction` checks shape, references and Stage 3 scope. Failures return
-   `invalid_action`, `unknown_target` or `duplicate`.
+2. `validateAction` checks shape, references and Stage 3/4 scope. Failures
+   return `invalid_action`, `unknown_target` or `duplicate`.
 3. `GamePolicyPort.evaluate` may deny. Denials return `policy_denied`.
 4. Accepted actions produce events through one path:
    `GameSession` builds a typed event, `gameEventSchema` validates it,
    `reduceGameState` checks ordering/provenance and returns a new state.
-5. Rules run after tick advances and asserted facts. They emit
-   `rule.evaluated`, derived `fact.asserted` and optionally `ending.reached`.
+5. Rules run after tick advances, asserted facts, evidence collection and a
+   committed choice. They emit `rule.evaluated`, derived `fact.asserted` and
+   optionally `ending.reached`.
 6. The session commits the snapshot, notifies subscribers and returns an
    `ActionResult` with every produced event ID and the resulting state hash.
 7. Rejected actions still emit one `action.rejected` audit event. World facts and
@@ -136,20 +140,34 @@ writes.
 
 ## 8. Rendering boundary
 
-`PhaserHost` dynamically imports Phaser, draws a boot grid and reads the latest
-snapshot through a callback each frame. The canvas is `aria-hidden`; the same
-state is present as DOM text, including an `aria-live` action result. Stage 4
-will add the map, movement, collision and interaction scenes; those scenes will
-dispatch actions and render snapshots, not own game state.
+`PhaserHost` dynamically imports Phaser and creates `DistrictScene`. The scene
+bakes the Aster street from the code-authored grid, places props, follows the
+player and draws interaction markers. It reads the latest canonical projection
+through `getView()` each frame and reports interaction intents upward
+(`onPrompt`, `onInteract`). It never dispatches to `GameSession` and never writes
+a fact. The canvas is `aria-hidden`; React carries the accessible text mirror,
+including the dialogue sheet, field notes, ledger and `aria-live` announcements.
+
+Player position, facing, camera and proximity are presentation state. They are
+updated in fixed 1/60 s steps (frame-rate independent) and are not saved, hashed
+or replayed. Only `evidence.collect`, `choice.make` and `anchor.record` reach the
+engine.
+
+Appendix: `?debug=1` exposes the Phaser game instance as `window.__lastBlinkGame`
+for automated verification only. It is not a gameplay or persistence API.
 
 ## 9. Directory layout
 
 ```
 src/
-  App.tsx                    React shell
+  App.tsx                    React shell, dialogue state machine, input
   main.tsx                   entry point
   styles.css                 design tokens and layout
-  game/PhaserHost.tsx        Phaser boot host
+  content/                   Stage 4 facts, rules, evidence, choices, dialogue
+  game/PhaserHost.tsx        Phaser host and world handle boundary
+  game/DistrictScene.ts      Aster street scene, camera, markers, audio
+  ui/                        dialogue sheet, field notes, ledger, touch controls
+  world/                     map grid, movement, interaction range, world view
   session/runtime.ts         browser composition root
   engine/
     contracts/               15 schemas, primitives, registry, fixtures
@@ -157,10 +175,30 @@ src/
     content/stage3Content.ts scaffold facts and rules
     session/                 GameSession, ports, deterministic mocks
     index.ts                 public engine surface
-tests/                       36 Vitest checks across 6 files
+tests/                       67 Vitest checks across 10 files
 tools/assets/               preserved asset pipeline
 docs/                       gate evidence, architecture, contracts, ADRs
 ```
+
+## 9a. Stage 4 vertical slice
+
+The playable slice is one street in Aster with three interaction targets:
+
+| Target | Kind | Action | Canonical effect |
+|---|---|---|---|
+| Relay 7 terminal | evidence | `evidence.collect` | `fact.asserted` for `evidence.relay_7`; a rule derives `story.relay_ready` |
+| Sable | npc | dialogue, then `choice.make` | `choice.made` plus declared `fact.asserted` effects; one rule pass derives `world.ward_alert` and `npc.sable.stance` |
+| cyan lamp post | anchor | `anchor.record` | anchor checkpoint with the pre-event state hash |
+
+`deriveWorldView(state, content)` is the single fact-to-UI projection used by
+React and Phaser. There is no parallel story store. Evidence and choice
+definitions live in trusted `GameContent`; action payloads only name a trusted
+ID, so an action cannot invent a fact key or value.
+
+Both interactive actions are additively guarded against duplicates: a second
+`evidence.collect` for the same item and a second `choice.make` for the same node
+are rejected with `duplicate` and audited. See ADR 0008 for why the action
+vocabulary was extended without changing the frozen event payloads.
 
 ## 10. Failure behaviour
 
@@ -174,13 +212,15 @@ docs/                       gate evidence, architecture, contracts, ADRs
 | Model/agent failure (future) | scripted fallback proposal; engine still validates |
 | Listener exception | caught and logged; other subscribers still run |
 
-## 11. Deliberate Stage 3 limits
+## 11. Deliberate limits at Stage 4
 
-- `branch.fork` records a child timeline but does not switch the active branch.
-  BLINK switching and cross-timeline comparison are Stage 6.
+- BLINK branch switching, scar memory and cross-timeline comparison are deferred.
+  `branch.fork` still records a child timeline without switching.
 - Rule evaluation is one ordered pass, not a fixpoint.
-- `MemoryRecord`, `NpcObservation` and `NpcDecisionProposal` are contracts and
-  fixtures only; no cognition runtime exists yet.
-- Persistence is in memory; reloading resets the session.
-- Content is scaffold (`debug.*` facts), not story content.
-- No map, movement, collision, dialogue, LLM, Meko or YugabyteDB.
+- `MemoryRecord`, `NpcObservation` and `NpcDecisionProposal` remain contracts and
+  fixtures; there is no NPC cognition runtime. Sable is a scripted conversation.
+- Persistence is in memory; reloading restarts the street. The UI states this
+  plainly instead of implying a save.
+- Content is one street. ECHO retrieval, LLM dialogue, MORROW policy, YugabyteDB
+  and Meko do not exist yet.
+- Player position is presentation state, not canonical and not saved.

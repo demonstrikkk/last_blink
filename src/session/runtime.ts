@@ -9,11 +9,12 @@ import {
   type PlayerProfile,
   type SessionId,
 } from '../engine/index.js';
+import { STAGE4_CONTENT } from '../content/stage4Content.js';
 
 /**
- * Browser composition root for Stage 3. Only this file chooses concrete ports;
- * the engine never imports it. Persistence is in-memory for now; IndexedDB and
- * the YSQL adapter arrive after the event contracts are proven in play.
+ * Browser composition root. Only this file chooses concrete ports; the engine
+ * never imports it. Persistence is in-memory for Stage 4: refreshing restarts
+ * the street, and the UI says so.
  */
 export async function createBrowserSession(): Promise<DeterministicGameSession> {
   const clock = createSystemClock();
@@ -35,7 +36,7 @@ export async function createBrowserSession(): Promise<DeterministicGameSession> 
       clock,
       policy: allowAllPolicy,
       persistence: new InMemoryPersistence(),
-      content: new StaticContentPort(),
+      content: new StaticContentPort(STAGE4_CONTENT),
       logger: createConsoleLogger(),
     },
   );

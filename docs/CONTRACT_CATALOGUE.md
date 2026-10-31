@@ -1,7 +1,8 @@
 # Contract Catalogue — v1.0.0
 
-Fifteen contracts are frozen for Stage 3. Every contract has one TypeScript type,
-one Zod schema, one owner, one version and two fixtures (valid and invalid).
+Fifteen contracts are frozen for Stage 3 and remain unchanged in Stage 4. Every
+contract has one TypeScript type, one Zod schema, one owner, one version and two
+fixtures (valid and invalid).
 `src/engine/contracts/registry.ts` is the executable source of truth; this
 document explains it for humans.
 
@@ -386,7 +387,7 @@ or before creation.
 **Fixture pair.** Valid: deterministic scripted policy. Invalid: scripted policy
 declared non-deterministic.
 
-## Stage 3 action vocabulary
+## Stage 3/4 action vocabulary
 
 Actions are not a frozen contract yet; they are the engine's accepted inputs for
 this stage. `gameActionSchema` requires `actionType`, `actorId` and `params`.
@@ -398,8 +399,18 @@ this stage. `gameActionSchema` requires `actionType`, `actorId` and `params`.
 | `fact.assert` | `key` (`debug.*` only), `value`, `kind`, `sourceRef` | `fact.asserted`, then rules |
 | `anchor.record` | `label` | `anchor.recorded` (one per tick) |
 | `branch.fork` | `anchorId`, `label` | `branch.forked` (safe, unforked anchor) |
+| `evidence.collect` | `evidenceId` from trusted content | `fact.asserted` for the declared fact, then rules; `duplicate` on repeat |
+| `choice.make` | `nodeId`, `optionId` from trusted content | `choice.made` + declared `fact.asserted` effects, then rules; `duplicate` on repeat |
 
-`story.*`, `npc.*` and `choice.*` actions arrive with the narrative stage.
+Stage 4 added the last two additively (ADR 0008): event payloads, contract
+versions and the fifteen frozen contracts are unchanged. `npcDefinition` and
+`npcDecisionProposal` deliberately use a narrower `npcActionTypeSchema` (the
+original five actions), so NPC contracts do not accept player-only actions.
+
+`gameContentSchema` gained optional `evidence` and `choices` arrays. Each entry
+declares the fact keys, values, labels and consequence keys a trusted content
+bundle may write. Action parameters can only reference those IDs. `story.*` and
+`npc.*` actions remain future work.
 
 ## Versioning rules
 

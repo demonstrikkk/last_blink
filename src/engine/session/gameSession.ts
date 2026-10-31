@@ -19,6 +19,8 @@
   type Branch,
   type BranchForkedEvent,
   type BranchId,
+  type Choice,
+  type ChoiceMadeEvent,
   type EndingReachedEvent,
   type Fact,
   type FactAssertedEvent,
@@ -26,6 +28,7 @@
   type GameEventId,
   type GameState,
   type JsonObject,
+  type JsonValue,
   type PlayerProfile,
   type RuleEvaluatedEvent,
   type SaveEnvelope,
@@ -283,7 +286,7 @@ export class DeterministicGameSession implements GameSession {
 
   dispatch(raw: unknown): ActionResult {
     const actionId = this.ids.next('act_') as ActionId;
-    const validation = validateAction(this.state, raw);
+    const validation = validateAction(this.state, raw, this.content);
 
     if (!validation.ok) {
       return this.reject(raw, actionId, validation.code, validation.message, validation.details);
@@ -401,6 +404,77 @@ export class DeterministicGameSession implements GameSession {
         break;
       }
 
+      case 'evidence.collect': {
+        const definition = this.content.evidence.find(
+          (candidate) => candidate.evidenceId === action.params.evidenceId,
+        );
+        if (!definition) throw new Error('validated evidence definition disappeared');
+
+        const asserted = this.assertFact(state, actionId, action.actorId, source, {
+          key: definition.factKey,
+          value: definition.value,
+          kind: 'observed',
+          sourceRef: definition.sourceRef,
+          sourceKind: 'record',
+          confidence: definition.confidence,
+        });
+        state = asserted.state;
+        produced.push(asserted.eventId);
+        const ruled = this.runRules(state, actionId);
+        state = ruled.state;
+        produced.push(...ruled.eventIds);
+        break;
+      }
+
+      case 'choice.make': {
+        const node = this.content.choices.find(
+          (candidate) => candidate.nodeId === action.params.nodeId,
+        );
+        if (!node) throw new Error('validated choice node disappeared');
+        const option = node.options.find(
+          (candidate) => candidate.optionId === action.params.optionId,
+        );
+        if (!option) throw new Error('validated choice option disappeared');
+
+        const choiceEventId = this.ids.next('evt_') as GameEventId;
+        const choice: Choice = {
+          schemaVersion: CONTRACT_VERSION,
+          choiceId: this.ids.next('cho_') as Choice['choiceId'],
+          sessionId: state.sessionId,
+          branchId: state.branchId,
+          nodeId: node.nodeId,
+          optionId: option.optionId,
+          madeAtTick: state.tick,
+          sourceEventId: choiceEventId,
+          consequenceKeys: option.consequenceKeys,
+        };
+        const choiceEvent: ChoiceMadeEvent = {
+          ...this.envelope(state, choiceEventId, state.tick, action.actorId, source, actionId),
+          type: 'choice.made',
+          payload: { choice },
+        };
+        state = this.apply(state, choiceEvent);
+        produced.push(choiceEventId);
+
+        for (const effect of option.effects) {
+          const asserted = this.assertFact(state, actionId, action.actorId, source, {
+            key: effect.key,
+            value: effect.value,
+            kind: 'asserted',
+            sourceRef: `choice.${node.nodeId}.${option.optionId}`,
+            sourceKind: 'system',
+            confidence: 1,
+          });
+          state = asserted.state;
+          produced.push(asserted.eventId);
+        }
+
+        const ruled = this.runRules(state, actionId);
+        state = ruled.state;
+        produced.push(...ruled.eventIds);
+        break;
+      }
+
       default: {
         const exhaustive: never = action;
         throw new Error(`unhandled action ${String(exhaustive)}`);
@@ -503,6 +577,41 @@ export class DeterministicGameSession implements GameSession {
     const next = reduceGameState(state, validated);
     this.events.push(validated);
     return next;
+  }
+
+  private assertFact(
+    state: GameState,
+    actionId: ActionId,
+    actorId: ActorId,
+    sourceId: SourceId,
+    spec: {
+      key: Fact['key'];
+      value: JsonValue;
+      kind: Fact['kind'];
+      sourceRef: string;
+      sourceKind: Fact['source']['kind'];
+      confidence: number;
+    },
+  ): { state: GameState; eventId: GameEventId } {
+    const eventId = this.ids.next('evt_') as GameEventId;
+    const fact: Fact = {
+      schemaVersion: CONTRACT_VERSION,
+      factId: this.ids.next('fct_') as Fact['factId'],
+      key: spec.key,
+      value: spec.value,
+      kind: spec.kind,
+      confidence: spec.confidence,
+      sourceEventId: eventId,
+      branchId: state.branchId,
+      acquiredAtTick: state.tick,
+      source: { kind: spec.sourceKind, ref: spec.sourceRef },
+    };
+    const event: FactAssertedEvent = {
+      ...this.envelope(state, eventId, state.tick, actorId, sourceId, actionId),
+      type: 'fact.asserted',
+      payload: { fact },
+    };
+    return { state: this.apply(state, event), eventId };
   }
 
   private runRules(state: GameState, actionId: ActionId): { state: GameState; eventIds: GameEventId[] } {

@@ -1,8 +1,11 @@
 import type { GameState, Rejection } from '../contracts/index.js';
 import { anchorIdSchema } from '../contracts/index.js';
+import type { GameContent } from '../content/stage3Content.js';
 import {
   advanceTickParamsSchema,
   anchorParamsSchema,
+  choiceMakeParamsSchema,
+  evidenceCollectParamsSchema,
   factAssertParamsSchema,
   forkParamsSchema,
   gameActionSchema,
@@ -30,7 +33,11 @@ function fail(
  * Boundary validation for every action, whether it came from the UI, a test or
  * an NPC proposal. Validation is pure: it never mutates state.
  */
-export function validateAction(state: GameState, raw: unknown): ActionValidation {
+export function validateAction(
+  state: GameState,
+  raw: unknown,
+  content: GameContent,
+): ActionValidation {
   const parsed = gameActionSchema.safeParse(raw);
   if (!parsed.success) {
     return fail('invalid_action', 'action does not match the action schema', {
@@ -122,6 +129,66 @@ export function validateAction(state: GameState, raw: unknown): ActionValidation
       return {
         ok: true,
         action: { actionType: 'branch.fork', actorId: action.actorId, params: params.data },
+      };
+    }
+
+    case 'evidence.collect': {
+      const params = evidenceCollectParamsSchema.safeParse(action.params);
+      if (!params.success) {
+        return fail('invalid_action', 'evidence.collect requires a content evidence id');
+      }
+      const definition = content.evidence.find(
+        (candidate) => candidate.evidenceId === params.data.evidenceId,
+      );
+      if (!definition) {
+        return fail('unknown_target', 'evidence is not defined by content', {
+          evidenceId: params.data.evidenceId,
+        });
+      }
+      if (state.facts[definition.factKey] !== undefined) {
+        return fail('duplicate', 'evidence has already been collected', {
+          evidenceId: definition.evidenceId,
+          factKey: definition.factKey,
+        });
+      }
+      return {
+        ok: true,
+        action: {
+          actionType: 'evidence.collect',
+          actorId: action.actorId,
+          params: params.data,
+        },
+      };
+    }
+
+    case 'choice.make': {
+      const params = choiceMakeParamsSchema.safeParse(action.params);
+      if (!params.success) {
+        return fail('invalid_action', 'choice.make requires a node id and an option id');
+      }
+      const node = content.choices.find((candidate) => candidate.nodeId === params.data.nodeId);
+      if (!node) {
+        return fail('unknown_target', 'choice node is not defined by content', {
+          nodeId: params.data.nodeId,
+        });
+      }
+      const option = node.options.find(
+        (candidate) => candidate.optionId === params.data.optionId,
+      );
+      if (!option) {
+        return fail('unknown_target', 'choice option is not defined on this node', {
+          nodeId: params.data.nodeId,
+          optionId: params.data.optionId,
+        });
+      }
+      if (state.choices.some((choice) => choice.nodeId === node.nodeId)) {
+        return fail('duplicate', 'this node has already been decided', {
+          nodeId: node.nodeId,
+        });
+      }
+      return {
+        ok: true,
+        action: { actionType: 'choice.make', actorId: action.actorId, params: params.data },
       };
     }
 

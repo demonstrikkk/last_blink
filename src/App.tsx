@@ -1,13 +1,30 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import {
-  type ActionResult,
-  type DeterministicGameSession,
-  type GameEvent,
-} from './engine/index.js';
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { type ActionResult, type DeterministicGameSession } from './engine/index.js';
 import { createBrowserSession } from './session/runtime.js';
-import { PhaserHost, type WorldStatus } from './game/PhaserHost.js';
+import { STAGE4_CONTENT } from './content/stage4Content.js';
+import { ANCHOR_LABEL, DISTRICT_TITLE, SABLE_DIALOGUE } from './content/stage4Dialogue.js';
+import { PhaserHost, type WorldHandle } from './game/PhaserHost.js';
+import { WORLD_TARGETS, type WorldTarget } from './world/district.js';
+import { deriveWorldView } from './world/worldView.js';
+import type { MoveInput } from './world/movement.js';
+import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
+import { FieldNotes } from './ui/FieldNotes.js';
+import { Ledger, type SaveState } from './ui/Ledger.js';
+import { TouchControls } from './ui/TouchControls.js';
 
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type DialogueState =
+  | { phase: 'closed' }
+  | { phase: 'lines'; index: number }
+  | { phase: 'choice' }
+  | { phase: 'resolved' };
+
+const EMPTY_TOUCH: MoveInput = { up: false, down: false, left: false, right: false };
 
 export function App() {
   const [session, setSession] = useState<DeterministicGameSession | null>(null);
@@ -41,18 +58,18 @@ export function App() {
     return (
       <main className="boot">
         <p className="micro">SECOND SETTLEMENT</p>
-        <h1>Initialising deterministic engine</h1>
+        <h1>Opening Relay Street</h1>
         <p className="boot-line" role="status">
-          Loading contracts, content and mock persistence…
+          Loading contracts, content and the Aster district…
         </p>
       </main>
     );
   }
 
-  return <SessionConsole session={session} />;
+  return <GameScreen session={session} />;
 }
 
-function SessionConsole({ session }: { session: DeterministicGameSession }) {
+function GameScreen({ session }: { session: DeterministicGameSession }) {
   const subscribe = useCallback(
     (onChange: () => void) => session.subscribe(() => onChange()),
     [session],
@@ -62,54 +79,203 @@ function SessionConsole({ session }: { session: DeterministicGameSession }) {
     () => session.getSnapshot(),
     () => session.getSnapshot(),
   );
-
-  const [lastResult, setLastResult] = useState<ActionResult | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
-
   const { state, hash } = snapshot;
-  const currentBranch =
-    state.branches.find((branch) => branch.branchId === state.branchId) ?? state.branches[0];
-  const facts = Object.entries(state.facts).sort(([left], [right]) =>
-    left < right ? -1 : left > right ? 1 : 0,
+  const view = deriveWorldView(state, STAGE4_CONTENT);
+
+  const [dialogue, setDialogue] = useState<DialogueState>({ phase: 'closed' });
+  const [choiceIndex, setChoiceIndex] = useState(0);
+  const [promptTargetId, setPromptTargetId] = useState<string | null>(null);
+  const [worldReady, setWorldReady] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [toast, setToast] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
+  const [touchActive, setTouchActive] = useState<Record<keyof MoveInput, boolean>>({ ...EMPTY_TOUCH });
+
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const pausedRef = useRef(false);
+  pausedRef.current = dialogue.phase !== 'closed';
+  const touchRef = useRef<MoveInput>(EMPTY_TOUCH);
+  const worldRef = useRef<WorldHandle | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
+
+  const promptTarget = WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
+  const paused = dialogue.phase !== 'closed';
+
+  useEffect(() => {
+    worldRef.current?.setMuted(muted);
+  }, [muted, worldReady]);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    },
+    [],
   );
-  const evidence = facts.filter(([key]) => key.startsWith('evidence.'));
-  const latestAnchor = state.anchors.at(-1);
-  const events = [...session.getRecentEvents(8)].reverse();
 
-  const readStatus = useCallback((): WorldStatus => {
-    const current = session.getSnapshot();
-    const branch = current.state.branches.find(
-      (candidate) => candidate.branchId === current.state.branchId,
-    );
-    return {
-      tick: current.state.tick,
-      stateVersion: current.state.stateVersion,
-      hash: current.hash,
-      branchLabel: branch?.label ?? 'unknown',
-    };
-  }, [session]);
+  const showToast = useCallback((text: string) => {
+    setToast(text);
+    setAnnouncement(text);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 5200);
+  }, []);
 
-  const run = (action: () => ActionResult) => {
-    try {
-      setLastResult(action());
-      setSaveState('idle');
-    } catch (cause) {
-      setLastResult(null);
-      setSaveState('error');
-      console.error('[last-blink] action failed', cause);
-    }
+  const describeRejection = (result: ActionResult): string => {
+    const code = result.rejection?.code ?? 'engine_error';
+    if (code === 'duplicate') return 'Already recorded. The engine refused a second write.';
+    if (code === 'unknown_target') return 'That is not something this street can act on.';
+    return `Engine rejected the action (${code}).`;
   };
 
-  const scan = () => {
-    const counter = state.facts['debug.counter']?.value;
-    const next = typeof counter === 'number' ? counter + 1 : 1;
-    run(() =>
-      session.dispatch({
-        actionType: 'fact.assert',
+  const openDialogue = useCallback(() => {
+    setChoiceIndex(0);
+    setDialogue({ phase: 'lines', index: 0 });
+    worldRef.current?.playSfx('ui-open');
+  }, []);
+
+  const collectEvidence = useCallback(() => {
+    const result = session.dispatch({
+      actionType: 'evidence.collect',
+      actorId: 'player_local',
+      params: { evidenceId: 'relay_7_log' },
+    });
+    if (result.status === 'accepted') {
+      worldRef.current?.playSfx('evidence-found');
+      showToast('Evidence logged: Relay 7 maintenance log. The relay kept counting.');
+    } else {
+      showToast(describeRejection(result));
+    }
+  }, [session, showToast]);
+
+  const recordAnchor = useCallback(() => {
+    const result = session.recordAnchor(ANCHOR_LABEL);
+    if (result.status === 'accepted') {
+      worldRef.current?.playSfx('anchor-set');
+      showToast('Anchor recorded. Canonical state is checkpointed at this tick.');
+    } else {
+      showToast(describeRejection(result));
+    }
+  }, [session, showToast]);
+
+  const handleTarget = useCallback(
+    (targetId: string) => {
+      if (pausedRef.current) return;
+      const target: WorldTarget | undefined = WORLD_TARGETS.find((item) => item.id === targetId);
+      if (!target) return;
+
+      if (target.kind === 'npc') {
+        openDialogue();
+      } else if (target.kind === 'evidence') {
+        collectEvidence();
+      } else {
+        recordAnchor();
+      }
+    },
+    [collectEvidence, openDialogue, recordAnchor],
+  );
+
+  const advanceDialogue = useCallback(() => {
+    if (dialogue.phase !== 'lines') return;
+    if (dialogue.index + 1 < SABLE_DIALOGUE.lines.length) {
+      setDialogue({ phase: 'lines', index: dialogue.index + 1 });
+      return;
+    }
+    setChoiceIndex(0);
+    setDialogue(viewRef.current.choiceResolved ? { phase: 'resolved' } : { phase: 'choice' });
+  }, [dialogue]);
+
+  const choose = useCallback(
+    (optionId: string) => {
+      if (dialogue.phase !== 'choice') return;
+      const result = session.dispatch({
+        actionType: 'choice.make',
         actorId: 'player_local',
-        params: { key: 'debug.counter', value: next, sourceRef: 'ui.scan' },
-      }),
-    );
+        params: { nodeId: SABLE_DIALOGUE.choiceNodeId, optionId },
+      });
+      if (result.status === 'accepted') {
+        setDialogue({ phase: 'resolved' });
+        worldRef.current?.playSfx('choice-lock');
+        showToast('Decision committed to canonical state. The ward alert has changed.');
+      } else {
+        showToast(describeRejection(result));
+      }
+    },
+    [dialogue.phase, session, showToast],
+  );
+
+  const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
+
+  useEffect(() => {
+    if (dialogue.phase === 'closed') return;
+
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const onControl = Boolean(target?.closest('button, input, select, textarea'));
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setDialogue({ phase: 'closed' });
+        return;
+      }
+
+      if (dialogue.phase === 'lines') {
+        const interact = event.key.toLowerCase() === 'e';
+        if (interact || (!onControl && (event.key === ' ' || event.key === 'Enter'))) {
+          event.preventDefault();
+          advanceDialogue();
+        }
+        return;
+      }
+
+      if (dialogue.phase === 'choice') {
+        const options = viewRef.current.choice?.options ?? [];
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          const delta = event.key === 'ArrowDown' ? 1 : -1;
+          setChoiceIndex((current) => (current + delta + options.length) % Math.max(1, options.length));
+          return;
+        }
+        if (/^[1-9]$/.test(event.key)) {
+          const option = options[Number(event.key) - 1];
+          if (option) {
+            event.preventDefault();
+            choose(option.optionId);
+          }
+          return;
+        }
+        const interact = event.key.toLowerCase() === 'e';
+        if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
+          event.preventDefault();
+          const option = options[choiceIndex];
+          if (option) choose(option.optionId);
+        }
+        return;
+      }
+
+      if (dialogue.phase === 'resolved') {
+        const interact = event.key.toLowerCase() === 'e';
+        if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
+          event.preventDefault();
+          setDialogue({ phase: 'closed' });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [advanceDialogue, choiceIndex, choose, dialogue.phase]);
+
+  const setTouch = useCallback((direction: keyof MoveInput, pressed: boolean) => {
+    touchRef.current = { ...touchRef.current, [direction]: pressed };
+    setTouchActive((current) => ({ ...current, [direction]: pressed }));
+  }, []);
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    worldRef.current?.setMuted(next);
   };
 
   const save = async () => {
@@ -123,195 +289,139 @@ function SessionConsole({ session }: { session: DeterministicGameSession }) {
     }
   };
 
+  const restart = () => {
+    if (window.confirm('Restart the street? All in-memory progress is lost.')) {
+      window.location.reload();
+    }
+  };
+
+  const objective = view.choiceResolved
+    ? view.anchors.length > 0
+      ? 'The street remembers your decision. Keep walking, or open the ledger to inspect canonical state.'
+      : 'Set an anchor at the cyan lamp post on the south walk to checkpoint the decision.'
+    : view.relayReady
+      ? 'Talk to Sable beside the relay terminal on the south walk.'
+      : 'Read the Relay 7 terminal on the north kerb, then talk to Sable.';
+
   return (
-    <div className="shell">
-      <header className="masthead">
-        <div>
+    <div className="game-shell">
+      <header className="topbar">
+        <div className="brand">
           <p className="micro">THE LAST BLINK / SECOND SETTLEMENT</p>
-          <h1>Engineering foundation</h1>
-          <p className="lede">
-            The engine is authoritative. This build proves contracts, determinism and ports — it has
-            no map, movement or dialogue yet.
-          </p>
+          <h1>Relay Street</h1>
         </div>
-        <div className="engine-state">
-          <span className="chip">
-            <span className="dot" aria-hidden="true" />
-            ENGINE ONLINE
+        <div className="topbar-right">
+          <span className="timeline-chip">
+            <span className="timeline-shape" aria-hidden="true" />
+            V1
           </span>
-          <p className="micro mono">{state.sessionId}</p>
+          <span className="mono curfew">CURFEW {view.curfew?.toUpperCase() ?? '—'}</span>
+          <button
+            type="button"
+            className="icon-btn sound-btn"
+            onClick={toggleMute}
+            aria-pressed={muted}
+          >
+            {muted ? 'Sound off' : 'Sound on'}
+          </button>
+          <button type="button" className="btn btn-quiet ledger-btn" onClick={() => setLedgerOpen(true)}>
+            Ledger
+          </button>
         </div>
       </header>
 
-      <main className="console">
-        <section className="panel panel-state" aria-labelledby="state-heading">
-          <div className="panel-head">
-            <h2 id="state-heading">Canonical state</h2>
-            <span className="chip chip-quiet">v{state.stateVersion}</span>
+      <main className="play-layout">
+        <section className="stage" aria-label="Playable district">
+          <div className="world-frame">
+            <PhaserHost
+              getView={() => viewRef.current}
+              isPaused={() => pausedRef.current}
+              getTouchInput={() => touchRef.current}
+              onPrompt={setPromptTargetId}
+              onInteract={handleTarget}
+              onReady={() => setWorldReady(true)}
+              worldRef={worldRef}
+            />
+
+            {!worldReady ? (
+              <div className="world-loading" role="status">
+                <p className="micro">ASTER / RELAY STREET</p>
+                <p>Baking the district…</p>
+              </div>
+            ) : null}
+
+            {worldReady && promptTarget && !paused ? (
+              <button
+                type="button"
+                className="interact-prompt"
+                onClick={() => handleTarget(promptTarget.id)}
+              >
+                <span className="prompt-dot" aria-hidden="true" />
+                <span>{promptTarget.prompt}</span>
+                <kbd>E</kbd>
+              </button>
+            ) : null}
+
+            {toast ? (
+              <p className="toast" role="status">
+                {toast}
+              </p>
+            ) : null}
+
+            <p className="sr-only" role="status" aria-live="polite">
+              {announcement}
+            </p>
           </div>
 
-          <dl className="stats">
-            <Stat label="Tick" value={String(state.tick).padStart(3, '0')} />
-            <Stat label="Branch" value={currentBranch?.label ?? 'unknown'} />
-            <Stat label="Facts" value={String(facts.length)} />
-            <Stat label="Evidence" value={String(evidence.length)} />
-            <Stat label="Anchors" value={String(state.anchors.length)} />
-            <Stat label="Timelines" value={String(state.branches.length)} />
-          </dl>
+          <TouchControls
+            active={touchActive}
+            onPress={setTouch}
+            onInteract={() => promptTarget && handleTarget(promptTarget.id)}
+            interactDisabled={!promptTarget || paused}
+          />
 
-          <div className="hash-block">
-            <p className="micro">STATE HASH</p>
-            <p className="mono hash">{hash}</p>
-            <p className="micro">LAST EVENT</p>
-            <p className="mono hash">{state.lastEventId ?? 'none'}</p>
-          </div>
-
-          <div className="fact-list">
-            <h3>Facts</h3>
-            {facts.length === 0 ? (
-              <p className="empty">No facts asserted.</p>
-            ) : (
-              <ul>
-                {facts.map(([key, fact]) => (
-                  <li key={key}>
-                    <span className="mono fact-key">{key}</span>
-                    <span className="mono fact-value">{JSON.stringify(fact.value)}</span>
-                    <span className="fact-kind">{fact.kind}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <p className="world-caption mono">
+            V1 · {DISTRICT_TITLE.toUpperCase()} · STATE v{state.stateVersion} · TICK {state.tick}
+          </p>
         </section>
 
-        <section className="panel panel-world" aria-labelledby="world-heading">
-          <div className="panel-head">
-            <h2 id="world-heading">World layer</h2>
-            <span className="chip chip-quiet">PHASER BOOT</span>
-          </div>
-          <PhaserHost readStatus={readStatus} />
-          <p className="canvas-mirror mono">
-            V1 · tick {state.tick} · state v{state.stateVersion} · branch {currentBranch?.label}
-          </p>
-          <p className="note">
-            The canvas is decorative in Stage 3. Everything above is mirrored in text for assistive
-            technology, and the canvas is hidden from the accessibility tree.
-          </p>
-        </section>
-
-        <section className="panel panel-controls" aria-labelledby="controls-heading">
-          <div className="panel-head">
-            <h2 id="controls-heading">Session controls</h2>
-            <span className="chip chip-quiet">MOCK PORTS</span>
-          </div>
-
-          <div className="button-row">
-            <button type="button" onClick={() => run(() => session.advanceTick(1))}>
-              Advance tick <span className="key">+1</span>
-            </button>
-            <button type="button" onClick={scan}>
-              Assert scan <span className="key">debug</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => run(() => session.recordAnchor(`Checkpoint ${state.tick}`))}
-            >
-              Record anchor
-            </button>
-            <button
-              type="button"
-              disabled={!latestAnchor}
-              onClick={() => {
-                if (!latestAnchor) return;
-                run(() =>
-                  session.forkBranch(latestAnchor.anchorId, `Timeline ${state.branches.length + 1}`),
-                );
-              }}
-            >
-              Fork timeline
-            </button>
-            <button type="button" onClick={() => void save()} disabled={saveState === 'saving'}>
-              {saveState === 'saving' ? 'Saving…' : 'Save snapshot'}
-            </button>
-          </div>
-
-          <p className="result" role="status" aria-live="polite">
-            {lastResult
-              ? `${lastResult.status.toUpperCase()} · ${lastResult.actionType} · ${
-                  lastResult.rejection
-                    ? lastResult.rejection.code
-                    : `${lastResult.eventIds.length} event(s)`
-                }`
-              : 'No action dispatched yet.'}
-          </p>
-          <p className="save-line mono">
-            {saveState === 'saved'
-              ? 'SaveEnvelope written to InMemoryPersistence.'
-              : saveState === 'error'
-                ? 'Save failed — see console.'
-                : 'Persistence is in-memory; refreshing resets the session.'}
-          </p>
-
-          <div className="anchors">
-            <h3>Anchors</h3>
-            {state.anchors.length === 0 ? (
-              <p className="empty">None recorded. Anchors are immutable checkpoints.</p>
-            ) : (
-              <ul>
-                {state.anchors.map((anchor) => (
-                  <li key={anchor.anchorId}>
-                    <span className="mono">{anchor.label}</span>
-                    <span className="mono anchor-hash">{anchor.stateHash}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        <section className="panel panel-log" aria-labelledby="log-heading">
-          <div className="panel-head">
-            <h2 id="log-heading">Event log</h2>
-            <span className="chip chip-quiet">NEWEST FIRST</span>
-          </div>
-          {events.length === 0 ? (
-            <p className="empty">No events yet.</p>
-          ) : (
-            <ol className="event-list">
-              {events.map((event) => (
-                <EventRow key={event.eventId} event={event} />
-              ))}
-            </ol>
-          )}
-        </section>
+        <FieldNotes view={view} objective={objective} />
       </main>
 
-      <footer className="footer">
-        <p className="micro">
-          DETERMINISTIC CORE · ZOD BOUNDARIES · NO LLM · NO DATABASE · STAGE 3 GATE
+      {dialogue.phase !== 'closed' ? (
+        <DialogueSheet
+          phase={dialogue.phase as DialoguePhase}
+          line={dialogue.phase === 'lines' ? (SABLE_DIALOGUE.lines[dialogue.index] ?? null) : null}
+          lineIndex={dialogue.phase === 'lines' ? dialogue.index : 0}
+          lineCount={SABLE_DIALOGUE.lines.length}
+          view={view}
+          choiceIndex={choiceIndex}
+          onAdvance={advanceDialogue}
+          onChoose={choose}
+          onHighlight={setChoiceIndex}
+          onClose={closeDialogue}
+        />
+      ) : null}
+
+      <Ledger
+        open={ledgerOpen}
+        onClose={() => setLedgerOpen(false)}
+        state={state}
+        hash={hash}
+        events={session.getRecentEvents(20)}
+        saveState={saveState}
+        onSave={() => void save()}
+        onRestart={restart}
+      />
+
+      <footer className="statusbar">
+        <p className="mono">
+          Arrow keys / WASD move · E or Space interact · 1 / 2 choose · Esc close
+        </p>
+        <p className="mono memory-note">
+          In-memory session — refreshing restarts the street. No persistent save in Stage 4.
         </p>
       </footer>
     </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="stat">
-      <dt>{label}</dt>
-      <dd className="mono">{value}</dd>
-    </div>
-  );
-}
-
-function EventRow({ event }: { event: GameEvent }) {
-  return (
-    <li>
-      <span className="mono event-seq">{String(event.sequenceNo).padStart(3, '0')}</span>
-      <span className="event-type">{event.type}</span>
-      <span className="mono event-meta">
-        t{event.tick} · {event.sourceId}
-      </span>
-    </li>
   );
 }

@@ -85,7 +85,29 @@ export const hashSchema = z.string().regex(/^[0-9a-f]{16}$/, 'expected 16 hex ch
 
 export const confidenceSchema = z.number().min(0).max(1);
 
+/**
+ * The full player/engine action vocabulary. Stage 4 adds `evidence.collect` and
+ * `choice.make` additively; see docs/adr/0008-action-vocabulary-extension.md.
+ * No event contract changed: both reuse `fact.asserted` and `choice.made`.
+ */
 export const actionTypeSchema = z.enum([
+  'session.advance_tick',
+  'session.noop',
+  'fact.assert',
+  'anchor.record',
+  'branch.fork',
+  'evidence.collect',
+  'choice.make',
+]);
+
+export type ActionType = z.infer<typeof actionTypeSchema>;
+
+/**
+ * Frozen Stage 3 action set for NPCs. NPC contracts intentionally do not widen
+ * when the player action vocabulary does; an NPC can never be granted
+ * `evidence.collect` or `choice.make` by content drift.
+ */
+export const npcActionTypeSchema = z.enum([
   'session.advance_tick',
   'session.noop',
   'fact.assert',
@@ -93,7 +115,7 @@ export const actionTypeSchema = z.enum([
   'branch.fork',
 ]);
 
-export type ActionType = z.infer<typeof actionTypeSchema>;
+export type NpcActionType = z.infer<typeof npcActionTypeSchema>;
 
 export type SessionId = z.infer<typeof sessionIdSchema>;
 export type GameEventId = z.infer<typeof eventIdSchema>;

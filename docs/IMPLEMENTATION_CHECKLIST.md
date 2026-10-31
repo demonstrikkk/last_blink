@@ -48,7 +48,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` complete and veri
 - [x] `docs/GATE_1_REPORT.md` summarises deliverables, commands and open items
 - [x] Inspector sign-off (Stages 0–2 accepted, subject to clean Git baseline)
 - [x] Clean foundation commit `2f3c710` with 95 tracked files
-- [ ] Authorisation to begin Stage 4
+- [x] Authorisation to begin Stage 4
 
 ## Stage 3 — Engineering foundation
 
@@ -68,15 +68,30 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` complete and veri
 - [x] `docs/STAGE_3_REPORT.md` with commands, outputs and limitations
 - [x] Stage 3 acceptance gate reached; Stage 4 not started
 
-## Stage 4 — Deterministic playable game (after gate 1)
+## Stage 4 — First playable vertical slice
 
-- [ ] Phaser scene, Tiled map, movement, collision, camera
-- [ ] Interaction, evidence, dialogue, choices
-- [ ] Rules, facts, causal graph, anchors
-- [ ] Save/reload, BLINK branch, scar memory
-- [ ] ECHO templates and ending decision table
-- [ ] Heuristic MORROW and fairness guard
-- [ ] Tests: unit, replay, branch isolation, E2E
+- [x] Code-authored Aster street grid (48 × 22 tiles) with solid buildings, kerbs, road paint and props
+- [x] Phaser scene: baked ground, night grade, lamp glows, vignette, camera bounds and deadzone
+- [x] Fixed-step movement (1/60 s), axis-separated collision, facing, walk/idle animation
+- [x] Generic interaction range/priority, DOM prompt and keyboard/touch interact
+- [x] Relay 7 evidence collection through `evidence.collect`, duplicate guard
+- [x] Scripted Sable conversation, accessible dialogue sheet, choice via `choice.make`
+- [x] Choice effects write canonical facts; rules derive `world.ward_alert` and `npc.sable.stance`
+- [x] Anchor at the cyan lamp post; available once and validated by the engine
+- [x] Field notes and ledger read the single canonical projection
+- [x] Restart/reload copy is explicit about the in-memory session
+- [x] 67 Vitest checks across 10 files; runtime play-through verified in headless Chrome
+- [x] Desktop and narrow screenshots captured (`docs/stage4_*.png`)
+- [x] Asset pipeline re-run: 46 assets, 0 changed, validator clean, 44/44 links
+- [x] `docs/STAGE_4_REPORT.md` with commands, acceptance matrix and limits
+- [ ] Stage 4 gate sign-off
+
+Deferred beyond Stage 4:
+
+- [ ] Persistent save/reload, BLINK branch switching, scar memory
+- [ ] ECHO retrieval/templates and the ending decision table
+- [ ] Heuristic MORROW, fairness guard, multiple NPCs
+- [ ] Branch isolation, replay and end-to-end suites beyond the current unit/runtime checks
 
 ## Stage 5 — Jaya NPC pipeline (third gate)
 

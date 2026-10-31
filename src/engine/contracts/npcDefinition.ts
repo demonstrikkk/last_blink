@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import {
-  actionTypeSchema,
   contractVersionSchema,
   manifestIdSchema,
+  npcActionTypeSchema,
   npcIdSchema,
 } from './primitives.js';
 
@@ -26,7 +26,7 @@ export const npcDefinitionSchema = z.strictObject({
   knowledgeScopes: z.array(z.string().trim().min(1).max(80)).min(1).max(12),
   permissions: z.strictObject({
     observableFactPrefixes: z.array(z.string().trim().min(1).max(80)).max(12),
-    allowedActionTypes: z.array(actionTypeSchema).max(8),
+    allowedActionTypes: z.array(npcActionTypeSchema).max(8),
     mayProposeOnly: z.literal(true),
   }),
   memoryNamespace: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/),

@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import {
-  actionTypeSchema,
   branchIdSchema,
   confidenceSchema,
   contractVersionSchema,
   isoTimestampSchema,
   jsonObjectSchema,
   manifestIdSchema,
+  npcActionTypeSchema,
   npcIdSchema,
   observationIdSchema,
   proposalIdSchema,
@@ -15,7 +15,7 @@ import {
 } from './primitives.js';
 
 export const proposedActionSchema = z.strictObject({
-  actionType: actionTypeSchema,
+  actionType: npcActionTypeSchema,
   targetId: z.string().trim().min(1).max(64).nullable(),
   params: jsonObjectSchema,
 });

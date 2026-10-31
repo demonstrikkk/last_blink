@@ -81,8 +81,8 @@ code, not a player outcome, and is never silently repaired.
 |---|---|---|
 | `session.started` | contentId, gameVersion, seed | session creation |
 | `tick.advanced` | fromTick, toTick, reason | accepted `session.advance_tick` |
-| `fact.asserted` | Fact | accepted `fact.assert`, initial content, rule effects |
-| `choice.made` | Choice | future choice resolver |
+| `fact.asserted` | Fact | accepted `fact.assert`, initial content, evidence/choice effects, rule effects |
+| `choice.made` | Choice | accepted `choice.make` |
 | `rule.evaluated` | ruleId, matched, assertedFactKeys | rule pass |
 | `anchor.recorded` | Anchor | accepted `anchor.record` |
 | `branch.forked` | Branch, fromAnchorId | accepted `branch.fork` |
@@ -91,7 +91,26 @@ code, not a player outcome, and is never silently repaired.
 | `action.rejected` | actionType, code, message, proposalId | dispatch rejection audit |
 
 `choice.made`, `npc.proposal.evaluated` and `ending.reached` are frozen now but
-not produced by Stage 3 gameplay; their valid fixtures and schemas are tested.
+`ending.reached` and `npc.proposal.evaluated` are not produced by Stage 4
+gameplay; their valid fixtures and schemas are tested.
+
+## 3a. Stage 4 action vocabulary
+
+Stage 4 added two actions without changing any event payload or contract version
+(ADR 0008):
+
+| Action | Params | Events | Duplicate guard |
+|---|---|---|---|
+| `evidence.collect` | `{ evidenceId }` | one `fact.asserted` for the trusted evidence fact | rejected with `duplicate` when the fact already exists |
+| `choice.make` | `{ nodeId, optionId }` | one `choice.made`, then one `fact.asserted` per declared effect | rejected with `duplicate` when a choice exists for the node |
+
+Both resolve their fact keys and values from trusted `GameContent`; the action
+payload cannot name a fact. After either action is applied, one rule pass runs
+with the usual ordering rules. A rejected collection or choice emits the standard
+single `action.rejected` audit event and leaves world facts unchanged.
+
+`fact.assert` remains a debug-only escape hatch used by tests and the bootstrap,
+not by the playable UI.
 
 ## 4. Actions, acceptance and rejection
 
@@ -116,7 +135,8 @@ the resulting state hash.
 
 ## 5. Rule pass
 
-After a tick advance or a non-derived fact assertion, rules are ordered by
+After a tick advance, a non-derived fact assertion, evidence collection or a
+committed choice, rules are ordered by
 priority descending, then rule ID ascending by code unit. Each enabled rule is
 evaluated once against a value map that includes effects applied by earlier rules
 in the same pass. A matched rule emits:

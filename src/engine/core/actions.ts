@@ -40,6 +40,17 @@ export const forkParamsSchema = z.strictObject({
 
 export const noopParamsSchema = z.strictObject({});
 
+/** Names a content-defined evidence item; never carries a fact key or value. */
+export const evidenceCollectParamsSchema = z.strictObject({
+  evidenceId: z.string().regex(/^[a-z][a-z0-9_]{1,60}$/),
+});
+
+/** Names a content-defined choice node and option. */
+export const choiceMakeParamsSchema = z.strictObject({
+  nodeId: z.string().regex(/^[a-z][a-z0-9_.]{1,60}$/),
+  optionId: z.string().regex(/^[a-z][a-z0-9_]{1,40}$/),
+});
+
 export type ParsedAction =
   | { actionType: 'session.noop'; actorId: z.infer<typeof actorIdSchema>; params: Record<string, never> }
   | {
@@ -61,4 +72,14 @@ export type ParsedAction =
       actionType: 'branch.fork';
       actorId: z.infer<typeof actorIdSchema>;
       params: z.infer<typeof forkParamsSchema>;
+    }
+  | {
+      actionType: 'evidence.collect';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof evidenceCollectParamsSchema>;
+    }
+  | {
+      actionType: 'choice.make';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof choiceMakeParamsSchema>;
     };
