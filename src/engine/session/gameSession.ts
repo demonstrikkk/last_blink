@@ -43,6 +43,17 @@ import { createDeterministicIdFactory, type IdFactory } from '../core/ids.js';
 import { reduceGameState } from '../core/reducer.js';
 import { evaluateRules } from '../core/rules.js';
 import { validateAction, type RejectionCode } from '../core/validation.js';
+import {
+  ancestryChain,
+  collectScars,
+  compareBranchStates,
+  lineageEvents,
+  rebaseState,
+  summariseBranch,
+  type BranchComparison,
+  type BranchRuntimeView,
+  type BranchSummary,
+} from './branching.js';
 import type { GameContent } from '../content/stage3Content.js';
 import type {
   ClockPort,
@@ -57,6 +68,21 @@ export interface GameSnapshot {
   readonly hash: string;
   readonly revision: number;
 }
+
+export interface BranchSwitchResult {
+  readonly status: 'switched' | 'rejected';
+  readonly branchId: BranchId;
+  readonly stateHash: string;
+  readonly stateVersion: number;
+  readonly code: 'unknown_branch' | 'already_active' | 'stale_snapshot' | 'hash_mismatch' | null;
+  readonly message: string | null;
+}
+
+export interface ForkTimelineResult {
+  readonly result: ActionResult;
+  readonly branchId: BranchId | null;
+}
+
 
 export interface GameSessionDeps {
   readonly clock: ClockPort;
@@ -82,12 +108,28 @@ export interface GameSession {
   getState(): GameState;
   getSnapshot(): GameSnapshot;
   getRecentEvents(limit?: number): readonly GameEvent[];
+  getLineageEvents(branchId?: BranchId): readonly GameEvent[];
+  listBranches(): readonly BranchSummary[];
+  getBranchState(branchId: BranchId): GameState | null;
+  getBranchHash(branchId: BranchId): string | null;
+  getActiveBranchId(): BranchId;
+  switchBranch(branchId: BranchId): BranchSwitchResult;
+  compareBranches(baseId: BranchId, otherId: BranchId): BranchComparison;
   dispatch(action: unknown): ActionResult;
   advanceTick(ticks?: number): ActionResult;
   recordAnchor(label: string): ActionResult;
   forkBranch(anchorId: string, label?: string): ActionResult;
+  forkTimeline(anchorId: string, label?: string): ForkTimelineResult;
   subscribe(listener: (snapshot: GameSnapshot) => void): () => void;
   save(): Promise<SaveEnvelope>;
+}
+
+interface BranchRuntime {
+  readonly branch: Branch;
+  state: GameState;
+  hash: string;
+  readonly history: GameState[];
+  readonly events: GameEvent[];
 }
 
 interface EventEnvelope {
@@ -139,7 +181,7 @@ export class DeterministicGameSession implements GameSession {
 
   private state: GameState;
   private snapshot: GameSnapshot;
-  private readonly events: GameEvent[] = [];
+  private readonly runtimes = new Map<BranchId, BranchRuntime>();
   private readonly listeners = new Set<(snapshot: GameSnapshot) => void>();
   private readonly ids: IdFactory;
   private readonly content: GameContent;
@@ -155,8 +197,17 @@ export class DeterministicGameSession implements GameSession {
     this.sessionId = state.sessionId;
     this.state = state;
     this.ids = ids;
-    this.events.push(...initialEvents);
-    this.snapshot = { state, hash: hashCanonical(state), revision: 0 };
+    const history: GameState[] = [];
+    history[state.stateVersion] = state;
+    const root: BranchRuntime = {
+      branch: state.branches.find((branch) => branch.branchId === state.branchId) as Branch,
+      state,
+      hash: hashCanonical(state),
+      history,
+      events: [...initialEvents],
+    };
+    this.runtimes.set(state.branchId, root);
+    this.snapshot = { state, hash: root.hash, revision: 0 };
   }
 
   static async create(
@@ -179,6 +230,8 @@ export class DeterministicGameSession implements GameSession {
       forkedAtAnchorId: null,
       forkedAtTick: null,
       forkedAtStateVersion: null,
+      forkedAtEventSequenceNo: null,
+      forkedAtStateHash: null,
       label: 'Original timeline',
       status: 'active',
       timelineIndex: 0,
@@ -258,7 +311,113 @@ export class DeterministicGameSession implements GameSession {
 
   getRecentEvents(limit = 20): readonly GameEvent[] {
     const size = Math.max(0, Math.min(limit, MAX_RECENT_EVENTS));
-    return this.events.slice(Math.max(0, this.events.length - size));
+    const events = this.activeEvents();
+    return events.slice(Math.max(0, events.length - size));
+  }
+
+  /** All events on the active timeline, ancestry first. */
+  getLineageEvents(branchId: BranchId = this.state.branchId): readonly GameEvent[] {
+    const runtime = this.requireRuntime(branchId);
+    return lineageEvents(runtime.branch, this.chainFor(runtime.branch), this.logs());
+  }
+
+  listBranches(): readonly BranchSummary[] {
+    return [...this.runtimes.values()]
+      .map((runtime) =>
+        summariseBranch(this.view(runtime), this.chainFor(runtime.branch), this.logs()),
+      )
+      .sort((a, b) => a.timelineIndex - b.timelineIndex);
+  }
+
+  getBranchState(branchId: BranchId): GameState | null {
+    return this.runtimes.get(branchId)?.state ?? null;
+  }
+
+  getBranchHash(branchId: BranchId): string | null {
+    return this.runtimes.get(branchId)?.hash ?? null;
+  }
+
+  getActiveBranchId(): BranchId {
+    return this.state.branchId;
+  }
+
+  /**
+   * Switch the active timeline. A switch never writes to either timeline: the
+   * target state was committed when its branch last acted, so restoring it is a
+   * pointer move. Failures leave the active snapshot exactly as it was.
+   */
+  switchBranch(branchId: BranchId): BranchSwitchResult {
+    const reject = (
+      code: NonNullable<BranchSwitchResult['code']>,
+      message: string,
+    ): BranchSwitchResult => ({
+      status: 'rejected',
+      branchId,
+      stateHash: this.snapshot.hash,
+      stateVersion: this.state.stateVersion,
+      code,
+      message,
+    });
+
+    if (branchId === this.state.branchId) {
+      return reject('already_active', 'that timeline is already active');
+    }
+
+    const runtime = this.runtimes.get(branchId);
+    if (!runtime) {
+      const known = this.state.branches.some((branch) => branch.branchId === branchId);
+      return known
+        ? reject('stale_snapshot', 'this timeline has no retained snapshot in this session')
+        : reject('unknown_branch', 'no timeline with that id exists in this session');
+    }
+    const recomputed = hashCanonical(runtime.state);
+    if (recomputed !== runtime.hash) {
+      return reject('stale_snapshot', 'the retained snapshot no longer matches its recorded hash');
+    }
+
+    this.state = runtime.state;
+    this.snapshot = {
+      state: runtime.state,
+      hash: runtime.hash,
+      revision: this.snapshot.revision + 1,
+    };
+    this.deps.logger.info('timeline switched', {
+      sessionId: this.sessionId,
+      branchId,
+      stateVersion: runtime.state.stateVersion,
+    });
+    for (const listener of this.listeners) {
+      try {
+        listener(this.snapshot);
+      } catch (error) {
+        this.deps.logger.error('session listener failed', {
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    return {
+      status: 'switched',
+      branchId,
+      stateHash: runtime.hash,
+      stateVersion: runtime.state.stateVersion,
+      code: null,
+      message: null,
+    };
+  }
+
+  /** Compare two timelines using canonical states and event logs only. */
+  compareBranches(baseId: BranchId, otherId: BranchId): BranchComparison {
+    const base = this.requireRuntime(baseId);
+    const other = this.requireRuntime(otherId);
+    const baseChain = this.chainFor(base.branch);
+    const otherChain = this.chainFor(other.branch);
+    return compareBranchStates(this.view(base), this.view(other), {
+      baseChain,
+      otherChain,
+      baseEvents: lineageEvents(base.branch, baseChain, this.logs()),
+      otherEvents: lineageEvents(other.branch, otherChain, this.logs()),
+      logs: this.logs(),
+    });
   }
 
   subscribe(listener: (snapshot: GameSnapshot) => void): () => void {
@@ -282,6 +441,14 @@ export class DeterministicGameSession implements GameSession {
       actorId: PLAYER_ACTOR,
       params: { anchorId, label },
     });
+  }
+
+  /** Fork and report the new branch id so the caller can switch to it. */
+  forkTimeline(anchorId: string, label = 'Forked timeline'): ForkTimelineResult {
+    const before = new Set(this.state.branches.map((branch) => branch.branchId));
+    const result = this.forkBranch(anchorId, label);
+    const created = this.state.branches.find((branch) => !before.has(branch.branchId));
+    return { result, branchId: result.status === 'accepted' ? (created?.branchId ?? null) : null };
   }
 
   dispatch(raw: unknown): ActionResult {
@@ -380,6 +547,14 @@ export class DeterministicGameSession implements GameSession {
       case 'branch.fork': {
         const anchor = state.anchors.find((candidate) => candidate.anchorId === action.params.anchorId);
         if (!anchor) throw new Error('validated fork anchor disappeared');
+        const parentRuntime = this.requireRuntime(state.branchId);
+        const checkpoint = parentRuntime.history[anchor.stateVersion];
+        if (!checkpoint || hashCanonical(checkpoint) !== anchor.stateHash) {
+          return this.reject(raw, actionId, 'stale_state', 'the anchor checkpoint is not retained', {
+            anchorId: anchor.anchorId,
+          });
+        }
+
         const eventId = this.ids.next('evt_') as GameEventId;
         const branch: Branch = {
           schemaVersion: CONTRACT_VERSION,
@@ -387,8 +562,10 @@ export class DeterministicGameSession implements GameSession {
           sessionId: state.sessionId,
           parentBranchId: state.branchId,
           forkedAtAnchorId: anchor.anchorId,
-          forkedAtTick: state.tick,
-          forkedAtStateVersion: state.stateVersion,
+          forkedAtTick: anchor.tick,
+          forkedAtStateVersion: anchor.stateVersion,
+          forkedAtEventSequenceNo: anchor.eventSequenceNo,
+          forkedAtStateHash: anchor.stateHash,
           label: action.params.label,
           status: 'active',
           timelineIndex: state.branches.length,
@@ -401,6 +578,8 @@ export class DeterministicGameSession implements GameSession {
         };
         state = this.apply(state, event);
         produced.push(eventId);
+
+        this.createChildRuntime(parentRuntime, branch, anchor.stateVersion, state, actionId);
         break;
       }
 
@@ -573,10 +752,125 @@ export class DeterministicGameSession implements GameSession {
   }
 
   private apply(state: GameState, event: GameEvent): GameState {
+    const runtime = this.runtimes.get(state.branchId);
+    if (!runtime) throw new Error(`no runtime for branch ${state.branchId}`);
+    return this.emitInto(runtime, event);
+  }
+
+  private emitInto(runtime: BranchRuntime, event: GameEvent): GameState {
     const validated = gameEventSchema.parse(event);
-    const next = reduceGameState(state, validated);
-    this.events.push(validated);
+    const next = reduceGameState(runtime.state, validated);
+    runtime.events.push(validated);
+    runtime.state = next;
+    runtime.hash = hashCanonical(next);
+    runtime.history[next.stateVersion] = next;
     return next;
+  }
+
+  private requireRuntime(branchId: BranchId): BranchRuntime {
+    const runtime = this.runtimes.get(branchId);
+    if (!runtime) throw new Error(`no runtime for branch ${branchId}`);
+    return runtime;
+  }
+
+  private view(runtime: BranchRuntime): BranchRuntimeView {
+    return {
+      branch: runtime.branch,
+      state: runtime.state,
+      hash: runtime.hash,
+      history: runtime.history,
+      events: runtime.events,
+    };
+  }
+
+  /** Union of every branch record known to the session, for ancestry walks. */
+  private branchUniverse(): Branch[] {
+    const byId = new Map<BranchId, Branch>();
+    for (const runtime of this.runtimes.values()) {
+      for (const branch of runtime.state.branches) byId.set(branch.branchId, branch);
+    }
+    for (const branch of this.state.branches) byId.set(branch.branchId, branch);
+    return [...byId.values()];
+  }
+
+  private chainFor(branch: Branch): Branch[] {
+    return ancestryChain(this.branchUniverse(), branch.branchId);
+  }
+
+  private logs(): Map<BranchId, readonly GameEvent[]> {
+    const map = new Map<BranchId, readonly GameEvent[]>();
+    for (const [branchId, runtime] of this.runtimes) map.set(branchId, runtime.events);
+    return map;
+  }
+
+  private activeEvents(): readonly GameEvent[] {
+    const runtime = this.requireRuntime(this.state.branchId);
+    return lineageEvents(runtime.branch, this.chainFor(runtime.branch), this.logs());
+  }
+
+  /**
+   * Materialise the child timeline at its anchor checkpoint, then carry the
+   * explicit scar allowlist across. The parent state is never touched here: the
+   * only parent write is the `branch.forked` ancestry event itself.
+   */
+  private createChildRuntime(
+    parent: BranchRuntime,
+    branch: Branch,
+    checkpointVersion: number,
+    parentStateAfterFork: GameState,
+    actionId: ActionId,
+  ): void {
+    const childId = branch.branchId;
+    const history = parent.history
+      .slice(0, checkpointVersion + 1)
+      .map((state) => rebaseState(state, branch, childId));
+    const inherited = history[checkpointVersion];
+    if (!inherited) throw new Error('fork checkpoint state is missing from the parent history');
+
+    const runtime: BranchRuntime = {
+      branch,
+      state: inherited,
+      hash: hashCanonical(inherited),
+      history,
+      events: [],
+    };
+    this.runtimes.set(childId, runtime);
+
+    const postCheckpoint = new Set<GameEventId>(
+      parent.events
+        .filter((event) => event.stateVersion > checkpointVersion)
+        .map((event) => event.eventId),
+    );
+    const scars = collectScars(parentStateAfterFork, postCheckpoint);
+
+    for (const scar of scars) {
+      const eventId = this.ids.next('evt_') as GameEventId;
+      const fact: Fact = {
+        schemaVersion: CONTRACT_VERSION,
+        factId: this.ids.next('fct_') as Fact['factId'],
+        key: scar.key,
+        value: scar.value,
+        kind: scar.kind,
+        confidence: scar.confidence,
+        sourceEventId: eventId,
+        branchId: childId,
+        acquiredAtTick: runtime.state.tick,
+        source: { kind: 'system', ref: `scar.carry:${scar.key}` },
+      };
+      const event: FactAssertedEvent = {
+        ...this.envelope(
+          runtime.state,
+          eventId,
+          runtime.state.tick,
+          SYSTEM_ACTOR,
+          'engine.branch' as SourceId,
+          actionId,
+        ),
+        type: 'fact.asserted',
+        payload: { fact },
+      };
+      this.emitInto(runtime, event);
+    }
   }
 
   private assertFact(
@@ -743,10 +1037,14 @@ export class DeterministicGameSession implements GameSession {
   }
 
   private commit(state: GameState): void {
+    const runtime = this.requireRuntime(state.branchId);
+    runtime.state = state;
+    runtime.hash = hashCanonical(state);
+    runtime.history[state.stateVersion] = state;
     this.state = state;
     this.snapshot = {
       state,
-      hash: hashCanonical(state),
+      hash: runtime.hash,
       revision: this.snapshot.revision + 1,
     };
     for (const listener of this.listeners) {

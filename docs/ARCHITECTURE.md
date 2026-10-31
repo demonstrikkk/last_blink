@@ -1,10 +1,9 @@
 # Architecture — The Last Blink: Second Settlement
 
-Status: Stage 5 narrative and causal slice, version 0.3.0. This document
-describes what exists and what later stages are allowed to add. It is
-deliberately narrower than the game design blueprint: Stage 5 adds a causal
-investigation to the one playable street that Stage 4 delivered, on top of the
-unchanged Stage 3 authority and contracts.
+Status: Stage 6 timeline branching, version 0.4.0. This document describes what
+exists and what later stages are allowed to add. Stage 6 adds real branch
+isolation, switching, ancestry and comparison to the Stage 5 investigation, on
+top of the unchanged Stage 3 authority and event contracts.
 
 ## 1. Principles
 
@@ -182,9 +181,9 @@ src/
     contracts/               15 schemas, primitives, registry, fixtures
     core/                    canonical JSON, hash, IDs, reducer, rules, validation
     content/stage3Content.ts scaffold facts, rules and the content schema
-    session/                 GameSession, ports, deterministic mocks
+    session/                 GameSession, branch runtimes, branching semantics, mocks
     index.ts                 public engine surface
-tests/                       98 Vitest checks across 12 files
+tests/                       108 Vitest checks across 13 files
 tools/assets/               preserved asset pipeline
 docs/                       gate evidence, architecture, contracts, ADRs
 ```
@@ -220,6 +219,28 @@ Both interactive actions are additively guarded against duplicates: a second
 are rejected with `duplicate` and audited. See ADR 0008 for why the action
 vocabulary was extended without changing the frozen event payloads.
 
+## 9b. Stage 6 timeline branching
+
+BLINK is a real fork. A `branch.fork` action still writes one event on the
+parent, but the session now materialises a second branch runtime from the
+parent's retained state at the anchor checkpoint (`docs/adr/0013`).
+
+| Concept | Owner | Rule |
+|---|---|---|
+| Fork point | `Branch` + reducer | anchor ID, checkpoint version, tick, event sequence and hash, all validated against the anchor |
+| Child state | `GameSession` | parent history at the checkpoint, re-scoped to the child branch |
+| Activation | `switchBranch` | pointer move only; no event, no mutation of either timeline |
+| Scar memory | `session/branching.ts` | only `scar.*` facts asserted after the checkpoint cross, as `fact.asserted` events (`docs/adr/0014`) |
+| Lineage | `getLineageEvents` | ancestor events up to the fork point, then the branch's own events |
+| Comparison | `compareBranches` | derived from the two canonical states and their lineage logs |
+
+A rejected switch returns `unknown_branch`, `already_active`, `stale_snapshot` or
+`hash_mismatch` and leaves the active snapshot object untouched, so a failed
+operation cannot partially mutate either timeline.
+
+`BlinkPanel` presents the timelines, the anchor fork actions and the comparison.
+Every value it shows is an engine projection; it keeps no story state.
+
 ## 10. Failure behaviour
 
 | Failure | Behaviour |
@@ -228,15 +249,22 @@ vocabulary was extended without changing the frozen event payloads.
 | Missing evidence or decision prerequisite | rejected with `invalid_action` and `details.missing`; audited; facts unchanged |
 | Policy denial | rejected, audited, `policy_denied` |
 | Unknown anchor or duplicate fork | rejected before events |
+| Fork whose metadata does not match its anchor | rejected by the reducer with `stale_anchor` / `anchor_hash_mismatch` |
+| Switch to an unknown or non-materialised branch | rejected with a result code; active snapshot unchanged |
+| Retained branch state no longer hashes to its record | switch refused with `stale_snapshot`; branch not entered |
 | Reducer invariant violation | throws `EngineInvariantError`; this is a programming defect, not a player outcome |
 | Persistence failure | `save()` rejects; in-memory state remains usable |
 | Model/agent failure (future) | scripted fallback proposal; engine still validates |
 | Listener exception | caught and logged; other subscribers still run |
 
-## 11. Deliberate limits at Stage 5
+## 11. Deliberate limits at Stage 6
 
-- BLINK branch switching, scar memory and cross-timeline comparison are deferred.
-  `branch.fork` still records a child timeline without switching.
+- Branch runtimes are in memory. Restoring a session reconstructs only the active
+  branch, so switching to a known-but-not-materialised branch returns
+  `stale_snapshot` rather than pretending to restore it.
+- A branch is memory-resident per state version, so a long session with many
+  branches holds more state than a single timeline would. That is a recorded
+  limit, not a hidden one.
 - Rule evaluation is one ordered pass, not a fixpoint. Delayed consequences are
   milestone-triggered by facts, never by wall-clock time.
 - `MemoryRecord`, `NpcObservation` and `NpcDecisionProposal` remain contracts and

@@ -9,4 +9,5 @@ export * from './core/validation.js';
 export * from './content/stage3Content.js';
 export * from './session/ports.js';
 export * from './session/mocks.js';
+export * from './session/branching.js';
 export * from './session/gameSession.js';

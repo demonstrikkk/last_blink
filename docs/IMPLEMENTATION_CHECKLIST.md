@@ -115,13 +115,38 @@ Deferred beyond Stage 4:
 - [x] Desktop and narrow screenshots captured (`docs/stage5_*.png`)
 - [x] Asset pipeline re-run: 46 assets, 0 changed, validator clean, 44/44 links
 - [x] `docs/STAGE_5_REPORT.md` with commands, acceptance matrix and limits
-- [ ] Stage 5 gate sign-off
+- [x] Stage 5 gate sign-off (`26b1b9d`, `8b03a48`)
 
 Deferred beyond Stage 5:
 
 - [ ] NPC cognition runtime, memory store and scripted/LLM policy pipeline (Jaya pipeline)
-- [ ] ECHO retrieval, MORROW adaptive policy, BLINK switching
-- [ ] Persistent save/reload and multi-branch timelines
+- [ ] ECHO retrieval, MORROW adaptive policy
+
+## Stage 6 — Real timeline branching
+
+- [x] `docs/STAGE_6_PLAN.md`: fork contract, session surface, scar rule, UI, acceptance tests
+- [x] Additive `Branch` fork-point fields (`forkedAtEventSequenceNo`, `forkedAtStateHash`); no contract bump (ADR 0013)
+- [x] Reducer validates fork coordinates against the anchor checkpoint
+- [x] Child state materialised from the parent's retained history at the anchor version
+- [x] `forkTimeline`, `switchBranch`, `listBranches`, `getBranchState/Hash`, `getActiveBranchId`, `compareBranches`, `getLineageEvents`
+- [x] Switching is a pointer move with no event and no mutation on failure
+- [x] Scar allowlist: only `scar.*` facts asserted after the checkpoint cross, as explicit events (ADR 0014)
+- [x] Ancestry stops at the fork point; child events tagged and separated in the ledger
+- [x] Comparison derived from canonical states and lineage logs only
+- [x] BLINK panel: timelines, hashes, checkpoints, fork actions, comparison; topbar timeline chip is live
+- [x] Field notes and ledger surface timeline, checkpoint, lineage and per-event branch tags
+- [x] Scene loads and plays `blink` and `timeline-shift` on fork and switch
+- [x] 108 Vitest checks across 13 files; Stage 3, 4 and 5 suites unchanged and green
+- [x] Runtime play-through at desktop and 390 × 844: fork, diverge, switch back, compare, 0 console errors
+- [x] Desktop and narrow screenshots captured (`docs/stage6_*.png`)
+- [x] `docs/STAGE_6_REPORT.md` with commands, acceptance matrix, isolation evidence and limits
+- [ ] Stage 6 gate sign-off
+
+Deferred beyond Stage 6:
+
+- [ ] Persistent per-branch save/reload (current restore retains only the active branch)
+- [ ] ECHO retrieval, MORROW adaptive policy, PPO, NPC cognition runtime
+- [ ] YugabyteDB, Meko and remote services behind ports
 
 ## Later
 

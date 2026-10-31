@@ -1,4 +1,4 @@
-import type { GameEvent, GameState } from '../engine/index.js';
+import type { BranchSummary, GameEvent, GameState } from '../engine/index.js';
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -8,18 +8,43 @@ interface LedgerProps {
   readonly state: GameState;
   readonly hash: string;
   readonly events: readonly GameEvent[];
+  readonly branches: readonly BranchSummary[];
   readonly saveState: SaveState;
   readonly onSave: () => void;
   readonly onRestart: () => void;
 }
 
-export function Ledger({ open, onClose, state, hash, events, saveState, onSave, onRestart }: LedgerProps) {
+export function Ledger({
+  open,
+  onClose,
+  state,
+  hash,
+  events,
+  branches,
+  saveState,
+  onSave,
+  onRestart,
+}: LedgerProps) {
   if (!open) return null;
 
   const facts = Object.entries(state.facts).sort(([left], [right]) =>
     left < right ? -1 : left > right ? 1 : 0,
   );
   const recent = [...events].slice(-12).reverse();
+  const timelineName = (branchId: string): string => {
+    const found = branches.find((branch) => String(branch.branchId) === branchId);
+    return found ? `V${found.timelineIndex + 1}` : 'V?';
+  };
+  const lineage = new Map<string, BranchSummary>(
+    branches.map((branch) => [String(branch.branchId), branch]),
+  );
+  const chain: string[] = [];
+  let cursor: string | null = String(state.branchId);
+  while (cursor && lineage.has(cursor) && chain.length < 16) {
+    chain.unshift(cursor);
+    const parent: BranchSummary['parentBranchId'] | undefined = lineage.get(cursor)?.parentBranchId;
+    cursor = parent ? String(parent) : null;
+  }
 
   return (
     <div className="ledger-layer">
@@ -69,6 +94,40 @@ export function Ledger({ open, onClose, state, hash, events, saveState, onSave, 
           <p className="mono">{state.sessionId}</p>
         </div>
 
+        <section className="ledger-section" aria-labelledby="ledger-lineage">
+          <h3 id="ledger-lineage">Timeline lineage</h3>
+          <ol className="lineage-list">
+            {chain.map((branchId) => {
+              const branch = lineage.get(branchId);
+              if (!branch) return null;
+              const active = branchId === String(state.branchId);
+              return (
+                <li key={branchId} className={active ? 'lineage-active' : undefined}>
+                  <span className="mono lineage-tag">{timelineName(branchId)}</span>
+                  <span className="lineage-label">{branch.label}</span>
+                  <span className="mono lineage-meta">
+                    {branch.branchId} · v{branch.stateVersion} · {branch.stateHash}
+                  </span>
+                  {branch.checkpoint ? (
+                    <span className="mono lineage-meta">
+                      forked at {branch.checkpoint.anchorId} · checkpoint v
+                      {branch.checkpoint.stateVersion} · event {branch.checkpoint.eventSequenceNo}
+                    </span>
+                  ) : (
+                    <span className="mono lineage-meta">root timeline</span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+          {branches.length > chain.length ? (
+            <p className="mono lineage-meta">
+              {branches.length - chain.length} other timeline
+              {branches.length - chain.length === 1 ? '' : 's'} in this session.
+            </p>
+          ) : null}
+        </section>
+
         <section className="ledger-section" aria-labelledby="ledger-facts">
           <h3 id="ledger-facts">Facts ({facts.length})</h3>
           <ul className="fact-list">
@@ -95,7 +154,7 @@ export function Ledger({ open, onClose, state, hash, events, saveState, onSave, 
                 <li key={event.eventId}>
                   <span className="mono event-seq">{String(event.sequenceNo).padStart(3, '0')}</span>
                   <span className="event-type">{event.type}</span>
-                  <span className="mono event-meta">{event.sourceId}</span>
+                  <span className="mono event-meta">{timelineName(event.branchId)} · {event.sourceId}</span>
                 </li>
               ))}
             </ol>

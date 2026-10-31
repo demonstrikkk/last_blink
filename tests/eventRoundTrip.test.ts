@@ -113,6 +113,8 @@ const EVENTS = [
         forkedAtAnchorId: 'anc_roundtrip',
         forkedAtTick: 3,
         forkedAtStateVersion: 6,
+        forkedAtEventSequenceNo: 7,
+        forkedAtStateHash: '0123456789abcdef',
         label: 'Fork',
         status: 'active',
         timelineIndex: 1,

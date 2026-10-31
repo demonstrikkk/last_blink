@@ -110,8 +110,9 @@ payload cannot name a fact. After either action is applied, one rule pass runs
 with the usual ordering rules. A rejected collection or choice emits the standard
 single `action.rejected` audit event and leaves world facts unchanged.
 
-`fact.assert` remains a debug-only escape hatch used by tests and the bootstrap,
-not by the playable UI.
+`fact.assert` remains an escape hatch used by tests, the bootstrap and the scar
+carry path. Stage 6 widened its key allowance from `debug.*` to `debug.*` and
+`scar.*` only; every other namespace is still refused (ADR 0014).
 
 ## 3b. Stage 5 content prerequisites and endings
 
@@ -246,11 +247,27 @@ The ID factory resumes with a restore-specific seed so new IDs cannot collide.
 - The root branch is created at session start with `timelineIndex: 0`.
 - `anchor.record` stores the pre-event version and hash, one anchor per tick per
   branch. The reducer recomputes the hash and rejects tampering.
-- `branch.fork` records a child timeline with parent, anchor, tick and version. It
-  does **not** switch the active branch in Stage 3. BLINK switching, old-timeline
-  preservation and comparison are Stage 6.
+- `branch.fork` records a child timeline with parent, anchor, tick, version,
+  event sequence and checkpoint hash. Those coordinates always describe the
+  anchor checkpoint, not the parent's live state, and the reducer validates them
+  against the anchor before writing anything.
+- Forking does **not** activate the child. `GameSession.forkTimeline` returns the
+  new branch ID; `GameSession.switchBranch` performs the activation as a session
+  operation with no canonical event.
+- The child state is the parent's retained state at the checkpoint, re-scoped to
+  the child branch. Post-checkpoint facts, choices, anchors and events do not
+  cross. The parent's only write is the `branch.forked` event itself.
+- `scar.*` facts asserted on the parent after the checkpoint cross as explicit
+  `fact.asserted` events on the child (`source.ref: scar.carry:<key>`). Nothing
+  else crosses; see ADR 0014.
+- `getLineageEvents` reports ancestor events up to the fork point followed by the
+  branch's own events. Shared ancestry is reported, never replayed into the child.
+- `switchBranch` re-verifies the retained hash before moving the pointer and
+  returns `unknown_branch`, `already_active`, `stale_snapshot` or
+  `hash_mismatch` on refusal. A refused switch leaves the active snapshot
+  untouched.
 - Anchors marked `safe: false` cannot be forked. Unsafe-anchor creation is left
-  to the BLINK stage.
+  to a later BLINK stage.
 
 ## 9. Replay
 

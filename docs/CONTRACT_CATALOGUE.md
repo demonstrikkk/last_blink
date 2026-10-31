@@ -1,7 +1,7 @@
 # Contract Catalogue — v1.0.0
 
-Fifteen contracts are frozen for Stage 3 and remain unchanged in Stages 4 and 5.
-Every contract has one TypeScript type, one Zod schema, one owner, one version
+Fifteen contracts are frozen for Stage 3 and remain unchanged in Stages 4, 5 and
+6. Every contract has one TypeScript type, one Zod schema, one owner, one version
 and two fixtures (valid and invalid).
 `src/engine/contracts/registry.ts` is the executable source of truth; this
 document explains it for humans.
@@ -211,15 +211,20 @@ The reducer recomputes the hash and rejects a mismatch.
 | sessionId | `ses_*` | yes | |
 | parentBranchId | `brn_*` or null | yes | null only for the root |
 | forkedAtAnchorId | `anc_*` or null | yes | required for children |
-| forkedAtTick | int or null | yes | required for children |
-| forkedAtStateVersion | int or null | yes | required for children |
+| forkedAtTick | int or null | yes | checkpoint tick, required for children |
+| forkedAtStateVersion | int or null | yes | checkpoint version, required for children |
+| forkedAtEventSequenceNo | positive int or null | yes | Stage 6; position of `anchor.recorded` in the parent log |
+| forkedAtStateHash | 16-hex hash or null | yes | Stage 6; parent canonical hash at the checkpoint |
 | label | 1–60 chars | yes | |
 | status | `active \| archived` | yes | |
 | timelineIndex | non-negative int | yes | sequential from 0 |
 | createdAt | ISO | yes | |
 
-**Validation.** A root has no fork metadata; a child must have all three fork
-fields. Stage 3 records forks but does not switch the active branch.
+**Validation.** A root has no fork metadata; a child must have all five fork
+fields. The reducer additionally checks each field against the anchor the state
+holds: an unknown, unsafe, future or mismatched anchor is rejected before any
+write. Forking does not activate the child; `GameSession.switchBranch` does that
+as a session operation without an event (ADR 0013).
 
 **Fixture pair.** Valid: root branch. Invalid: parent set with no fork anchor.
 

@@ -5,7 +5,11 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { type ActionResult, type DeterministicGameSession } from './engine/index.js';
+import {
+  type ActionResult,
+  type BranchId,
+  type DeterministicGameSession,
+} from './engine/index.js';
 import { createBrowserSession } from './session/runtime.js';
 import { STAGE5_CONTENT } from './content/stage5Content.js';
 import {
@@ -21,6 +25,7 @@ import type { MoveInput } from './world/movement.js';
 import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
 import { FieldNotes } from './ui/FieldNotes.js';
 import { Ledger, type SaveState } from './ui/Ledger.js';
+import { BlinkPanel } from './ui/BlinkPanel.js';
 import { TouchControls } from './ui/TouchControls.js';
 
 type DialogueState =
@@ -93,6 +98,8 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
   const [promptTargetId, setPromptTargetId] = useState<string | null>(null);
   const [worldReady, setWorldReady] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [blinkOpen, setBlinkOpen] = useState(false);
+  const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [toast, setToast] = useState<string | null>(null);
@@ -269,6 +276,49 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
 
   const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
 
+  const branches = session.listBranches();
+  const comparison =
+    compareTargetId && compareTargetId !== state.branchId
+      ? session.compareBranches(state.branchId, compareTargetId as BranchId)
+      : null;
+
+  const forkFromAnchor = useCallback(
+    (anchorId: string) => {
+      const anchor = viewRef.current.anchors.find((item) => item.anchorId === anchorId);
+      const label = `Blink ${new Date().toISOString().slice(11, 19)}`;
+      const fork = session.forkTimeline(anchorId, label);
+      if (fork.result.status !== 'accepted' || !fork.branchId) {
+        showToast(describeRejection(fork.result));
+        return;
+      }
+      const switched = session.switchBranch(fork.branchId);
+      if (switched.status !== 'switched') {
+        showToast(switched.message ?? 'The new timeline could not be activated.');
+        return;
+      }
+      setCompareTargetId(fork.branchId);
+      worldRef.current?.playSfx('blink');
+      showToast(
+        `BLINK complete. New timeline active from ${anchor?.label ?? 'the checkpoint'}. V1 is preserved.`,
+      );
+    },
+    [session, showToast],
+  );
+
+  const switchBranch = useCallback(
+    (branchId: string) => {
+      const result = session.switchBranch(branchId as BranchId);
+      if (result.status !== 'switched') {
+        showToast(result.message ?? 'Timeline switch refused.');
+        return;
+      }
+      setCompareTargetId(null);
+      worldRef.current?.playSfx('timeline-shift');
+      showToast(`Timeline switched. Canonical hash ${result.stateHash}.`);
+    },
+    [session, showToast],
+  );
+
   useEffect(() => {
     if (dialogue.phase === 'closed') return;
 
@@ -374,10 +424,16 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           <h1>Relay Street</h1>
         </div>
         <div className="topbar-right">
-          <span className="timeline-chip">
+          <button
+            type="button"
+            className="timeline-chip timeline-button"
+            onClick={() => setBlinkOpen(true)}
+            aria-label={`BLINK — open timeline control. Active timeline V${view.timeline.index + 1}.`}
+          >
             <span className="timeline-shape" aria-hidden="true" />
-            V1
-          </span>
+            V{view.timeline.index + 1}
+            <span className="timeline-count mono">/{view.timeline.total}</span>
+          </button>
           <span className="mono curfew">CURFEW {view.curfew?.toUpperCase() ?? '—'}</span>
           <span className="mono phase-chip">PHASE {view.phase?.toUpperCase() ?? '—'}</span>
           <button
@@ -387,6 +443,9 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
             aria-pressed={muted}
           >
             {muted ? 'Sound off' : 'Sound on'}
+          </button>
+          <button type="button" className="btn btn-quiet blink-btn" onClick={() => setBlinkOpen(true)}>
+            BLINK
           </button>
           <button type="button" className="btn btn-quiet ledger-btn" onClick={() => setLedgerOpen(true)}>
             Ledger
@@ -445,7 +504,8 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           />
 
           <p className="world-caption mono">
-            V1 · {DISTRICT_TITLE.toUpperCase()} · STATE v{state.stateVersion} · TICK {state.tick}
+            V{view.timeline.index + 1} · {DISTRICT_TITLE.toUpperCase()} · STATE v{state.stateVersion} ·
+            TICK {state.tick} · {hash}
           </p>
         </section>
 
@@ -469,12 +529,26 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         />
       ) : null}
 
+      <BlinkPanel
+        open={blinkOpen}
+        onClose={() => setBlinkOpen(false)}
+        view={view}
+        branches={branches}
+        activeBranchId={state.branchId}
+        comparison={comparison}
+        compareTargetId={compareTargetId}
+        onCompare={setCompareTargetId}
+        onFork={forkFromAnchor}
+        onSwitch={switchBranch}
+      />
+
       <Ledger
         open={ledgerOpen}
         onClose={() => setLedgerOpen(false)}
         state={state}
         hash={hash}
-        events={session.getRecentEvents(20)}
+        events={session.getLineageEvents()}
+        branches={branches}
         saveState={saveState}
         onSave={() => void save()}
         onRestart={restart}
@@ -482,10 +556,10 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
 
       <footer className="statusbar">
         <p className="mono">
-          Arrow keys / WASD move · E or Space interact · 1 / 2 choose · Esc close
+          Arrow keys / WASD move · E or Space interact · 1 / 2 choose · Esc close · BLINK forks a timeline
         </p>
         <p className="mono memory-note">
-          In-memory session — refreshing restarts the street. No persistent save in Stage 5.
+          In-memory session — refreshing restarts the street. Branch snapshots live in memory only.
         </p>
       </footer>
     </div>

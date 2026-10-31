@@ -64,6 +64,8 @@ export const branchFixture = {
   forkedAtAnchorId: null,
   forkedAtTick: null,
   forkedAtStateVersion: null,
+  forkedAtEventSequenceNo: null,
+  forkedAtStateHash: null,
   label: 'Original timeline',
   status: 'active',
   timelineIndex: 0,

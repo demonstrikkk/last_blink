@@ -34,6 +34,20 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
         </span>
       </header>
 
+      <section className="note-block" aria-labelledby="note-timeline">
+        <h2 id="note-timeline" className="note-title">
+          Timeline
+        </h2>
+        <p className="timeline-current mono">
+          V{view.timeline.index + 1} / {view.timeline.total} · {view.timeline.label}
+        </p>
+        <p className="note-muted">
+          {view.timeline.parentLabel
+            ? `Forked from ${view.timeline.parentLabel} at ${view.timeline.forkedFromAnchorId}.`
+            : 'Original timeline. Record an anchor, then BLINK to fork it.'}
+        </p>
+      </section>
+
       <section className="note-block" aria-labelledby="note-objectives">
         <h2 id="note-objectives" className="note-title">
           Investigation
@@ -147,7 +161,14 @@ export function FieldNotes({ view, objective }: FieldNotesProps) {
             </p>
             <div>
               <p className="anchor-label">{latestAnchor.label}</p>
+              <p className="mono anchor-hash">
+                {latestAnchor.anchorId} · v{latestAnchor.stateVersion} · event{' '}
+                {latestAnchor.eventSequenceNo}
+              </p>
               <p className="mono anchor-hash">{latestAnchor.stateHash}</p>
+              {latestAnchor.forkedInto ? (
+                <p className="mono anchor-forked">forked into {latestAnchor.forkedInto}</p>
+              ) : null}
             </div>
           </div>
         ) : (

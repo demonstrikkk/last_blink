@@ -49,9 +49,23 @@ export interface EndingView {
 }
 
 export interface AnchorView {
+  readonly anchorId: string;
   readonly label: string;
   readonly stateHash: string;
   readonly tick: number;
+  readonly stateVersion: number;
+  readonly eventSequenceNo: number;
+  /** Label of the child timeline forked from this anchor, if any. */
+  readonly forkedInto: string | null;
+}
+
+export interface TimelineView {
+  readonly branchId: string;
+  readonly index: number;
+  readonly total: number;
+  readonly label: string;
+  readonly parentLabel: string | null;
+  readonly forkedFromAnchorId: string | null;
 }
 
 export interface WorldView {
@@ -77,6 +91,7 @@ export interface WorldView {
   readonly consequence: string;
   readonly endingId: string | null;
   readonly ending: EndingView | null;
+  readonly timeline: TimelineView;
   readonly anchors: readonly AnchorView[];
   readonly evidenceFound: number;
   readonly evidenceTotal: number;
@@ -168,6 +183,11 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
       }
     : null;
 
+  const activeBranch = state.branches.find((branch) => branch.branchId === state.branchId);
+  const parentBranch = activeBranch?.parentBranchId
+    ? state.branches.find((branch) => branch.branchId === activeBranch.parentBranchId)
+    : undefined;
+
   return {
     district: asString(factValue(state, 'world.district')),
     curfew: asString(factValue(state, 'world.curfew')),
@@ -191,10 +211,23 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
     consequence: describeConsequence(wardAlert, committed?.optionId ?? null),
     endingId,
     ending,
+    timeline: {
+      branchId: state.branchId,
+      index: activeBranch?.timelineIndex ?? 0,
+      total: state.branches.length,
+      label: activeBranch?.label ?? 'Original timeline',
+      parentLabel: parentBranch?.label ?? null,
+      forkedFromAnchorId: activeBranch?.forkedAtAnchorId ?? null,
+    },
     anchors: state.anchors.map((anchor) => ({
+      anchorId: anchor.anchorId,
       label: anchor.label,
       stateHash: anchor.stateHash,
       tick: anchor.tick,
+      stateVersion: anchor.stateVersion,
+      eventSequenceNo: anchor.eventSequenceNo,
+      forkedInto:
+        state.branches.find((branch) => branch.forkedAtAnchorId === anchor.anchorId)?.label ?? null,
     })),
     evidenceFound: state.player.progress.evidenceFound,
     evidenceTotal: evidence.length,

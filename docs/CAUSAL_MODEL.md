@@ -1,9 +1,10 @@
-# Causal Model — Stage 5
+# Causal Model — Stage 5 content, Stage 6 branching
 
 The causal model is the contract between narrative content and canonical state.
-Every story outcome in Stage 5 is either a fact written by a trusted choice
-effect or a fact derived by a rule from facts that already exist. Nothing is
-driven by wall-clock time, randomness, renderer state or model output.
+Every story outcome is either a fact written by a trusted choice effect or a fact
+derived by a rule from facts that already exist. Nothing is driven by wall-clock
+time, randomness, renderer state or model output. Stage 6 does not add story
+variables; it adds branch scope and an explicit scar channel (§8-9).
 
 Executable source: `src/content/stage5Content.ts` (facts, rules, choices,
 objectives, endings). This document explains the semantics for humans.
@@ -201,8 +202,31 @@ accepted on a branch. All three are covered by tests, including the two
 6. The rule pass is one ordered pass with no fixpoint, no clock and no
    randomness, so a given action sequence always produces the same facts, the
    same event log and the same state hash.
+7. Facts, choices and anchors belong to the branch that produced them. A fork
+   starts from the parent's checkpoint state, so no post-checkpoint fact can
+   influence the child.
+8. Scar memory is the only channel across a fork: a `scar.*` fact asserted after
+   the checkpoint is re-asserted once on the child with
+   `source.ref: scar.carry:<key>`. Derived story facts never cross; the child
+   re-derives them from its own actions.
 
-## 9. Adding a variable
+## 9. Branching and outcomes
+
+A timeline is a branch, and every rule above is evaluated inside one branch.
+
+- A fork at an anchor gives the child exactly the facts, choices and anchors that
+  existed at the checkpoint. Later parent evidence, decisions and endings are
+  invisible to it, so the same rules can reach a different ending in the child.
+- Switching timelines changes only which canonical state the session presents. It
+  does not re-run rules, so it cannot change any outcome.
+- Comparison is a diff of two canonical states: facts present in one only,
+  changed fact values, per-node decisions, endings, event overlap and scars. It is
+  a read, never a second model of the story.
+- A carried scar can influence the child because it is a fact like any other; that
+  is its purpose. It cannot smuggle a derived outcome, because only `scar.*` keys
+  cross.
+
+## 10. Adding a variable
 
 1. Add the initial fact (or the producer that writes it) to
    `src/content/stage5Content.ts`.

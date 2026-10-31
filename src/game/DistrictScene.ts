@@ -31,6 +31,8 @@ export type SfxName =
   | 'choice-lock'
   | 'anchor-set'
   | 'ending-sting'
+  | 'blink'
+  | 'timeline-shift'
   | 'ui-click'
   | 'ui-open'
   | 'ui-confirm';
@@ -98,6 +100,8 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
         'choice-lock',
         'anchor-set',
         'ending-sting',
+        'blink',
+        'timeline-shift',
         'ui-click',
         'ui-open',
         'ui-confirm',

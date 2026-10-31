@@ -73,8 +73,8 @@ export function validateAction(
       if (!params.success) {
         return fail('invalid_action', 'fact.assert requires a namespaced key and a JSON value');
       }
-      if (!params.data.key.startsWith('debug.')) {
-        return fail('invalid_action', 'Stage 3 only accepts debug.* facts from actions', {
+      if (!params.data.key.startsWith('debug.') && !params.data.key.startsWith('scar.')) {
+        return fail('invalid_action', 'actions may only assert debug.* or scar.* facts', {
           key: params.data.key,
         });
       }

@@ -190,25 +190,38 @@ export function reduceGameState(state: GameState, event: GameEvent): GameState {
         'branch_mismatch',
         'fork metadata does not match fromAnchorId',
       );
+      const anchor = state.anchors.find((candidate) => candidate.anchorId === fromAnchorId);
+      invariant(anchor !== undefined, 'unknown_target', 'fork anchor does not exist');
+      invariant(anchor.safe, 'policy_denied', 'unsafe anchors cannot be forked');
       invariant(
-        branch.forkedAtStateVersion === state.stateVersion,
+        branch.forkedAtStateVersion === anchor.stateVersion,
         'stale_anchor',
-        'fork must start from the current state version',
+        'fork must start at the anchor checkpoint version',
       );
       invariant(
-        branch.forkedAtTick === state.tick,
+        branch.forkedAtTick === anchor.tick,
         'invalid_tick',
-        'fork tick must match current tick',
+        'fork tick must equal the anchor checkpoint tick',
+      );
+      invariant(
+        branch.forkedAtEventSequenceNo === anchor.eventSequenceNo,
+        'stale_anchor',
+        'fork must record the anchor event position',
+      );
+      invariant(
+        branch.forkedAtStateHash === anchor.stateHash,
+        'anchor_hash_mismatch',
+        'fork must record the anchor checkpoint hash',
+      );
+      invariant(
+        anchor.stateVersion <= state.stateVersion,
+        'stale_anchor',
+        'fork checkpoint cannot be in the future',
       );
       invariant(
         branch.timelineIndex === state.branches.length,
         'branch_mismatch',
         'timeline index must be sequential',
-      );
-      invariant(
-        state.anchors.some((anchor) => anchor.anchorId === fromAnchorId),
-        'unknown_target',
-        'fork anchor does not exist',
       );
       invariant(
         !state.branches.some((existing) => existing.branchId === branch.branchId),
