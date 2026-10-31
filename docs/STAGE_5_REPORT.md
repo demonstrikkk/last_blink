@@ -214,8 +214,10 @@ Tests and docs:
 
 ## 7. Limitations and open risks
 
-1. **CI still unverified.** No Git remote exists, so GitHub Actions has not run.
-   Local `npm ci`, typecheck, tests, build and asset checks pass.
+1. **CI not yet run for this commit.** `origin` exists and tracks `main`, and the
+   Stage 4 commits up to `96e627a` are pushed. The Stage 5 commits are local and
+   unpushed, so GitHub Actions has not run for them. Local typecheck, tests,
+   build and asset checks pass; pushing is left to the gate decision.
 2. **Phaser bundle size.** The Phaser chunk is 1.37 MB (357 kB gzip). Acceptable
    for a single-page slice; code-splitting is future work.
 3. **Root-deployment assumption.** Fonts and Phaser assets are requested from
@@ -259,4 +261,7 @@ with zero console errors, and the screenshots above.
 No Stage 6 work — ECHO, MORROW policy, BLINK switching, persistence or the NPC
 cognition runtime — will begin until this gate is accepted.
 
-Stage 5 implementation commit: `<pending — recorded on commit>`.
+Stage 5 implementation commit: `26b1b9d`. A follow-up documentation commit records
+this hash in the report. Nothing from Stage 5 has been pushed to `origin`; the
+remote is one commit behind, so CI has not seen Stage 5. Pushing is deferred to
+the gate decision.

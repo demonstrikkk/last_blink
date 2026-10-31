@@ -1,6 +1,6 @@
 # Stage 5 Plan — Narrative and Causal Systems
 
-Status: approved scope, implementation in progress.
+Status: delivered. See `docs/STAGE_5_REPORT.md` for acceptance evidence.
 Baseline: Stage 4 at `96e627a`, 67/67 tests, working tree clean.
 
 ## 1. Objective
