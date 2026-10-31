@@ -1,6 +1,6 @@
 import type { BranchSummary, GameEvent, GameState } from '../engine/index.js';
 
-export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'restored';
 
 interface LedgerProps {
   readonly open: boolean;
@@ -10,6 +10,10 @@ interface LedgerProps {
   readonly events: readonly GameEvent[];
   readonly branches: readonly BranchSummary[];
   readonly saveState: SaveState;
+  readonly lastSavedAt?: string | null;
+  readonly lastSaveId?: string | null;
+  readonly saveErrorMessage?: string | null;
+  readonly isDurable?: boolean;
   readonly onSave: () => void;
   readonly onRestart: () => void;
 }
@@ -22,6 +26,10 @@ export function Ledger({
   events,
   branches,
   saveState,
+  lastSavedAt,
+  lastSaveId,
+  saveErrorMessage,
+  isDurable = true,
   onSave,
   onRestart,
 }: LedgerProps) {
@@ -162,21 +170,42 @@ export function Ledger({
         </section>
 
         <section className="ledger-section ledger-actions" aria-labelledby="ledger-save">
-          <h3 id="ledger-save">Session</h3>
-          <div className="button-row">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 id="ledger-save" style={{ margin: 0 }}>Persistence & Session</h3>
+            <span className="mono phase-chip" style={{ fontSize: '0.75rem' }}>
+              {saveState === 'saving'
+                ? 'SAVING…'
+                : saveState === 'saved'
+                  ? 'SAVED'
+                  : saveState === 'restored'
+                    ? 'RESTORED'
+                    : saveState === 'error'
+                      ? 'SAVE FAILED'
+                      : isDurable
+                        ? 'DURABLE (IDB)'
+                        : 'IN-MEMORY'}
+            </span>
+          </div>
+          <div className="button-row" style={{ marginTop: '0.75rem' }}>
             <button type="button" className="btn" onClick={onSave} disabled={saveState === 'saving'}>
-              {saveState === 'saving' ? 'Saving…' : 'Snapshot to memory'}
+              {saveState === 'saving' ? 'Saving…' : isDurable ? 'Save to IndexedDB' : 'Snapshot to memory'}
             </button>
             <button type="button" className="btn btn-quiet" onClick={onRestart}>
-              Restart street
+              New session
             </button>
           </div>
           <p className="mono session-note" role="status" aria-live="polite">
-            {saveState === 'saved'
-              ? 'Write hit InMemoryPersistence. Refreshing still discards it.'
-              : saveState === 'error'
-                ? 'Snapshot failed — see console.'
-                : 'Persistence is in memory only. Refreshing restarts the street.'}
+            {saveState === 'saving'
+              ? 'Writing atomic snapshot, branch runtimes, and event logs to IndexedDB…'
+              : saveState === 'saved'
+                ? `Saved to IndexedDB (${lastSaveId ?? 'envelope'} · ${lastSavedAt ?? 'just now'}). Session survives browser reload.`
+                : saveState === 'restored'
+                  ? `Restored from IndexedDB (${lastSaveId ?? 'envelope'}). V1/V2 branch runtimes and logs intact.`
+                  : saveState === 'error'
+                    ? `Save failed: ${saveErrorMessage ?? 'Transaction error. Previous save remains untouched.'}`
+                    : isDurable
+                      ? `IndexedDB persistence active. ${lastSavedAt ? `Last save: ${lastSavedAt}` : 'No save written yet this session.'}`
+                      : 'Persistence is in memory only. Refreshing restarts the street.'}
           </p>
         </section>
       </aside>

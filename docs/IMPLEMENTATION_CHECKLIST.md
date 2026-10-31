@@ -207,10 +207,27 @@ Deferred beyond Stage 6:
 - [x] Implementation `175985d`; docs `96c47a1`; CI runs `41211874808` and `41211994166` green
 - [ ] Automated NPC screenshots (tooling not installed in this environment)
 
-Deferred beyond Stage 9:
+## Stage 10 — Durable Persistence (IndexedDB)
 
-- [ ] LLM-backed ECHO, embeddings/vector retrieval
-- [ ] Learned/PPO MORROW policy with parity and fairness evaluation
-- [ ] Durable NPC memory, persistent per-branch saves, YugabyteDB and Meko
-- [ ] Autonomous multi-NPC simulation and free-text NPC dialogue
+- [x] `docs/ANTIGRAVITY_PROJECT_BASELINE.md`: Verified audit baseline of Stages 0–9
+- [x] `docs/STAGE_10_PLAN.md`: Scope, architecture, data model, acceptance matrix
+- [x] `src/session/indexedDb.ts`: Zero-dependency `IndexedDbPersistence` adapter with atomic transactions across envelopes, events, branch snapshots, and session metadata
+- [x] `src/engine/session/persistenceErrors.ts`: Typed error hierarchy (`PersistenceError`, `PersistenceUnavailableError`, `SaveTransactionError`, `CorruptSaveError`, `VersionMismatchError`, `QuotaExceededError`)
+- [x] `src/engine/session/ports.ts`: Additive `BranchSnapshotRecord`, `SessionDurableRecord`, and optional durable persistence methods
+- [x] `src/engine/session/gameSession.ts`: Multi-branch runtime serialization in `save()` and reconstitution in `restore()`
+- [x] Multi-branch restoration: V1 and V2 timelines preserved across reloads; branch switching post-restore preserves exact canonical hashes
+- [x] `src/session/runtime.ts`: Browser composition root with automated session recovery from IndexedDB
+- [x] `src/ui/Ledger.tsx` & `src/App.tsx`: Real-time persistence status indicators (`SAVED`, `SAVING…`, `RESTORED`, `SAVE FAILED`, `DURABLE (IDB)`)
+- [x] `tests/enginePurity.test.ts`: Engine purity verified with 0 browser globals in `src/engine/`
+- [x] `tests/stage10Persistence.test.ts`: 12 automated acceptance tests covering round-trip, reload, multi-branch, ancestry, ordering, integrity, idempotence, rollback, corruption, and schema checks
+- [x] 154 Vitest checks across 17 files; `npm run verify` completely green
+- [x] `docs/PERSISTENCE_ARCHITECTURE.md` and ADR 0018 (`docs/adr/0018-indexeddb-durable-persistence.md`)
+- [x] `docs/STAGE_10_REPORT.md`
+- [x] Stage 10 acceptance gate reached
+
+Deferred beyond Stage 10:
+
+- [ ] Stage 11: Replay, event-log integrity, migrations, and corrupted snapshot recovery
+- [ ] Stage 12: YugabyteDB and Meko server-side context retrieval and durable memory
+- [ ] Stage 13+: Centralized Model Gateway and Agentic NPC evolution
 

@@ -46,14 +46,17 @@ type DialogueState =
 const EMPTY_TOUCH: MoveInput = { up: false, down: false, left: false, right: false };
 
 export function App() {
-  const [session, setSession] = useState<DeterministicGameSession | null>(null);
+  const [sessionData, setSessionData] = useState<{
+    session: DeterministicGameSession;
+    restoredFromSave: boolean;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     createBrowserSession()
-      .then((created) => {
-        if (!cancelled) setSession(created);
+      .then((data) => {
+        if (!cancelled) setSessionData(data);
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
@@ -73,7 +76,7 @@ export function App() {
     );
   }
 
-  if (!session) {
+  if (!sessionData) {
     return (
       <main className="boot">
         <p className="micro">SECOND SETTLEMENT</p>
@@ -85,10 +88,16 @@ export function App() {
     );
   }
 
-  return <GameScreen session={session} />;
+  return <GameScreen session={sessionData.session} initialRestored={sessionData.restoredFromSave} />;
 }
 
-function GameScreen({ session }: { session: DeterministicGameSession }) {
+function GameScreen({
+  session,
+  initialRestored = false,
+}: {
+  session: DeterministicGameSession;
+  initialRestored?: boolean;
+}) {
   const subscribe = useCallback(
     (onChange: () => void) => session.subscribe(() => onChange()),
     [session],
@@ -113,7 +122,10 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
   const [npcNotice, setNpcNotice] = useState<string | null>(null);
   const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [saveState, setSaveState] = useState<SaveState>(initialRestored ? 'restored' : 'idle');
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [lastSaveId, setLastSaveId] = useState<string | null>(null);
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const [touchActive, setTouchActive] = useState<Record<keyof MoveInput, boolean>>({ ...EMPTY_TOUCH });
@@ -462,17 +474,25 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
 
   const save = async () => {
     setSaveState('saving');
+    setSaveErrorMessage(null);
     try {
-      await session.save();
+      const envelope = await session.save();
       setSaveState('saved');
+      setLastSavedAt(new Date(envelope.savedAt).toLocaleTimeString());
+      setLastSaveId(envelope.saveId);
+      showToast(`Saved to IndexedDB (${envelope.saveId}). Session is durable.`);
     } catch (cause) {
       console.error('[last-blink] save failed', cause);
+      const msg = cause instanceof Error ? cause.message : String(cause);
       setSaveState('error');
+      setSaveErrorMessage(msg);
+      showToast(`Save failed: ${msg}`);
     }
   };
 
   const restart = () => {
-    if (window.confirm('Restart the street? All in-memory progress is lost.')) {
+    if (window.confirm('Restart and start a new session? Current saved progress will be reset.')) {
+      indexedDB.deleteDatabase('the_last_blink_db');
       window.location.reload();
     }
   };
@@ -654,6 +674,10 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         events={session.getLineageEvents()}
         branches={branches}
         saveState={saveState}
+        lastSavedAt={lastSavedAt}
+        lastSaveId={lastSaveId}
+        saveErrorMessage={saveErrorMessage}
+        isDurable={true}
         onSave={() => void save()}
         onRestart={restart}
       />
@@ -663,7 +687,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           Arrow keys / WASD move · E or Space interact · 1 / 2 choose · Esc close · BLINK forks a timeline
         </p>
         <p className="mono memory-note">
-          In-memory session — refreshing restarts the street. Branch snapshots live in memory only.
+          Durable persistence (IndexedDB) — progress and BLINK branches survive reload.
         </p>
       </footer>
     </div>

@@ -65,6 +65,7 @@ import {
 } from './branching.js';
 import type { GameContent } from '../content/stage3Content.js';
 import type {
+  BranchSnapshotRecord,
   ClockPort,
   ContentPort,
   GamePolicyPort,
@@ -240,22 +241,45 @@ export class DeterministicGameSession implements GameSession {
     state: GameState,
     ids: IdFactory,
     initialEvents: readonly GameEvent[] = [],
+    branchStates?: ReadonlyMap<BranchId, { state: GameState; events: readonly GameEvent[] }>,
   ) {
     this.content = content;
     this.sessionId = state.sessionId;
     this.state = state;
     this.ids = ids;
-    const history: GameState[] = [];
-    history[state.stateVersion] = state;
-    const root: BranchRuntime = {
-      branch: state.branches.find((branch) => branch.branchId === state.branchId) as Branch,
-      state,
-      hash: hashCanonical(state),
-      history,
-      events: [...initialEvents],
-    };
-    this.runtimes.set(state.branchId, root);
-    this.snapshot = { state, hash: root.hash, revision: 0 };
+
+    if (branchStates && branchStates.size > 0) {
+      for (const [branchId, data] of branchStates.entries()) {
+        const branchMeta = state.branches.find((branch) => branch.branchId === branchId);
+        if (branchMeta) {
+          const history: GameState[] = [];
+          history[data.state.stateVersion] = data.state;
+          this.runtimes.set(branchId, {
+            branch: branchMeta,
+            state: data.state,
+            hash: hashCanonical(data.state),
+            history,
+            events: [...data.events],
+          });
+        }
+      }
+    }
+
+    if (!this.runtimes.has(state.branchId)) {
+      const history: GameState[] = [];
+      history[state.stateVersion] = state;
+      const root: BranchRuntime = {
+        branch: state.branches.find((branch) => branch.branchId === state.branchId) as Branch,
+        state,
+        hash: hashCanonical(state),
+        history,
+        events: [...initialEvents],
+      };
+      this.runtimes.set(state.branchId, root);
+    }
+
+    const activeRuntime = this.runtimes.get(state.branchId)!;
+    this.snapshot = { state, hash: activeRuntime.hash, revision: 0 };
   }
 
   static async create(
@@ -346,7 +370,43 @@ export class DeterministicGameSession implements GameSession {
     const ids = createDeterministicIdFactory(
       `${parsed.payload.sessionId}:${parsed.payload.seed}:restore:${parsed.payload.stateVersion}`,
     );
-    return new DeterministicGameSession(deps, content, parsed.payload, ids);
+
+    let branchStates: Map<BranchId, { state: GameState; events: readonly GameEvent[] }> | undefined;
+
+    if (typeof deps.persistence.loadSession === 'function') {
+      try {
+        const durableRecord = await deps.persistence.loadSession(parsed.payload.sessionId);
+        if (durableRecord) {
+          branchStates = new Map();
+          const eventsByBranch = new Map<BranchId, GameEvent[]>();
+          for (const ev of durableRecord.events) {
+            const list = eventsByBranch.get(ev.branchId) ?? [];
+            list.push(ev);
+            eventsByBranch.set(ev.branchId, list);
+          }
+
+          for (const snapshot of durableRecord.branchSnapshots) {
+            branchStates.set(snapshot.branchId, {
+              state: snapshot.state,
+              events: eventsByBranch.get(snapshot.branchId) ?? [],
+            });
+          }
+
+          if (!branchStates.has(parsed.payload.branchId)) {
+            branchStates.set(parsed.payload.branchId, {
+              state: parsed.payload,
+              events: eventsByBranch.get(parsed.payload.branchId) ?? [],
+            });
+          }
+        }
+      } catch (err) {
+        deps.logger.warn('Failed to load durable session record, falling back to envelope payload', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    return new DeterministicGameSession(deps, content, parsed.payload, ids, [], branchStates);
   }
 
   getState(): GameState {
@@ -875,7 +935,31 @@ export class DeterministicGameSession implements GameSession {
       ...withoutChecksum,
       checksum: saveChecksum(withoutChecksum),
     });
-    await this.deps.persistence.save(envelope);
+
+    if (typeof this.deps.persistence.saveSession === 'function') {
+      const allEvents: GameEvent[] = [];
+      const branchSnapshots: BranchSnapshotRecord[] = [];
+      for (const [branchId, runtime] of this.runtimes.entries()) {
+        allEvents.push(...runtime.events);
+        branchSnapshots.push({
+          sessionId: this.sessionId,
+          branchId,
+          stateVersion: runtime.state.stateVersion,
+          stateHash: runtime.hash,
+          state: runtime.state,
+          updatedAt: this.deps.clock.nowIso(),
+        });
+      }
+      await this.deps.persistence.saveSession({
+        envelope,
+        events: allEvents,
+        branchSnapshots,
+        activeBranchId: this.state.branchId,
+      });
+    } else {
+      await this.deps.persistence.save(envelope);
+    }
+
     this.deps.logger.info('session saved', {
       sessionId: this.sessionId,
       stateVersion: this.state.stateVersion,

@@ -17,6 +17,7 @@ export * from './npc/policy.js';
 export * from './npc/memory.js';
 export * from './npc/controller.js';
 export * from './session/ports.js';
+export * from './session/persistenceErrors.js';
 export * from './session/mocks.js';
 export * from './session/branching.js';
 export * from './session/gameSession.js';

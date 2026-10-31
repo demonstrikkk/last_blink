@@ -1,5 +1,5 @@
 import type { GameContent } from '../content/stage3Content.js';
-import type { GameState, SaveEnvelope, SessionId } from '../contracts/index.js';
+import type { BranchId, GameEvent, GameState, SaveEnvelope, SessionId } from '../contracts/index.js';
 import type { ParsedAction } from '../core/actions.js';
 
 /** Time is injected so deterministic tests never read the wall clock. */
@@ -33,11 +33,32 @@ export interface SaveSummary {
   readonly stateVersion: number;
 }
 
+export interface BranchSnapshotRecord {
+  readonly sessionId: SessionId;
+  readonly branchId: BranchId;
+  readonly stateVersion: number;
+  readonly stateHash: string;
+  readonly state: GameState;
+  readonly updatedAt: string;
+}
+
+export interface SessionDurableRecord {
+  readonly envelope: SaveEnvelope;
+  readonly events: readonly GameEvent[];
+  readonly branchSnapshots: readonly BranchSnapshotRecord[];
+  readonly activeBranchId: BranchId;
+}
+
 /** Local memory now; IndexedDB and YSQL adapters implement this later. */
 export interface PersistencePort {
   save(envelope: SaveEnvelope): Promise<void>;
   load(sessionId: SessionId): Promise<SaveEnvelope | null>;
   list(): Promise<SaveSummary[]>;
+
+  // Optional extensions for multi-branch and event-durable persistence
+  saveSession?(record: SessionDurableRecord): Promise<void>;
+  loadSession?(sessionId: SessionId): Promise<SessionDurableRecord | null>;
+  delete?(sessionId: SessionId): Promise<void>;
 }
 
 export interface ContentPort {
