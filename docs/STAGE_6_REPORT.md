@@ -1,6 +1,6 @@
 # Stage 6 Report - Real Timeline Branching
 
-Status: **complete, awaiting Stage 6 gate sign-off. Stages 7 has not started.**
+Status: **complete, awaiting Stage 6 gate sign-off. Stage 7 has not started.**
 Date: 2026-10-31
 Version: 0.4.0 (content bundle `content.stage5.aster`, unchanged)
 
@@ -146,6 +146,19 @@ python tools/assets/validate/check_catalogue_links.py
 ✓ stage 6 - ancestry and scar memory > keeps a forked timeline playable through a different ending
 ```
 
+### Remote CI
+
+```text
+gh run list --limit 3
+  41204915349  a1c9209  feat(stage6): real timeline branching  success
+  41201289746  88a167f  docs(stage5): record green remote CI run    success
+  41201157399  6ecf9d8  fix(assets): make register output ...        success
+
+gh run view 41204915349
+  Asset pipeline integrity      success
+  Typecheck, tests and build    success
+```
+
 ### Runtime verification
 
 Headless Chrome against the production build (`vite preview :4173`,
@@ -157,7 +170,7 @@ Desktop, 1440 x 900:
 | Step | Observed |
 |---|---|
 | Record anchor after reading Relay 7 | anchor checkpoint v14, event 15, hash `6f1c33d763c30f6f`; V1 hash `33c1546cdf333f34` after the fork event |
-| Fork from the anchor | V2 active, state v14, 10 facts, 14 events, hash `ac2ce532e0385549`-class fork state, checkpoint line names anchor `anc_0fdb10_000u` v14 event 15 hash `6f1c33d763c30f6f` |
+| Fork from the anchor | V2 active, state v14, 10 facts, 14 events; checkpoint line names anchor `anc_0fdb10_000u` v14 event 15 hash `6f1c33d763c30f6f`; V1 moved to v16 / `33c1546cdf333f34` from the single `branch.forked` event |
 | Compare at the fork point | shared facts 10, only V2 0, only V1 0, changed 0, divergent events 0 / 2 |
 | V2: conceal the log, collect the dispatch slip | V2 state v26, 15 facts, 26 events, hash `c3c4cc3832116a11`; V1 still v16 / `33c1546cdf333f34` |
 | Compare after divergence | shared facts 8, only V2 5 (`evidence.ward_dispatch`, `npc.sable.stance`, `story.relay_choice`, `story.relay_choice_resolved`, `world.ward_alert`), changed 2 (`story.phase`, `world.dispatch_continuity`), decision `node.sable.relay: conceal \| undecided`, divergent events 12 / 2 |
@@ -168,7 +181,7 @@ Mobile, 390 x 844:
 
 | Step | Observed |
 |---|---|
-| Fork | V1 `2ec2136fa80f9f59`, checkpoint `f854bad7a854bdb6` at v14 / event 15, V2 v14 `ac2ce532e0385549` |
+| Fork | V1 `2ec2136fa80f9f59` before the fork, then v16 `ce79aa960205c485` after the `branch.forked` event; checkpoint `f854bad7a854bdb6` at v14 / event 15; V2 v14 `ac2ce532e0385549` |
 | Diverged V2 after conceal | V2 v23 `f1d056b7fe2990f4`; comparison shared 9, only V2 4 (`npc.sable.stance`, `story.relay_choice`, `story.relay_choice_resolved`, `world.ward_alert`), changed 1, divergent events 9 / 2, decision `conceal \| undecided` |
 
 Console: 0 errors and 0 warnings in every run. The earlier Stage 6 script runs
@@ -264,11 +277,13 @@ Requesting Stage 6 sign-off on the basis of:
 
 - the 10-test Stage 6 acceptance suite and 108/108 tests across 13 files;
 - a clean typecheck and production build;
+- remote CI green on the Stage 6 commit (run `41204915349`, both jobs success);
 - the desktop and mobile play-through with verified V1 restoration and canonical
   comparison, at 0 console errors;
 - the branch-isolation evidence in §3 and §5;
 - ADR 0013 (fork lifecycle and switching) and ADR 0014 (scar allowlist).
 
-Stage 6 implementation commit: `7c1a4d3` (recorded in the follow-up documentation
-commit). No Stage 7 work - ECHO, MORROW policy, persistence, NPC cognition or
-LLM memory - will begin until this gate is accepted.
+Stage 6 implementation commit: `a1c9209` (remote CI run `41204915349`, green).
+This report's commit hash is recorded by the follow-up documentation commit. No
+Stage 7 work - ECHO, MORROW policy, persistence, NPC cognition or LLM memory -
+will begin until this gate is accepted.
