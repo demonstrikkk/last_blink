@@ -638,6 +638,43 @@ kbd {
     var(--ink-900);
 }
 
+.ending-stage-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  padding: 16px;
+  border: 1px solid rgb(56 225 232 / 60%);
+  border-radius: 8px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(56 225 232 / 16%), transparent 70%),
+    rgb(10 16 26 / 94%);
+  backdrop-filter: blur(8px);
+  z-index: 80;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 60%);
+}
+
+.ending-stage-banner h2 {
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 500;
+  margin: 4px 0 6px 0;
+  color: var(--text-primary);
+}
+
+.ending-stage-banner p {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.ending-stage-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .ending-title {
   font-family: var(--sans);
   font-size: 22px;

@@ -132,14 +132,14 @@ function GameScreen({
 
   const viewRef = useRef(view);
   viewRef.current = view;
+  const paused = dialogue.phase !== 'closed' || blinkOpen || echoOpen || npcOpen || ledgerOpen;
   const pausedRef = useRef(false);
-  pausedRef.current = dialogue.phase !== 'closed';
+  pausedRef.current = paused;
   const touchRef = useRef<MoveInput>(EMPTY_TOUCH);
   const worldRef = useRef<WorldHandle | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
 
   const promptTarget = WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
-  const paused = dialogue.phase !== 'closed';
   const activeScript: DialogueScript | null =
     dialogue.phase === 'closed' ? null : STAGE5_DIALOGUE[dialogue.scriptId] ?? null;
   const activeNode = activeScript
@@ -398,79 +398,133 @@ function GameScreen({
     [morrow, session, showToast],
   );
 
-  useEffect(() => {
-    if (dialogue.phase === 'closed') return;
+  const toggleMute = useCallback(() => {
+    setMuted((current) => {
+      const next = !current;
+      worldRef.current?.setMuted(next);
+      return next;
+    });
+  }, []);
 
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const onControl = Boolean(target?.closest('button, input, select, textarea'));
 
       if (event.key === 'Escape') {
         event.preventDefault();
-        setDialogue({ phase: 'closed' });
-        return;
-      }
-
-      if (dialogue.phase === 'lines') {
-        const interact = event.key.toLowerCase() === 'e';
-        if (interact || (!onControl && (event.key === ' ' || event.key === 'Enter'))) {
-          event.preventDefault();
-          advanceDialogue();
-        }
-        return;
-      }
-
-      if (dialogue.phase === 'choice') {
-        const scriptId = dialogue.scriptId;
-        const options = viewRef.current.choices.find(
-          (candidate) => candidate.nodeId === STAGE5_DIALOGUE[scriptId]?.choiceNodeId,
-        )?.options ?? [];
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-          event.preventDefault();
-          const delta = event.key === 'ArrowDown' ? 1 : -1;
-          setChoiceIndex((current) => (current + delta + options.length) % Math.max(1, options.length));
+        if (dialogue.phase !== 'closed') {
+          setDialogue({ phase: 'closed' });
           return;
         }
-        if (/^[1-9]$/.test(event.key)) {
-          const option = options[Number(event.key) - 1];
-          if (option) {
+        if (blinkOpen) {
+          setBlinkOpen(false);
+          return;
+        }
+        if (echoOpen) {
+          setEchoOpen(false);
+          return;
+        }
+        if (npcOpen) {
+          setNpcOpen(false);
+          return;
+        }
+        if (ledgerOpen) {
+          setLedgerOpen(false);
+          return;
+        }
+        return;
+      }
+
+      if (dialogue.phase !== 'closed') {
+        if (dialogue.phase === 'lines') {
+          const interact = event.key.toLowerCase() === 'e';
+          if (interact || (!onControl && (event.key === ' ' || event.key === 'Enter'))) {
             event.preventDefault();
-            choose(option.optionId);
+            advanceDialogue();
           }
           return;
         }
-        const interact = event.key.toLowerCase() === 'e';
-        if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
-          event.preventDefault();
-          const option = options[choiceIndex];
-          if (option) choose(option.optionId);
+
+        if (dialogue.phase === 'choice') {
+          const scriptId = dialogue.scriptId;
+          const options = viewRef.current.choices.find(
+            (candidate) => candidate.nodeId === STAGE5_DIALOGUE[scriptId]?.choiceNodeId,
+          )?.options ?? [];
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const delta = event.key === 'ArrowDown' ? 1 : -1;
+            setChoiceIndex((current) => (current + delta + options.length) % Math.max(1, options.length));
+            return;
+          }
+          if (/^[1-9]$/.test(event.key)) {
+            const option = options[Number(event.key) - 1];
+            if (option) {
+              event.preventDefault();
+              choose(option.optionId);
+            }
+            return;
+          }
+          const interact = event.key.toLowerCase() === 'e';
+          if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
+            event.preventDefault();
+            const option = options[choiceIndex];
+            if (option) choose(option.optionId);
+          }
+          return;
+        }
+
+        if (dialogue.phase === 'resolved' || dialogue.phase === 'blocked') {
+          const interact = event.key.toLowerCase() === 'e';
+          if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
+            event.preventDefault();
+            setDialogue({ phase: 'closed' });
+          }
         }
         return;
       }
 
-      if (dialogue.phase === 'resolved' || dialogue.phase === 'blocked') {
-        const interact = event.key.toLowerCase() === 'e';
-        if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
+      // Hotkeys when exploration is active
+      if (!onControl && !blinkOpen && !echoOpen && !npcOpen && !ledgerOpen) {
+        const k = event.key.toLowerCase();
+        if (k === 'b') {
           event.preventDefault();
-          setDialogue({ phase: 'closed' });
+          setBlinkOpen(true);
+        } else if (k === 'c') {
+          event.preventDefault();
+          setEchoOpen(true);
+        } else if (k === 'l') {
+          event.preventDefault();
+          setLedgerOpen(true);
+        } else if (k === 'n') {
+          event.preventDefault();
+          setNpcOpen(true);
+        } else if (k === 'm') {
+          event.preventDefault();
+          toggleMute();
         }
       }
     };
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [advanceDialogue, choiceIndex, choose, dialogue.phase, dialogue]);
+  }, [
+    advanceDialogue,
+    blinkOpen,
+    choiceIndex,
+    choose,
+    dialogue.phase,
+    dialogue,
+    echoOpen,
+    ledgerOpen,
+    npcOpen,
+    toggleMute,
+  ]);
 
   const setTouch = useCallback((direction: keyof MoveInput, pressed: boolean) => {
     touchRef.current = { ...touchRef.current, [direction]: pressed };
     setTouchActive((current) => ({ ...current, [direction]: pressed }));
   }, []);
-
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    worldRef.current?.setMuted(next);
-  };
 
   const save = async () => {
     setSaveState('saving');
@@ -576,6 +630,25 @@ function GameScreen({
                 <span>{promptTarget.prompt}</span>
                 <kbd>E</kbd>
               </button>
+            ) : null}
+
+            {view.ending && dialogue.phase === 'closed' ? (
+              <div className="ending-stage-banner" role="status">
+                <p className="micro">INVESTIGATION CONCLUDED</p>
+                <h2>{view.ending.title}</h2>
+                <p>{view.ending.summary}</p>
+                <div className="ending-stage-actions">
+                  <button type="button" className="btn btn-quiet" onClick={() => setBlinkOpen(true)}>
+                    BLINK Timeline (Fork / Rewind)
+                  </button>
+                  <button type="button" className="btn btn-quiet" onClick={() => setEchoOpen(true)}>
+                    ECHO Provenance
+                  </button>
+                  <button type="button" className="btn btn-quiet" onClick={() => setLedgerOpen(true)}>
+                    Save to Ledger
+                  </button>
+                </div>
+              </div>
             ) : null}
 
             {toast ? (
@@ -684,7 +757,7 @@ function GameScreen({
 
       <footer className="statusbar">
         <p className="mono">
-          Arrow keys / WASD move · E or Space interact · 1 / 2 choose · Esc close · BLINK forks a timeline
+          WASD/Arrows move · E/Space interact · 1/2 choose · B BLINK · C ECHO · N NPCs · L Ledger · Esc close
         </p>
         <p className="mono memory-note">
           Durable persistence (IndexedDB) — progress and BLINK branches survive reload.
