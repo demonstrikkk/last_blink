@@ -16,7 +16,20 @@ export const GRID_HEIGHT = 22;
 export const WORLD_WIDTH = GRID_WIDTH * TILE;
 export const WORLD_HEIGHT = GRID_HEIGHT * TILE;
 
-export type Cell = '#' | '.' | ',' | '-' | 'B' | 'L' | 'T' | 'A' | 'N' | 'R' | ' ';
+export type Cell =
+  | '#'
+  | '.'
+  | ','
+  | '-'
+  | 'B'
+  | 'L'
+  | 'T'
+  | 'A'
+  | 'N'
+  | 'R'
+  | 'D'
+  | 'C'
+  | ' ';
 
 export type Facing = 'up' | 'down' | 'left' | 'right';
 
@@ -33,7 +46,7 @@ export interface Rect {
 }
 
 /** Solid cells. Everything not listed here is walkable. */
-const SOLID: ReadonlySet<Cell> = new Set(['#', 'B', 'L', 'T', 'A', 'N', 'R', ' ']);
+const SOLID: ReadonlySet<Cell> = new Set(['#', 'B', 'L', 'T', 'A', 'N', 'R', 'D', 'C', ' ']);
 
 export const SPAWN: Point = { x: 10 * TILE + 8, y: 15 * TILE + 15 };
 
@@ -96,10 +109,13 @@ function buildGrid(): Cell[][] {
   // Parked cars do not survive the single-tile prop projection; the street is
   // dressed with lamps, barriers and trees instead.
 
-  // The evidence terminal, the anchor lamp and Sable.
+  // The evidence terminal, the ward dispatch board, the anchor lamp, Sable,
+  // Ivo's stall and the ward call-box.
   stamp(20, 4, 'T');
+  stamp(34, 4, 'D');
   stamp(12, 16, 'A');
   stamp(30, 16, 'N');
+  stamp(42, 16, 'C');
 
   return grid;
 }
@@ -154,6 +170,10 @@ export function propTileFor(cell: Cell): number | null {
       return 503;
     case 'T':
       return 714;
+    case 'D':
+      return 714;
+    case 'C':
+      return 681;
     case 'B':
       return 681;
     case 'R':
@@ -163,7 +183,7 @@ export function propTileFor(cell: Cell): number | null {
   }
 }
 
-export type InteractionKind = 'npc' | 'evidence' | 'anchor';
+export type InteractionKind = 'npc' | 'evidence' | 'anchor' | 'decision';
 
 export interface WorldTarget {
   readonly id: string;
@@ -192,6 +212,30 @@ export const WORLD_TARGETS: readonly WorldTarget[] = [
     priority: 3,
   },
   {
+    id: 'ivo',
+    kind: 'npc',
+    label: 'Ivo',
+    prompt: "Hear Ivo's account",
+    tileX: 37,
+    tileY: 16,
+    x: 37 * TILE + 8,
+    y: 16 * TILE + 8,
+    radius: 28,
+    priority: 3,
+  },
+  {
+    id: 'ward_call',
+    kind: 'decision',
+    label: 'Ward call-box',
+    prompt: 'Make the ward call',
+    tileX: 42,
+    tileY: 16,
+    x: 42 * TILE + 8,
+    y: 16 * TILE + 8,
+    radius: 28,
+    priority: 3,
+  },
+  {
     id: 'relay_7_log',
     kind: 'evidence',
     label: 'Relay 7 terminal',
@@ -199,6 +243,18 @@ export const WORLD_TARGETS: readonly WorldTarget[] = [
     tileX: 20,
     tileY: 4,
     x: 20 * TILE + 8,
+    y: 4 * TILE + 8,
+    radius: 28,
+    priority: 2,
+  },
+  {
+    id: 'ward_dispatch',
+    kind: 'evidence',
+    label: 'Ward dispatch board',
+    prompt: 'Read the dispatch slip',
+    tileX: 34,
+    tileY: 4,
+    x: 34 * TILE + 8,
     y: 4 * TILE + 8,
     radius: 28,
     priority: 2,

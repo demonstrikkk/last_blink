@@ -56,6 +56,10 @@ export function Ledger({ open, onClose, state, hash, events, saveState, onSave, 
             <dt>Anchors</dt>
             <dd className="mono">{state.anchors.length}</dd>
           </div>
+          <div className="ledger-stat-ending">
+            <dt>Ending</dt>
+            <dd className="mono">{state.endingId ?? '—'}</dd>
+          </div>
         </dl>
 
         <div className="ledger-hash">
@@ -73,6 +77,9 @@ export function Ledger({ open, onClose, state, hash, events, saveState, onSave, 
                 <span className="mono fact-key">{key}</span>
                 <span className="mono fact-value">{JSON.stringify(fact.value)}</span>
                 <span className="fact-kind">{fact.kind}</span>
+                <span className="mono fact-source">
+                  {fact.source.kind}:{fact.source.ref} · {fact.sourceEventId}
+                </span>
               </li>
             ))}
           </ul>

@@ -415,7 +415,7 @@ export class DeterministicGameSession implements GameSession {
           value: definition.value,
           kind: 'observed',
           sourceRef: definition.sourceRef,
-          sourceKind: 'record',
+          sourceKind: definition.sourceKind,
           confidence: definition.confidence,
         });
         state = asserted.state;

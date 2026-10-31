@@ -1,14 +1,16 @@
 import { useEffect, useRef } from 'react';
-import type { DialogueLine } from '../content/stage4Dialogue.js';
-import type { WorldView } from '../world/worldView.js';
+import type { DialogueLine, DialogueScript } from '../content/stage5Dialogue.js';
+import type { ChoiceView, WorldView } from '../world/worldView.js';
 
-export type DialoguePhase = 'lines' | 'choice' | 'resolved';
+export type DialoguePhase = 'lines' | 'choice' | 'resolved' | 'blocked';
 
 interface DialogueSheetProps {
   readonly phase: DialoguePhase;
+  readonly script: DialogueScript;
   readonly line: DialogueLine | null;
   readonly lineIndex: number;
   readonly lineCount: number;
+  readonly node: ChoiceView | null;
   readonly view: WorldView;
   readonly choiceIndex: number;
   readonly onAdvance: () => void;
@@ -19,9 +21,11 @@ interface DialogueSheetProps {
 
 export function DialogueSheet({
   phase,
+  script,
   line,
   lineIndex,
   lineCount,
+  node,
   view,
   choiceIndex,
   onAdvance,
@@ -51,6 +55,7 @@ export function DialogueSheet({
               <h2 id="dialogue-speaker" className="dialogue-speaker">
                 {line.speaker}
               </h2>
+              <p className="dialogue-role mono">{script.role}</p>
             </div>
             <p className="mono dialogue-progress">
               {lineIndex + 1} / {lineCount}
@@ -71,22 +76,23 @@ export function DialogueSheet({
         </>
       ) : null}
 
-      {phase === 'choice' && view.choice ? (
+      {phase === 'choice' && node ? (
         <>
           <header className="dialogue-head">
             <div>
               <p className="micro">DECISION · CANONICAL</p>
               <h2 id="dialogue-speaker" className="dialogue-speaker">
-                Sable
+                {script.displayName}
               </h2>
+              <p className="dialogue-role mono">{script.role}</p>
             </div>
             <p className="mono dialogue-progress">choice</p>
           </header>
           <p id="dialogue-body" className="dialogue-text">
-            {view.choice.prompt}
+            {node.prompt}
           </p>
-          <div className="choice-list" role="radiogroup" aria-label="How to handle the relay log">
-            {view.choice.options.map((option, index) => (
+          <div className="choice-list" role="radiogroup" aria-label="Decision options">
+            {node.options.map((option, index) => (
               <button
                 key={option.optionId}
                 type="button"
@@ -111,21 +117,54 @@ export function DialogueSheet({
         </>
       ) : null}
 
+      {phase === 'blocked' ? (
+        <>
+          <header className="dialogue-head">
+            <div>
+              <p className="micro">EVIDENCE GATE</p>
+              <h2 id="dialogue-speaker" className="dialogue-speaker">
+                {script.displayName}
+              </h2>
+              <p className="dialogue-role mono">{script.role}</p>
+            </div>
+            <p className="mono dialogue-progress">blocked</p>
+          </header>
+          <p id="dialogue-body" className="dialogue-text">
+            {script.gate}
+          </p>
+          {node && node.missing.length > 0 ? (
+            <p className="dialogue-requirements mono">
+              Required before this decision: {node.missing.join(', ')}
+            </p>
+          ) : null}
+          <div className="dialogue-actions">
+            <button ref={primaryRef} type="button" className="btn btn-primary" onClick={onClose}>
+              Step away <kbd>Esc</kbd>
+            </button>
+          </div>
+        </>
+      ) : null}
+
       {phase === 'resolved' ? (
         <>
           <header className="dialogue-head">
             <div>
               <p className="micro">CONSEQUENCE · DERIVED BY RULES</p>
               <h2 id="dialogue-speaker" className="dialogue-speaker">
-                The street answers
+                {view.ending ? view.ending.title : 'The street answers'}
               </h2>
+              <p className="dialogue-role mono">{script.displayName}</p>
             </div>
             <p className="mono dialogue-progress">recorded</p>
           </header>
           <p id="dialogue-body" className="dialogue-text">
-            {view.consequence}
+            {view.ending ? view.ending.summary : view.consequence}
           </p>
           <dl className="consequence-grid">
+            <div>
+              <dt>Decision</dt>
+              <dd className="mono">{node?.resolvedOptionId ?? 'none'}</dd>
+            </div>
             <div>
               <dt>Ward alert</dt>
               <dd className="mono">{view.wardAlert ?? 'unresolved'}</dd>
@@ -135,8 +174,16 @@ export function DialogueSheet({
               <dd className="mono">{view.sableStance ?? 'unreadable'}</dd>
             </div>
             <div>
-              <dt>Decision</dt>
-              <dd className="mono">{view.choice?.resolvedOptionId ?? 'none'}</dd>
+              <dt>Ivo</dt>
+              <dd className="mono">{view.ivoStance ?? 'unresolved'}</dd>
+            </div>
+            <div>
+              <dt>Dispatch chain</dt>
+              <dd className="mono">{view.dispatchContinuity ?? 'unknown'}</dd>
+            </div>
+            <div>
+              <dt>Scrutiny</dt>
+              <dd className="mono">{view.morrowScrutiny ?? 'unknown'}</dd>
             </div>
           </dl>
           <div className="dialogue-actions">

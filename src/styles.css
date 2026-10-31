@@ -184,6 +184,15 @@ kbd {
   color: var(--text-muted);
 }
 
+.phase-chip {
+  padding: 4px 8px;
+  border: 1px solid rgb(56 225 232 / 30%);
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+}
+
 .play-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 312px;
@@ -504,6 +513,171 @@ kbd {
   border-top: 1px solid var(--ink-600);
 }
 
+/* ---------- stage 5 narrative surfaces ---------- */
+
+.objective-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.objective-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 6px 8px;
+  border: 1px dashed var(--ink-500);
+  border-radius: 6px;
+  background: var(--ink-900);
+}
+
+.objective-item.objective-done {
+  border-style: solid;
+  border-color: rgb(111 242 168 / 35%);
+}
+
+.objective-glyph {
+  color: var(--steel-200);
+  line-height: 1.2;
+}
+
+.objective-done .objective-glyph {
+  color: var(--green);
+}
+
+.objective-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.objective-detail {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.provenance-line {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.decision-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-600);
+  border-left: 2px solid var(--ink-500);
+  border-radius: 6px;
+  background: var(--ink-900);
+}
+
+.decision-prompt {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.decision-status {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.decision-status.status-resolved {
+  color: var(--green);
+}
+
+.causal-grid {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-600);
+  border-radius: 6px;
+  background: var(--ink-900);
+}
+
+.causal-grid div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.causal-grid dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.causal-grid dd {
+  font-size: 11px;
+  color: var(--cyan);
+  text-align: right;
+}
+
+.ending-panel {
+  padding: 12px;
+  border: 1px solid rgb(56 225 232 / 45%);
+  border-radius: 8px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(56 225 232 / 12%), transparent 70%),
+    var(--ink-900);
+}
+
+.ending-title {
+  font-family: var(--sans);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.ending-summary {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.dialogue-role {
+  margin-top: 2px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.dialogue-requirements {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px dashed rgb(255 180 84 / 45%);
+  border-radius: 6px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--amber, #ffb454);
+  overflow-wrap: anywhere;
+}
+
+.fact-source {
+  grid-column: 1 / -1;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
 /* ---------- buttons ---------- */
 
 .btn {
@@ -812,7 +986,13 @@ kbd {
 .ledger-stats dd {
   margin-top: 2px;
   font-size: 14px;
+  line-height: 1.3;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ledger-stats .ledger-stat-ending {
+  grid-column: 1 / -1;
 }
 
 .ledger-hash {

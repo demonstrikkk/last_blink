@@ -151,6 +151,13 @@ export function validateAction(
           factKey: definition.factKey,
         });
       }
+      const missing = definition.requires.filter((key) => state.facts[key] === undefined);
+      if (missing.length > 0) {
+        return fail('invalid_action', 'evidence prerequisites are not met', {
+          evidenceId: definition.evidenceId,
+          missing,
+        });
+      }
       return {
         ok: true,
         action: {
@@ -184,6 +191,13 @@ export function validateAction(
       if (state.choices.some((choice) => choice.nodeId === node.nodeId)) {
         return fail('duplicate', 'this node has already been decided', {
           nodeId: node.nodeId,
+        });
+      }
+      const missing = node.requires.filter((key) => state.facts[key] === undefined);
+      if (missing.length > 0) {
+        return fail('invalid_action', 'choice prerequisites are not met', {
+          nodeId: node.nodeId,
+          missing,
         });
       }
       return {

@@ -30,6 +30,7 @@ export type SfxName =
   | 'evidence-found'
   | 'choice-lock'
   | 'anchor-set'
+  | 'ending-sting'
   | 'ui-click'
   | 'ui-open'
   | 'ui-confirm';
@@ -59,6 +60,7 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
     private playerSprite!: PhaserTypes.GameObjects.Sprite;
     private playerShadow!: PhaserTypes.GameObjects.Ellipse;
     private sableSprite!: PhaserTypes.GameObjects.Sprite;
+    private ivoSprite!: PhaserTypes.GameObjects.Sprite;
     private markers!: PhaserTypes.GameObjects.Graphics;
     private lastPromptId: string | null = null;
     private reducedMotion = false;
@@ -88,11 +90,14 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
       this.load.image('rin-2', 'assets/characters/cap/2.png');
       this.load.image('sable-1', 'assets/characters/oldwoman/1.png');
       this.load.image('sable-2', 'assets/characters/oldwoman/2.png');
+      this.load.image('ivo-1', 'assets/characters/sage/1.png');
+      this.load.image('ivo-2', 'assets/characters/sage/2.png');
 
       for (const sfx of [
         'evidence-found',
         'choice-lock',
         'anchor-set',
+        'ending-sting',
         'ui-click',
         'ui-open',
         'ui-confirm',
@@ -136,9 +141,16 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
         .setDepth(16 * TILE + 16);
       this.add.ellipse(30 * TILE + 8, 16 * TILE + 15, 10, 4, 0x000000, 0.45).setDepth(16 * TILE + 15);
 
+      this.ivoSprite = this.add
+        .sprite(37 * TILE + 8, 16 * TILE + 16, 'ivo-1')
+        .setOrigin(0.5, 1)
+        .setDepth(16 * TILE + 16);
+      this.add.ellipse(37 * TILE + 8, 16 * TILE + 15, 10, 4, 0x000000, 0.45).setDepth(16 * TILE + 15);
+
       this.createAnimations();
       this.playerSprite.play('rin-idle');
       this.sableSprite.play('sable-idle');
+      this.ivoSprite.play('ivo-idle');
 
       const keyboard = this.input.keyboard;
       if (keyboard) {
@@ -383,8 +395,10 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
         [24, 16, 0xffb24d, 84],
         [40, 16, 0xffb24d, 84],
         [20, 4, 0x38e1e8, 56],
+        [34, 4, 0x38e1e8, 48],
         [12, 16, 0x38e1e8, 64],
         [30, 16, 0x38e1e8, 44],
+        [42, 16, 0x38e1e8, 48],
       ] as const) {
         this.add
           .image(x * TILE + 8, y * TILE + 8, 'lamp-glow')
@@ -477,6 +491,14 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
         this.anims.create({
           key: 'sable-idle',
           frames: [{ key: 'sable-1' }, { key: 'sable-2' }],
+          frameRate: 2,
+          repeat: -1,
+        });
+      }
+      if (!this.anims.exists('ivo-idle')) {
+        this.anims.create({
+          key: 'ivo-idle',
+          frames: [{ key: 'ivo-1' }, { key: 'ivo-2' }],
           frameRate: 2,
           repeat: -1,
         });

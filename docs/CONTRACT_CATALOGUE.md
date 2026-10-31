@@ -1,8 +1,8 @@
 # Contract Catalogue — v1.0.0
 
-Fifteen contracts are frozen for Stage 3 and remain unchanged in Stage 4. Every
-contract has one TypeScript type, one Zod schema, one owner, one version and two
-fixtures (valid and invalid).
+Fifteen contracts are frozen for Stage 3 and remain unchanged in Stages 4 and 5.
+Every contract has one TypeScript type, one Zod schema, one owner, one version
+and two fixtures (valid and invalid).
 `src/engine/contracts/registry.ts` is the executable source of truth; this
 document explains it for humans.
 
@@ -302,6 +302,10 @@ The schema constrains shape; the future cognition runtime must filter facts by
 Rejection codes: `invalid_action`, `unknown_action`, `policy_denied`,
 `stale_state`, `unknown_target`, `duplicate`, `engine_error`.
 
+`details` is a JSON object whose content is code-specific. Stage 5 uses
+`invalid_action` with `details.missing: [factKey, …]` for unmet evidence or
+decision prerequisites; no new code was added (ADR 0009).
+
 **Fixture pair.** Valid: accepted tick advance. Invalid: rejected status without a
 rejection object.
 
@@ -387,7 +391,7 @@ or before creation.
 **Fixture pair.** Valid: deterministic scripted policy. Invalid: scripted policy
 declared non-deterministic.
 
-## Stage 3/4 action vocabulary
+## Stage 3–5 action vocabulary
 
 Actions are not a frozen contract yet; they are the engine's accepted inputs for
 this stage. `gameActionSchema` requires `actionType`, `actorId` and `params`.
@@ -409,8 +413,22 @@ original five actions), so NPC contracts do not accept player-only actions.
 
 `gameContentSchema` gained optional `evidence` and `choices` arrays. Each entry
 declares the fact keys, values, labels and consequence keys a trusted content
-bundle may write. Action parameters can only reference those IDs. `story.*` and
-`npc.*` actions remain future work.
+bundle may write. Action parameters can only reference those IDs.
+
+Stage 5 extended the same content schema additively (ADR 0009), again without a
+version bump:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `evidence[].sourceKind` | `record` | `record` / `testimony` / `asset`; copied to `Fact.source.kind` |
+| `evidence[].requires` | `[]` | fact keys required before collection |
+| `choices[].requires` | `[]` | fact keys required before a decision |
+| `objectives[]` | `[]` | `objectiveId`, `label`, `detail`, `requires[]`; derived completion, not stored |
+| `endings[]` | `[]` | `endingId`, `title`, `summary`; presentation metadata for rule-owned endings |
+
+All new fields have Zod defaults, so a Stage 4 content bundle still parses. The
+engine enforces `requires`; `objectives` and `endings` are read only by the
+projection. `story.*` and `npc.*` actions remain future work.
 
 ## Versioning rules
 

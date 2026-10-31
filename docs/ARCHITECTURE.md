@@ -1,9 +1,10 @@
 # Architecture — The Last Blink: Second Settlement
 
-Status: Stage 4 vertical slice, version 0.2.0. This document describes what exists
-and what later stages are allowed to add. It is deliberately narrower than the
-game design blueprint: Stage 4 adds one playable street on top of the Stage 3
-authority and contracts.
+Status: Stage 5 narrative and causal slice, version 0.3.0. This document
+describes what exists and what later stages are allowed to add. It is
+deliberately narrower than the game design blueprint: Stage 5 adds a causal
+investigation to the one playable street that Stage 4 delivered, on top of the
+unchanged Stage 3 authority and contracts.
 
 ## 1. Principles
 
@@ -67,20 +68,22 @@ Future, behind the same boundary:
 | `src/engine/contracts` | schemas, versions, fixtures, registry | import UI, Phaser, network, database drivers |
 | `src/engine/core` | canonical JSON, hash, IDs, reducer, rules, action validation | read wall clock, `Math.random`, DOM, `fetch` |
 | `src/engine/session` | `GameSession`, ports, deterministic mocks | contain game rules or rendering |
-| `src/engine/content` | seed content for the scaffold and Stage 4 story content | be treated as final story content |
+| `src/engine/content` | seed content for the scaffold and the Stage 5 story content | be treated as final story content |
 | `src/world` | map grid, movement, interaction range, canonical-to-view projection | import Phaser, React or DOM APIs |
 | `src/game` | Phaser scene, rendering, input presentation | store canonical state or write facts directly |
 | `src/ui` | dialogue sheet, field notes, ledger, touch controls | keep a competing copy of canonical facts |
 | `src/session/runtime.ts` | browser composition root | leak into engine imports |
-| `src/App.tsx` | presentation, input, aria live text | mutate snapshots or calculate game outcomes |
+| `src/App.tsx` | presentation, input, dialogue state machine, aria live text | mutate snapshots or calculate game outcomes |
 | future backend | LLM calls, Meko, YSQL credentials, audit export | become a second source of game truth |
 
 ## 4. Request lifecycle
 
 1. UI, test or future agent submits an untrusted object to
    `GameSession.dispatch(raw)`. `gameActionSchema` parses it.
-2. `validateAction` checks shape, references and Stage 3/4 scope. Failures
-   return `invalid_action`, `unknown_target` or `duplicate`.
+2. `validateAction` checks shape, references and content prerequisites. Failures
+   return `invalid_action`, `unknown_target` or `duplicate`. Missing evidence or
+   decision prerequisites are reported as `invalid_action` with
+   `details.missing: [factKey, …]` (ADR 0009).
 3. `GamePolicyPort.evaluate` may deny. Denials return `policy_denied`.
 4. Accepted actions produce events through one path:
    `GameSession` builds a typed event, `gameEventSchema` validates it,
@@ -153,6 +156,12 @@ updated in fixed 1/60 s steps (frame-rate independent) and are not saved, hashed
 or replayed. Only `evidence.collect`, `choice.make` and `anchor.record` reach the
 engine.
 
+Dialogue scripts are presentation data too. A script may open even when its
+choice node is gated: the player hears the conversation, and the sheet then shows
+the gate text and the fact keys the engine still requires. Opening Ivo's script
+also dispatches `evidence.collect` for his testimony, if the engine allows it —
+the UI never writes the fact itself.
+
 Appendix: `?debug=1` exposes the Phaser game instance as `window.__lastBlinkGame`
 for automated verification only. It is not a gameplay or persistence API.
 
@@ -163,7 +172,7 @@ src/
   App.tsx                    React shell, dialogue state machine, input
   main.tsx                   entry point
   styles.css                 design tokens and layout
-  content/                   Stage 4 facts, rules, evidence, choices, dialogue
+  content/                   Stage 5 facts, rules, evidence, choices, dialogue
   game/PhaserHost.tsx        Phaser host and world handle boundary
   game/DistrictScene.ts      Aster street scene, camera, markers, audio
   ui/                        dialogue sheet, field notes, ledger, touch controls
@@ -172,28 +181,39 @@ src/
   engine/
     contracts/               15 schemas, primitives, registry, fixtures
     core/                    canonical JSON, hash, IDs, reducer, rules, validation
-    content/stage3Content.ts scaffold facts and rules
+    content/stage3Content.ts scaffold facts, rules and the content schema
     session/                 GameSession, ports, deterministic mocks
     index.ts                 public engine surface
-tests/                       67 Vitest checks across 10 files
+tests/                       98 Vitest checks across 12 files
 tools/assets/               preserved asset pipeline
 docs/                       gate evidence, architecture, contracts, ADRs
 ```
 
-## 9a. Stage 4 vertical slice
+## 9a. Stage 5 investigation
 
-The playable slice is one street in Aster with three interaction targets:
+The playable slice is still one street, now carrying a three-act investigation
+with three evidence items, three decisions and three reachable endings. Full
+semantics: `docs/CAUSAL_MODEL.md`.
 
 | Target | Kind | Action | Canonical effect |
 |---|---|---|---|
-| Relay 7 terminal | evidence | `evidence.collect` | `fact.asserted` for `evidence.relay_7`; a rule derives `story.relay_ready` |
-| Sable | npc | dialogue, then `choice.make` | `choice.made` plus declared `fact.asserted` effects; one rule pass derives `world.ward_alert` and `npc.sable.stance` |
+| Relay 7 terminal | evidence | `evidence.collect` | `evidence.relay_7`; derives `story.relay_ready`, phase `investigation` |
+| Sable | npc | dialogue, then `choice.make` | `choice.made`; rules derive `world.ward_alert`, `npc.sable.stance`, `npc.sable.trust`; phase `decision` |
+| Ward dispatch board | evidence | `evidence.collect` | `evidence.ward_dispatch`; delayed rules resolve `world.dispatch_continuity` from the earlier relay decision |
+| Ivo | npc | dialogue (grants testimony), then `choice.make` | `evidence.vendor_testimony`; rules derive `npc.ivo.stance`, `world.vendor_confidence`, `world.morrow_scrutiny`; phase `accounting` |
+| Ward call-box | decision | `choice.make` | `story.ward_call`; ending rules derive `story.ending_id` and emit `ending.reached`; phase `resolved` |
 | cyan lamp post | anchor | `anchor.record` | anchor checkpoint with the pre-event state hash |
 
 `deriveWorldView(state, content)` is the single fact-to-UI projection used by
-React and Phaser. There is no parallel story store. Evidence and choice
-definitions live in trusted `GameContent`; action payloads only name a trusted
-ID, so an action cannot invent a fact key or value.
+React and Phaser. It now carries evidence provenance and availability, objective
+completion, per-decision availability and missing prerequisites, the causal
+facts, and the resolved ending. There is no parallel story store.
+
+Evidence and choice definitions live in trusted `GameContent`; action payloads
+only name a trusted ID, so an action cannot invent a fact key or value. Evidence
+and decision prerequisites are declared in the same content and enforced by the
+engine (ADR 0009), so a UI that hides a locked decision and an action submitted
+by hand agree.
 
 Both interactive actions are additively guarded against duplicates: a second
 `evidence.collect` for the same item and a second `choice.make` for the same node
@@ -205,6 +225,7 @@ vocabulary was extended without changing the frozen event payloads.
 | Failure | Behaviour |
 |---|---|
 | Malformed or out-of-scope action | rejected, audited, state facts unchanged |
+| Missing evidence or decision prerequisite | rejected with `invalid_action` and `details.missing`; audited; facts unchanged |
 | Policy denial | rejected, audited, `policy_denied` |
 | Unknown anchor or duplicate fork | rejected before events |
 | Reducer invariant violation | throws `EngineInvariantError`; this is a programming defect, not a player outcome |
@@ -212,13 +233,17 @@ vocabulary was extended without changing the frozen event payloads.
 | Model/agent failure (future) | scripted fallback proposal; engine still validates |
 | Listener exception | caught and logged; other subscribers still run |
 
-## 11. Deliberate limits at Stage 4
+## 11. Deliberate limits at Stage 5
 
 - BLINK branch switching, scar memory and cross-timeline comparison are deferred.
   `branch.fork` still records a child timeline without switching.
-- Rule evaluation is one ordered pass, not a fixpoint.
+- Rule evaluation is one ordered pass, not a fixpoint. Delayed consequences are
+  milestone-triggered by facts, never by wall-clock time.
 - `MemoryRecord`, `NpcObservation` and `NpcDecisionProposal` remain contracts and
-  fixtures; there is no NPC cognition runtime. Sable is a scripted conversation.
+  fixtures; there is no NPC cognition runtime. Sable, Ivo and the call-box are
+  scripted conversations.
+- Prerequisites are a flat conjunction of fact keys. Disjunctions or numeric
+  thresholds would need a content-schema change and a new ADR.
 - Persistence is in memory; reloading restarts the street. The UI states this
   plainly instead of implying a save.
 - Content is one street. ECHO retrieval, LLM dialogue, MORROW policy, YugabyteDB

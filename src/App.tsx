@@ -7,8 +7,13 @@ import {
 } from 'react';
 import { type ActionResult, type DeterministicGameSession } from './engine/index.js';
 import { createBrowserSession } from './session/runtime.js';
-import { STAGE4_CONTENT } from './content/stage4Content.js';
-import { ANCHOR_LABEL, DISTRICT_TITLE, SABLE_DIALOGUE } from './content/stage4Dialogue.js';
+import { STAGE5_CONTENT } from './content/stage5Content.js';
+import {
+  ANCHOR_LABEL,
+  DISTRICT_TITLE,
+  STAGE5_DIALOGUE,
+  type DialogueScript,
+} from './content/stage5Dialogue.js';
 import { PhaserHost, type WorldHandle } from './game/PhaserHost.js';
 import { WORLD_TARGETS, type WorldTarget } from './world/district.js';
 import { deriveWorldView } from './world/worldView.js';
@@ -20,9 +25,10 @@ import { TouchControls } from './ui/TouchControls.js';
 
 type DialogueState =
   | { phase: 'closed' }
-  | { phase: 'lines'; index: number }
-  | { phase: 'choice' }
-  | { phase: 'resolved' };
+  | { phase: 'lines'; scriptId: string; index: number }
+  | { phase: 'choice'; scriptId: string }
+  | { phase: 'blocked'; scriptId: string }
+  | { phase: 'resolved'; scriptId: string };
 
 const EMPTY_TOUCH: MoveInput = { up: false, down: false, left: false, right: false };
 
@@ -80,7 +86,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     () => session.getSnapshot(),
   );
   const { state, hash } = snapshot;
-  const view = deriveWorldView(state, STAGE4_CONTENT);
+  const view = deriveWorldView(state, STAGE5_CONTENT);
 
   const [dialogue, setDialogue] = useState<DialogueState>({ phase: 'closed' });
   const [choiceIndex, setChoiceIndex] = useState(0);
@@ -103,6 +109,11 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
 
   const promptTarget = WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
   const paused = dialogue.phase !== 'closed';
+  const activeScript: DialogueScript | null =
+    dialogue.phase === 'closed' ? null : STAGE5_DIALOGUE[dialogue.scriptId] ?? null;
+  const activeNode = activeScript
+    ? view.choices.find((node) => node.nodeId === activeScript.choiceNodeId) ?? null
+    : null;
 
   useEffect(() => {
     worldRef.current?.setMuted(muted);
@@ -126,28 +137,27 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     const code = result.rejection?.code ?? 'engine_error';
     if (code === 'duplicate') return 'Already recorded. The engine refused a second write.';
     if (code === 'unknown_target') return 'That is not something this street can act on.';
+    if (code === 'invalid_action') return 'The engine refused: a prerequisite is not met.';
     return `Engine rejected the action (${code}).`;
   };
 
-  const openDialogue = useCallback(() => {
-    setChoiceIndex(0);
-    setDialogue({ phase: 'lines', index: 0 });
-    worldRef.current?.playSfx('ui-open');
-  }, []);
-
-  const collectEvidence = useCallback(() => {
-    const result = session.dispatch({
-      actionType: 'evidence.collect',
-      actorId: 'player_local',
-      params: { evidenceId: 'relay_7_log' },
-    });
-    if (result.status === 'accepted') {
-      worldRef.current?.playSfx('evidence-found');
-      showToast('Evidence logged: Relay 7 maintenance log. The relay kept counting.');
-    } else {
-      showToast(describeRejection(result));
-    }
-  }, [session, showToast]);
+  const collectEvidence = useCallback(
+    (evidenceId: string) => {
+      const label = viewRef.current.evidence.find((item) => item.evidenceId === evidenceId)?.label;
+      const result = session.dispatch({
+        actionType: 'evidence.collect',
+        actorId: 'player_local',
+        params: { evidenceId },
+      });
+      if (result.status === 'accepted') {
+        worldRef.current?.playSfx('evidence-found');
+        showToast(`Evidence logged: ${label ?? evidenceId}.`);
+      } else {
+        showToast(describeRejection(result));
+      }
+    },
+    [session, showToast],
+  );
 
   const recordAnchor = useCallback(() => {
     const result = session.recordAnchor(ANCHOR_LABEL);
@@ -159,18 +169,49 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     }
   }, [session, showToast]);
 
+  const openDialogue = useCallback(
+    (scriptId: string) => {
+      const script = STAGE5_DIALOGUE[scriptId];
+      if (!script) return;
+
+      if (script.grantsEvidenceId) {
+        const evidence = viewRef.current.evidence.find(
+          (item) => item.evidenceId === script.grantsEvidenceId,
+        );
+        if (evidence?.available) {
+          const result = session.dispatch({
+            actionType: 'evidence.collect',
+            actorId: 'player_local',
+            params: { evidenceId: script.grantsEvidenceId },
+          });
+          if (result.status === 'accepted') {
+            worldRef.current?.playSfx('evidence-found');
+            showToast(`Testimony recorded: ${evidence.label}.`);
+          } else {
+            showToast(describeRejection(result));
+          }
+        }
+      }
+
+      setChoiceIndex(0);
+      setDialogue({ phase: 'lines', scriptId, index: 0 });
+      worldRef.current?.playSfx('ui-open');
+    },
+    [session, showToast],
+  );
+
   const handleTarget = useCallback(
     (targetId: string) => {
       if (pausedRef.current) return;
       const target: WorldTarget | undefined = WORLD_TARGETS.find((item) => item.id === targetId);
       if (!target) return;
 
-      if (target.kind === 'npc') {
-        openDialogue();
-      } else if (target.kind === 'evidence') {
-        collectEvidence();
-      } else {
+      if (target.kind === 'evidence') {
+        collectEvidence(target.id);
+      } else if (target.kind === 'anchor') {
         recordAnchor();
+      } else {
+        openDialogue(target.id);
       }
     },
     [collectEvidence, openDialogue, recordAnchor],
@@ -178,31 +219,52 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
 
   const advanceDialogue = useCallback(() => {
     if (dialogue.phase !== 'lines') return;
-    if (dialogue.index + 1 < SABLE_DIALOGUE.lines.length) {
-      setDialogue({ phase: 'lines', index: dialogue.index + 1 });
+    const script = STAGE5_DIALOGUE[dialogue.scriptId];
+    if (!script) return;
+    if (dialogue.index + 1 < script.lines.length) {
+      setDialogue({ phase: 'lines', scriptId: dialogue.scriptId, index: dialogue.index + 1 });
       return;
     }
+    const node = viewRef.current.choices.find(
+      (candidate) => candidate.nodeId === script.choiceNodeId,
+    );
     setChoiceIndex(0);
-    setDialogue(viewRef.current.choiceResolved ? { phase: 'resolved' } : { phase: 'choice' });
+    if (!node) {
+      setDialogue({ phase: 'blocked', scriptId: dialogue.scriptId });
+    } else if (node.resolvedOptionId !== null) {
+      setDialogue({ phase: 'resolved', scriptId: dialogue.scriptId });
+    } else if (node.available) {
+      setDialogue({ phase: 'choice', scriptId: dialogue.scriptId });
+    } else {
+      setDialogue({ phase: 'blocked', scriptId: dialogue.scriptId });
+    }
   }, [dialogue]);
 
   const choose = useCallback(
     (optionId: string) => {
       if (dialogue.phase !== 'choice') return;
+      const script = STAGE5_DIALOGUE[dialogue.scriptId];
+      if (!script) return;
       const result = session.dispatch({
         actionType: 'choice.make',
         actorId: 'player_local',
-        params: { nodeId: SABLE_DIALOGUE.choiceNodeId, optionId },
+        params: { nodeId: script.choiceNodeId, optionId },
       });
       if (result.status === 'accepted') {
-        setDialogue({ phase: 'resolved' });
-        worldRef.current?.playSfx('choice-lock');
-        showToast('Decision committed to canonical state. The ward alert has changed.');
+        setDialogue({ phase: 'resolved', scriptId: dialogue.scriptId });
+        const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+        if (fresh.ending) {
+          worldRef.current?.playSfx('ending-sting');
+          showToast(`Ending reached: ${fresh.ending.title}.`);
+        } else {
+          worldRef.current?.playSfx('choice-lock');
+          showToast('Decision committed to canonical state. The street has answered.');
+        }
       } else {
         showToast(describeRejection(result));
       }
     },
-    [dialogue.phase, session, showToast],
+    [dialogue, session, showToast],
   );
 
   const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
@@ -230,7 +292,10 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
       }
 
       if (dialogue.phase === 'choice') {
-        const options = viewRef.current.choice?.options ?? [];
+        const scriptId = dialogue.scriptId;
+        const options = viewRef.current.choices.find(
+          (candidate) => candidate.nodeId === STAGE5_DIALOGUE[scriptId]?.choiceNodeId,
+        )?.options ?? [];
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
           event.preventDefault();
           const delta = event.key === 'ArrowDown' ? 1 : -1;
@@ -254,7 +319,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         return;
       }
 
-      if (dialogue.phase === 'resolved') {
+      if (dialogue.phase === 'resolved' || dialogue.phase === 'blocked') {
         const interact = event.key.toLowerCase() === 'e';
         if (interact || (!onControl && (event.key === 'Enter' || event.key === ' '))) {
           event.preventDefault();
@@ -265,7 +330,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [advanceDialogue, choiceIndex, choose, dialogue.phase]);
+  }, [advanceDialogue, choiceIndex, choose, dialogue.phase, dialogue]);
 
   const setTouch = useCallback((direction: keyof MoveInput, pressed: boolean) => {
     touchRef.current = { ...touchRef.current, [direction]: pressed };
@@ -295,13 +360,11 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
     }
   };
 
-  const objective = view.choiceResolved
-    ? view.anchors.length > 0
-      ? 'The street remembers your decision. Keep walking, or open the ledger to inspect canonical state.'
-      : 'Set an anchor at the cyan lamp post on the south walk to checkpoint the decision.'
-    : view.relayReady
-      ? 'Talk to Sable beside the relay terminal on the south walk.'
-      : 'Read the Relay 7 terminal on the north kerb, then talk to Sable.';
+  const objective = view.ending
+    ? `The account is closed: ${view.ending.title}.`
+    : view.currentObjective
+      ? `${view.currentObjective.label} — ${view.currentObjective.detail}`
+      : 'The record is complete. Set an anchor or open the ledger to inspect canonical state.';
 
   return (
     <div className="game-shell">
@@ -316,6 +379,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
             V1
           </span>
           <span className="mono curfew">CURFEW {view.curfew?.toUpperCase() ?? '—'}</span>
+          <span className="mono phase-chip">PHASE {view.phase?.toUpperCase() ?? '—'}</span>
           <button
             type="button"
             className="icon-btn sound-btn"
@@ -388,12 +452,14 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
         <FieldNotes view={view} objective={objective} />
       </main>
 
-      {dialogue.phase !== 'closed' ? (
+      {dialogue.phase !== 'closed' && activeScript ? (
         <DialogueSheet
           phase={dialogue.phase as DialoguePhase}
-          line={dialogue.phase === 'lines' ? (SABLE_DIALOGUE.lines[dialogue.index] ?? null) : null}
+          script={activeScript}
+          line={dialogue.phase === 'lines' ? (activeScript.lines[dialogue.index] ?? null) : null}
           lineIndex={dialogue.phase === 'lines' ? dialogue.index : 0}
-          lineCount={SABLE_DIALOGUE.lines.length}
+          lineCount={activeScript.lines.length}
+          node={activeNode}
           view={view}
           choiceIndex={choiceIndex}
           onAdvance={advanceDialogue}
@@ -419,7 +485,7 @@ function GameScreen({ session }: { session: DeterministicGameSession }) {
           Arrow keys / WASD move · E or Space interact · 1 / 2 choose · Esc close
         </p>
         <p className="mono memory-note">
-          In-memory session — refreshing restarts the street. No persistent save in Stage 4.
+          In-memory session — refreshing restarts the street. No persistent save in Stage 5.
         </p>
       </footer>
     </div>

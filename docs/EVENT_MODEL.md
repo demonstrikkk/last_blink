@@ -90,9 +90,10 @@ code, not a player outcome, and is never silently repaired.
 | `ending.reached` | endingId, summary, factKeys | rule `set_ending` effect |
 | `action.rejected` | actionType, code, message, proposalId | dispatch rejection audit |
 
-`choice.made`, `npc.proposal.evaluated` and `ending.reached` are frozen now but
-`ending.reached` and `npc.proposal.evaluated` are not produced by Stage 4
-gameplay; their valid fixtures and schemas are tested.
+`choice.made` and `ending.reached` were frozen in Stage 3. Stage 4 exercised
+`choice.made`; Stage 5 now exercises `ending.reached` through content rules.
+`npc.proposal.evaluated` is still not produced by gameplay; its schema and valid
+fixture are tested.
 
 ## 3a. Stage 4 action vocabulary
 
@@ -111,6 +112,34 @@ single `action.rejected` audit event and leaves world facts unchanged.
 
 `fact.assert` remains a debug-only escape hatch used by tests and the bootstrap,
 not by the playable UI.
+
+## 3b. Stage 5 content prerequisites and endings
+
+Stage 5 added no event, action or contract. Everything it needed fitted into
+existing content and existing rejection codes (ADR 0009).
+
+| Content field | Meaning | Enforced by |
+|---|---|---|
+| `evidence.requires[]` | fact keys that must exist before collection | `validateAction` |
+| `evidence.sourceKind` | `record` / `testimony` / `asset`; becomes `fact.source.kind` | evidence action |
+| `choices[].requires[]` | fact keys that must exist before a decision | `validateAction` |
+| `objectives[]`, `endings[]` | presentation metadata for derived progress and rule endings | projection only |
+
+A missing prerequisite rejects with the frozen `invalid_action` code and
+`details.missing` listing the absent keys. The duplicate guard is checked first,
+so a re-committed decision reports `duplicate`.
+
+Endings are emitted by rule `set_ending` effects, guarded by
+`not exists story.ending_id`:
+
+1. the rule pass emits `rule.evaluated`;
+2. it asserts the derived `story.ending_id` fact;
+3. it emits `ending.reached` with the ending ID, summary and contributing fact
+   keys.
+
+The reducer keeps the first ending on a branch and throws on a conflicting one.
+Stage 5 content declares three endings; all are reachable and covered by tests.
+Semantics and the full variable catalogue live in `docs/CAUSAL_MODEL.md`.
 
 ## 4. Actions, acceptance and rejection
 
@@ -146,8 +175,17 @@ in the same pass. A matched rule emits:
    keys within one rule);
 3. `ending.reached` if the rule sets an ending and the branch has none.
 
-Derived facts do not trigger another pass in Stage 3. There is no fixpoint
-iteration, no wall-clock trigger and no random trigger.
+Derived facts do not trigger another pass. There is no fixpoint iteration, no
+wall-clock trigger and no random trigger. A consequence that must appear later
+(for example, dispatch continuity resolving only after the dispatch slip is
+found) is expressed as a rule whose condition includes the later fact, so it
+fires on the pass that follows that discovery.
+
+Stage 5 adds about twenty-five rules. They stay inside the same one-pass
+semantics by using explicit guards: a rule that writes a mutable variable tests
+`not exists` on the fact it writes, or tests `neq`/`in` against the value it would
+write. Phase rules list only earlier phases in their `in` guard, so the highest
+reachable phase wins and cannot regress.
 
 ## 6. State reduction and hashes
 

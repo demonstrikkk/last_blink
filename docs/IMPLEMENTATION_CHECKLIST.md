@@ -84,7 +84,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` complete and veri
 - [x] Desktop and narrow screenshots captured (`docs/stage4_*.png`)
 - [x] Asset pipeline re-run: 46 assets, 0 changed, validator clean, 44/44 links
 - [x] `docs/STAGE_4_REPORT.md` with commands, acceptance matrix and limits
-- [ ] Stage 4 gate sign-off
+- [x] Stage 4 gate sign-off (`efe1c70`, report follow-up `96e627a`)
 
 Deferred beyond Stage 4:
 
@@ -93,14 +93,35 @@ Deferred beyond Stage 4:
 - [ ] Heuristic MORROW, fairness guard, multiple NPCs
 - [ ] Branch isolation, replay and end-to-end suites beyond the current unit/runtime checks
 
-## Stage 5 — Jaya NPC pipeline (third gate)
+## Stage 5 — Narrative and causal systems
 
-- [ ] Shared cognition runtime and context builder
-- [ ] `LocalMemoryStore`
-- [ ] Scripted policy and proposal validator
-- [ ] Memory isolation tests
-- [ ] Fallback tests
-- [ ] Three scripted scenarios
+- [x] `docs/STAGE_5_PLAN.md`: three acts, evidence chain, decisions, endings, acceptance tests
+- [x] Additive content schema: `requires`, `sourceKind`, `objectives`, `endings`; no contract bump (ADR 0009)
+- [x] Engine-enforced prerequisites for evidence and decisions (`invalid_action` + `details.missing`)
+- [x] Evidence provenance: record/testimony kind, source ref and confidence on every evidence fact
+- [x] Three evidence items with a gated chain (relay log → dispatch slip → Ivo's testimony)
+- [x] Three consequential decisions: Sable share/conceal, Ivo protect/name, ward call file/bury
+- [x] Deterministic delayed effect: dispatch continuity resolves only after the slip exists
+- [x] Relationship and stance facts: Sable stance/trust, Ivo stance, vendor confidence, MORROW scrutiny
+- [x] Monotonic story phase: arrival → investigation → decision → accounting → resolved
+- [x] Six objectives derived from canonical facts; current objective surfaced in field notes
+- [x] Three reachable endings with rule-owned `ending.reached`; second ending rejected by the engine
+- [x] Sable's decision intentionally gated on `evidence.relay_7`, settling the Stage 4 soft-gate limitation
+- [x] Extended street: dispatch board, Ivo, ward call-box; Ivo sprite, glows, ending sting
+- [x] UI: objectives, provenance, causal state, decisions, gate panel, ending panel, multi-script dialogue
+- [x] `docs/CAUSAL_MODEL.md`: variable catalogue, transitions, provenance, ending truth table
+- [x] 98 Vitest checks across 12 files; Stage 3 and Stage 4 suites unchanged and green
+- [x] Runtime play-through verified at desktop and 390 × 844 in headless Chrome, 0 console errors
+- [x] Desktop and narrow screenshots captured (`docs/stage5_*.png`)
+- [x] Asset pipeline re-run: 46 assets, 0 changed, validator clean, 44/44 links
+- [x] `docs/STAGE_5_REPORT.md` with commands, acceptance matrix and limits
+- [ ] Stage 5 gate sign-off
+
+Deferred beyond Stage 5:
+
+- [ ] NPC cognition runtime, memory store and scripted/LLM policy pipeline (Jaya pipeline)
+- [ ] ECHO retrieval, MORROW adaptive policy, BLINK switching
+- [ ] Persistent save/reload and multi-branch timelines
 
 ## Later
 

@@ -9,11 +9,11 @@ import {
   type PlayerProfile,
   type SessionId,
 } from '../engine/index.js';
-import { STAGE4_CONTENT } from '../content/stage4Content.js';
+import { STAGE5_CONTENT } from '../content/stage5Content.js';
 
 /**
  * Browser composition root. Only this file chooses concrete ports; the engine
- * never imports it. Persistence is in-memory for Stage 4: refreshing restarts
+ * never imports it. Persistence is in-memory for Stage 5: refreshing restarts
  * the street, and the UI says so.
  */
 export async function createBrowserSession(): Promise<DeterministicGameSession> {
@@ -36,7 +36,7 @@ export async function createBrowserSession(): Promise<DeterministicGameSession> 
       clock,
       policy: allowAllPolicy,
       persistence: new InMemoryPersistence(),
-      content: new StaticContentPort(STAGE4_CONTENT),
+      content: new StaticContentPort(STAGE5_CONTENT),
       logger: createConsoleLogger(),
     },
   );
