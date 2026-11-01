@@ -148,6 +148,8 @@ export function PuzzleBody({
   const [signalAnswer, setSignalAnswer] = useState('');
   const [timelinePlacement, setTimelinePlacement] = useState<Record<string, string>>({});
   const [timelinePicked, setTimelinePicked] = useState<string | null>(null);
+  const [draggedTimelineCard, setDraggedTimelineCard] = useState<string | null>(null);
+  const [contradictionEvidence, setContradictionEvidence] = useState<string | null>(null);
 
   const meta = PUZZLE_META[kind];
   const locked = lockedReasons(kind, view);
@@ -165,6 +167,20 @@ export function PuzzleBody({
   const disarmed = view.attackPlan.disarmed;
   const disarmedDeclined = bombChoice?.optionId === 'hold';
   const cutReady = picked.length === CUT_STEPS.length;
+
+  const placeTimelineCard = (cardId: string, slotId: string) => {
+    setTimelinePlacement((current) => {
+      const next = { ...current };
+      for (const [existingCardId, existingSlotId] of Object.entries(next)) {
+        if (existingSlotId === slotId) delete next[existingCardId];
+      }
+      next[cardId] = slotId;
+      return next;
+    });
+    setTimelinePicked(null);
+    setDraggedTimelineCard(null);
+    setFeedback(null);
+  };
 
   const chooseCut = (stepId: string) => {
     if (disarmed) return;
@@ -214,27 +230,31 @@ export function PuzzleBody({
           </p>
         ) : (
           <>
-            <div className="puzzle-choices" role="group" aria-label="Choose the ward channel">
-              {[
-                { id: '434.8MHz', label: '434.8 MHz' },
-                { id: '433.2MHz', label: '433.2 MHz' },
-              ].map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={signalAnswer === option.id}
-                  className={`btn btn-quiet${signalAnswer === option.id ? ' choice-active' : ''}`}
-                  onClick={() => setSignalAnswer(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div className="signal-console" role="group" aria-label="Frequency tuning console">
+              <div className="signal-readout" aria-live="polite">
+                <span className="micro mono">CARRIER</span>
+                <strong>{signalAnswer || '---.-'} MHz</strong>
+                <span className={signalAnswer === '434.8' ? 'signal-match' : undefined}>
+                  {signalAnswer === '434.8' ? 'GUESTBOOK MATCH' : 'AWAITING TUNE'}
+                </span>
+              </div>
+              <input
+                className="signal-dial"
+                aria-label="Tune carrier frequency"
+                type="range"
+                min="432"
+                max="436"
+                step="0.2"
+                value={signalAnswer || '434'}
+                onChange={(event) => setSignalAnswer(Number(event.currentTarget.value).toFixed(1))}
+              />
+              <div className="signal-scale mono"><span>432.0</span><span>434.0</span><span>434.8 MHz · guestbook mark</span><span>436.0</span></div>
             </div>
             <button
               type="button"
               className="btn"
               onClick={() => {
-                if (signalAnswer === '434.8MHz') {
+                if (signalAnswer === '434.8') {
                   setFeedback(
                     'Correct: the guestbook fragment matches the console. This establishes the channel, not who issued the order.',
                   );
@@ -292,24 +312,32 @@ export function PuzzleBody({
                         <span className="micro mono">Click to return it to the pool</span>
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        className="timeline-slot-target"
-                        disabled={timelinePicked === null}
+                      <div
+                        className={`timeline-slot-target${draggedTimelineCard ? ' slot-drag-ready' : ''}`}
+                        role="button"
+                        tabIndex={timelinePicked === null ? -1 : 0}
+                        aria-label={timelinePicked === null ? `${slot.label}: pick a record first` : `Place selected record at ${slot.label}`}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const cardId = event.dataTransfer.getData('text/plain') || draggedTimelineCard;
+                          if (cardId) placeTimelineCard(cardId, slot.id);
+                        }}
                         onClick={() => {
                           if (timelinePicked === null) return;
-                          setTimelinePlacement((current) => ({
-                            ...current,
-                            [timelinePicked]: slot.id,
-                          }));
-                          setTimelinePicked(null);
-                          setFeedback(null);
+                          placeTimelineCard(timelinePicked, slot.id);
+                        }}
+                        onKeyDown={(event) => {
+                          if ((event.key === 'Enter' || event.key === ' ') && timelinePicked !== null) {
+                            event.preventDefault();
+                            placeTimelineCard(timelinePicked, slot.id);
+                          }
                         }}
                       >
                         {timelinePicked === null
                           ? 'Pick a record below'
                           : `Place ${timelinePicked === 'ward_dispatch' ? 'the dispatch slip' : timelinePicked === 'relay_7_log' ? 'the relay log' : "Ivo's account"} here`}
-                      </button>
+                      </div>
                     )}
                   </li>
                 );
@@ -325,6 +353,13 @@ export function PuzzleBody({
                     className={`timeline-card${timelinePicked === card.id ? ' card-picked' : ''}`}
                     aria-pressed={timelinePicked === card.id}
                     onClick={() => setTimelinePicked(card.id)}
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData('text/plain', card.id);
+                      event.dataTransfer.effectAllowed = 'move';
+                      setDraggedTimelineCard(card.id);
+                    }}
+                    onDragEnd={() => setDraggedTimelineCard(null)}
                   >
                     <span className="card-title">{card.title}</span>
                     <span className="card-stamp mono">{card.stamp}</span>
@@ -372,13 +407,20 @@ export function PuzzleBody({
             FOLLOW-UP RECORDED // the contradiction is tested, not resolved.
           </p>
         ) : (
-          <div className="puzzle-choices" role="group" aria-label="Choose a follow-up question">
+          <div className="contradiction-console" role="group" aria-label="Cross-examine the dispatch claim">
+            <p className="puzzle-hint">Pin the two conflicting records, then ask the question that tests the gap between them.</p>
+            <div className="contradiction-records">
+              <button type="button" className={`contradiction-record${contradictionEvidence === 'ward_dispatch' ? ' record-pinned' : ''}`} aria-pressed={contradictionEvidence === 'ward_dispatch'} onClick={() => setContradictionEvidence('ward_dispatch')}><span className="micro mono">RECORD A</span><strong>Ward dispatch slip</strong><span>Claims an authorised sealed route at 03:14.</span></button>
+              <button type="button" className={`contradiction-record${contradictionEvidence === 'vendor_testimony' ? ' record-pinned' : ''}`} aria-pressed={contradictionEvidence === 'vendor_testimony'} onClick={() => setContradictionEvidence('vendor_testimony')}><span className="micro mono">RECORD B</span><strong>Ivo&apos;s account</strong><span>Places an unsealed runner after the clocks return.</span></button>
+            </div>
+            <div className="puzzle-choices">
             <button
               type="button"
               className="btn btn-quiet"
+              disabled={contradictionEvidence === null}
               onClick={() => {
                 setFeedback(
-                  'Useful follow-up: ask who sealed the route and when. The testimony undermines the authorized-route claim, but does not establish who altered the slip.',
+                  `Useful follow-up from ${contradictionEvidence === 'ward_dispatch' ? 'the dispatch claim' : 'Ivo’s account'}: ask who sealed the route and when. The testimony undermines the authorized-route claim, but does not establish who altered the slip.`,
                 );
                 onCompleteChallenge({
                   challengeId: 'challenge_dispatch_contradiction',
@@ -400,6 +442,7 @@ export function PuzzleBody({
             >
               Declare the slip definitive
             </button>
+            </div>
           </div>
         )
       ) : disarmed ? (

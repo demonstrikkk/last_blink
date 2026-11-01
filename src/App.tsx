@@ -33,7 +33,7 @@ import {
 import { PhaserHost, type WorldHandle } from './game/PhaserHost.js';
 import { ALL_WORLD_TARGETS, SPAWN, TILE, type WorldTarget, type WorldPuzzleId } from './world/district.js';
 import { deriveWorldView } from './world/worldView.js';
-import { buildPulseReadout } from './world/pulse.js';
+import { buildPulseReadout, type PulseReadout } from './world/pulse.js';
 import type { MoveInput } from './world/movement.js';
 import { shapeTestimonyLine } from './world/testimony.js';
 import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
@@ -51,7 +51,8 @@ import { MorrowCard } from './ui/hud/MorrowCard.js';
 import { EchoCard } from './ui/hud/EchoCard.js';
 import { BranchCard } from './ui/hud/BranchCard.js';
 import { Minimap } from './ui/Minimap.js';
-import { AiDiagnosticsPanel } from './ui/AiDiagnosticsPanel.js';
+import { PulseCard } from './ui/hud/PulseCard.js';
+import { TimelineShowcase } from './ui/TimelineShowcase.js';
 
 type DialogueState =
   | { phase: 'closed' }
@@ -154,11 +155,12 @@ function GameScreen({
   });
   const [blinkOpen, setBlinkOpen] = useState(false);
   const [echoOpen, setEchoOpen] = useState(false);
+  const [showcaseOpen, setShowcaseOpen] = useState(false);
   const [npcOpen, setNpcOpen] = useState(false);
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [showObjectives, setShowObjectives] = useState(true);
   const [showMorrow, setShowMorrow] = useState(true);
   const [showBranch] = useState(true);
+  const [pulseReadout, setPulseReadout] = useState<PulseReadout | null>(null);
   const [morrowNotice, setMorrowNotice] = useState<string | null>(null);
   const [npcNotice, setNpcNotice] = useState<string | null>(null);
   const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
@@ -189,6 +191,7 @@ function GameScreen({
     introOpen ||
     blinkOpen ||
     echoOpen ||
+    showcaseOpen ||
     npcOpen ||
     ledgerOpen ||
     puzzle !== null ||
@@ -200,6 +203,16 @@ function GameScreen({
   const toastTimer = useRef<number | undefined>(undefined);
   const cloudOfflineRef = useRef(false);
   const autoSaveVersionRef = useRef(state.stateVersion);
+  const pulseTimerRef = useRef<number | undefined>(undefined);
+
+  // Opt-in inspection hook used by automated playthroughs (`?debug=1`). It never
+  // ships in production unless the query flag is present.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('debug')) return;
+    (
+      window as unknown as { __lastBlinkSession?: DeterministicGameSession }
+    ).__lastBlinkSession = session;
+  }, [session]);
 
   const promptTarget = ALL_WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
   const activeScript: DialogueScript | null =
@@ -317,17 +330,22 @@ function GameScreen({
 
   const runMorrow = useCallback(
     async (eventId?: GameEventId) => {
-      const turn = await morrow.runAsync({ triggerEventId: eventId ?? null });
-      if (!turn) return;
-      worldRef.current?.playSfx('ui-error');
-      if (turn.result.status === 'accepted') {
-        setMorrowNotice(
-          `MORROW ${turn.proposal.response.toUpperCase()} · ${turn.proposal.reasonCodes.join(', ')}.`,
-        );
-      } else {
-        setMorrowNotice(
-          `MORROW ${turn.proposal.response.toUpperCase()} · refused by the engine (${turn.result.rejection?.code ?? 'unknown'}).`,
-        );
+      try {
+        const turn = await morrow.runAsync({ triggerEventId: eventId ?? null });
+        if (!turn) return;
+        worldRef.current?.playSfx('ui-error');
+        if (turn.result.status === 'accepted') {
+          setMorrowNotice(
+            `MORROW ${turn.proposal.response.toUpperCase()} · ${turn.proposal.reasonCodes.join(', ')}.`,
+          );
+        } else {
+          setMorrowNotice(
+            `MORROW ${turn.proposal.response.toUpperCase()} · refused by the engine (${turn.result.rejection?.code ?? 'unknown'}).`,
+          );
+        }
+      } catch (cause) {
+        console.warn('[last-blink] MORROW provider unavailable; deterministic fallback remains active', cause);
+        setMorrowNotice('MORROW link unavailable · the city record is holding its last position.');
       }
     },
     [morrow],
@@ -633,6 +651,9 @@ function GameScreen({
   const triggerPulse = useCallback(() => {
     const readout = buildPulseReadout(view, playerTile);
     worldRef.current?.triggerInvestigativePulse();
+    setPulseReadout(readout);
+    window.clearTimeout(pulseTimerRef.current);
+    pulseTimerRef.current = window.setTimeout(() => setPulseReadout(null), 14_000);
     showToast(readout.summary);
   }, [playerTile, showToast, view]);
 
@@ -678,6 +699,10 @@ function GameScreen({
         }
         if (echoOpen) {
           setEchoOpen(false);
+          return;
+        }
+        if (showcaseOpen) {
+          setShowcaseOpen(false);
           return;
         }
         if (npcOpen) {
@@ -744,9 +769,10 @@ function GameScreen({
       if (
         !onControl &&
         !introOpen &&
-        puzzle === null &&
+        !puzzle &&
         !blinkOpen &&
         !echoOpen &&
+        !showcaseOpen &&
         !npcOpen &&
         !ledgerOpen
       ) {
@@ -760,6 +786,9 @@ function GameScreen({
         } else if (k === 'c') {
           event.preventDefault();
           setEchoOpen(true);
+        } else if (k === 't') {
+          event.preventDefault();
+          setShowcaseOpen(true);
         } else if (k === 'l') {
           event.preventDefault();
           setLedgerOpen(true);
@@ -788,6 +817,7 @@ function GameScreen({
     ledgerOpen,
     npcOpen,
     puzzle,
+    showcaseOpen,
     toggleMute,
     triggerPulse,
   ]);
@@ -894,10 +924,10 @@ function GameScreen({
         onToggleMute={toggleMute}
         onSave={() => void save()}
         onOpenBlink={() => setBlinkOpen(true)}
+        onOpenShowcase={() => setShowcaseOpen(true)}
          onPulse={triggerPulse}
          timeMode={timeMode}
          onToggleTimeMode={() => setTimeMode((mode) => (mode === 'night' ? 'day' : 'night'))}
-         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
          onOpenBrief={() => setIntroOpen(true)}
        />
 
@@ -996,6 +1026,10 @@ function GameScreen({
 
       {/* ---- Floating HUD Cards ---- */}
       {showObjectives ? <ObjectivesCard view={view} /> : null}
+
+      {pulseReadout ? (
+        <PulseCard readout={pulseReadout} onClose={() => setPulseReadout(null)} />
+      ) : null}
 
       {worldReady ? <Minimap playerTile={playerTile} view={view} /> : null}
 
@@ -1101,6 +1135,8 @@ function GameScreen({
         activeBranchId={state.branchId}
       />
 
+      <TimelineShowcase open={showcaseOpen} onClose={() => setShowcaseOpen(false)} />
+
       <NpcPanel
         open={npcOpen}
         onClose={() => setNpcOpen(false)}
@@ -1135,7 +1171,6 @@ function GameScreen({
         onCompleteChallenge={completeChallenge}
       />
 
-      <AiDiagnosticsPanel open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
 
       {/* ---- Keyboard hints overlay ---- */}
       <div className="hud-keyhints mono" aria-hidden="true">

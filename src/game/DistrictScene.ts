@@ -290,19 +290,23 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
       this.updatePulse(delta);
 
       const view = options.getView();
-      const targets = [
-        ...WORLD_TARGETS,
-        {
-          ...COMPANION_TARGET,
-          x: this.companionPos.x,
-          y: this.companionPos.y,
-          tileX: Math.floor(this.companionPos.x / TILE),
-          tileY: Math.floor(this.companionPos.y / TILE),
-        },
-      ];
-      const target = findInteractionTarget(this.player, targets, (candidate) =>
-        targetAvailable(view, candidate.id),
-      );
+      const companionTarget = {
+        ...COMPANION_TARGET,
+        x: this.companionPos.x,
+        y: this.companionPos.y,
+        tileX: Math.floor(this.companionPos.x / TILE),
+        tileY: Math.floor(this.companionPos.y / TILE),
+      };
+      // Moth is a helpful nudge, never an obstacle: the drone only becomes the
+      // interaction target when nothing else is within reach. Otherwise a
+      // hovering companion can eclipse the console the player is standing on.
+      const target =
+        findInteractionTarget(this.player, WORLD_TARGETS, (candidate) =>
+          targetAvailable(view, candidate.id),
+        ) ??
+        findInteractionTarget(this.player, [companionTarget], (candidate) =>
+          targetAvailable(view, candidate.id),
+        );
       const nextPromptId = target?.id ?? null;
       if (nextPromptId !== this.lastPromptId) {
         this.lastPromptId = nextPromptId;

@@ -14,9 +14,13 @@ export interface PulseLead {
 export interface PulseReadout {
   readonly openLeads: number;
   readonly missingEvidence: number;
+  readonly openChallenges: number;
+  readonly openContradictions: number;
   readonly remaining: string;
   readonly pressure: string | null;
   readonly nearest: PulseLead | null;
+  /** The three closest actionable leads, for the HUD readout panel. */
+  readonly leads: readonly PulseLead[];
   /** One line suitable for the HUD toast. */
   readonly summary: string;
 }
@@ -90,8 +94,8 @@ export function buildPulseReadout(
   view: WorldView,
   playerTile: { readonly x: number; readonly y: number },
 ): PulseReadout {
-  const leads = ALL_WORLD_TARGETS.filter((target) => isOpenLead(view, target));
-  const ranked = leads
+  const openTargets = ALL_WORLD_TARGETS.filter((target) => isOpenLead(view, target));
+  const ranked = openTargets
     .map((target) => ({
       target,
       distanceTiles: Math.round(
@@ -105,7 +109,7 @@ export function buildPulseReadout(
         left.target.id.localeCompare(right.target.id),
     );
 
-  const nearest = ranked[0]
+  const nearestLead = ranked[0]
     ? {
         targetId: ranked[0].target.id,
         label: ranked[0].target.label,
@@ -120,21 +124,37 @@ export function buildPulseReadout(
       }
     : null;
 
+  const leads: PulseLead[] = ranked.slice(0, 3).map(({ target, distanceTiles }) => ({
+    targetId: target.id,
+    label: target.label,
+    prompt: target.prompt,
+    tileX: target.tileX,
+    tileY: target.tileY,
+    distanceTiles,
+    direction: compass(target.tileX - playerTile.x, target.tileY - playerTile.y),
+  }));
+
   const missingEvidence = view.evidence.filter((item) => !item.collected).length;
   const pressure = view.threats[0] ?? null;
   const remaining = view.clock.remainingLabel;
+  const openChallenges = ranked.filter(({ target }) => Boolean(target.puzzle)).length;
+  const openContradictions = view.discrepancies.filter(
+    (discrepancy) => discrepancy.status === 'active',
+  ).length;
 
-  const leadLine = nearest
-    ? nearest.distanceTiles <= 1
-      ? `Nearest lead: ${nearest.label} — within reach. ${nearest.prompt}.`
-      : `Nearest lead: ${nearest.label} — ${nearest.distanceTiles} tiles ${nearest.direction}. ${nearest.prompt}.`
+  const leadLine = nearestLead
+    ? nearestLead.distanceTiles <= 1
+      ? `Nearest lead: ${nearestLead.label} — within reach. ${nearestLead.prompt}.`
+      : `Nearest lead: ${nearestLead.label} — ${nearestLead.distanceTiles} tiles ${nearestLead.direction}. ${nearestLead.prompt}.`
     : 'No reachable lead. Test a contradiction in ECHO, or BLINK and try another route.';
 
   const openLeads = ranked.length;
   const summary = [
     `PULSE // ${openLeads} open lead${openLeads === 1 ? '' : 's'} · ${missingEvidence} record${
       missingEvidence === 1 ? '' : 's'
-    } still missing · ${remaining} to 18:00.`,
+    } still missing · ${openChallenges} challenge${openChallenges === 1 ? '' : 's'} ready · ${
+      openContradictions
+    } live contradiction${openContradictions === 1 ? '' : 's'} · ${remaining} to 18:00.`,
     leadLine,
     pressure ? `Pressure: ${pressure}` : 'Pressure: no active MORROW countermeasure detected.',
   ].join(' ');
@@ -142,9 +162,12 @@ export function buildPulseReadout(
   return {
     openLeads,
     missingEvidence,
+    openChallenges,
+    openContradictions,
     remaining,
     pressure,
-    nearest,
+    nearest: nearestLead,
+    leads,
     summary,
   };
 }

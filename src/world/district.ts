@@ -171,7 +171,7 @@ const PUZZLE_TARGETS: readonly WorldTarget[] = [
     'Lock the ward channel',
     139,
     34,
-    3,
+    5,
   ),
   makePuzzleTarget(
     'puzzle_timeline',
@@ -180,18 +180,18 @@ const PUZZLE_TARGETS: readonly WorldTarget[] = [
     'Reconstruct the dispatch order',
     59,
     31,
-    2,
+    5,
   ),
   makePuzzleTarget(
     'puzzle_contradiction',
     'contradiction',
-    "Ivo's stall",
+    "Ivo's stall ledger",
     'Test the testimony against the slip',
-    30,
+    28,
     73,
-    3,
+    5,
   ),
-  makePuzzleTarget('relay_disarm', 'bomb', 'Zeroing charge', 'Cut the zeroing charge', 34, 28, 3),
+  makePuzzleTarget('relay_disarm', 'bomb', 'Zeroing charge', 'Cut the zeroing charge', 34, 28, 5),
 ];
 
 export const WORLD_TARGETS: readonly WorldTarget[] = [

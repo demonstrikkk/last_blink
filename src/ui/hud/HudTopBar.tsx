@@ -20,10 +20,10 @@ interface HudTopBarProps {
   readonly onToggleMute: () => void;
   readonly onSave: () => void;
   readonly onOpenBlink: () => void;
+  readonly onOpenShowcase: () => void;
   readonly onPulse?: () => void;
   readonly timeMode: 'day' | 'night';
   readonly onToggleTimeMode: () => void;
-  readonly onOpenDiagnostics: () => void;
   readonly onOpenBrief: () => void;
 }
 
@@ -47,17 +47,17 @@ export function HudTopBar({
   onToggleMute,
   onSave,
   onOpenBlink,
+  onOpenShowcase,
   onPulse,
   timeMode,
   onToggleTimeMode,
-  onOpenDiagnostics,
   onOpenBrief,
 }: HudTopBarProps) {
   return (
     <header className="hud-topbar" role="banner">
       <div className="hud-brand-group">
         <h1 className="hud-main-title">BLINK</h1>
-        <span className="hud-sub-title">A RIN Adventure</span>
+        <span className="hud-sub-title">Second Settlement</span>
       </div>
 
       <nav className="hud-center-pills" aria-label="Investigation tools">
@@ -99,6 +99,15 @@ export function HudTopBar({
         >
           <span className="pill-glyph glyph-ledger" aria-hidden="true">⮹</span>
            <span>Case Board</span>
+        </button>
+        <button
+          type="button"
+          className="hud-pill-btn"
+          onClick={onOpenShowcase}
+          title="Showcase: three completed timelines replayed by the engine (T)"
+        >
+          <span className="pill-glyph glyph-timeline" aria-hidden="true">⌁</span>
+          <span>Timelines</span>
         </button>
       </nav>
 
@@ -149,9 +158,6 @@ export function HudTopBar({
         </button>
         <button type="button" className="hud-tool-btn mono" onClick={onOpenBrief} title="Open the storyline and case brief">
           BRIEF
-        </button>
-        <button type="button" className="hud-tool-btn mono" onClick={onOpenDiagnostics} title="Developer AI diagnostics">
-          AI DIAG
         </button>
 
         <button

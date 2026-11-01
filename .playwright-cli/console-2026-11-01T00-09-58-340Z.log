@@ -670,3 +670,179 @@ Visit https://react.dev/link/error-boundaries to learn more about error boundari
 [14290179ms] [INFO] [last-blink] restored session from durable persistence {sessionId: ses_local_mvxa8btb, saveId: sav_8596b2_000m, stateVersion: 11} @ http://127.0.0.1:4174/src/engine/session/mocks.ts?t=1793500632940:98
 [14290183ms] [INFO] [last-blink] restored session from durable persistence {sessionId: ses_local_mvxa8btb, saveId: sav_8596b2_000m, stateVersion: 11} @ http://127.0.0.1:4174/src/engine/session/mocks.ts?t=1793500632940:98
 [14290396ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[17498385ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:4174/src/world/pulse.ts?t=1793509296515:0
+[17498398ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[17653536ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[17688082ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[17738880ms] [ERROR] The final argument passed to %s changed size between renders. The order and size of this array must remain constant.
+
+Previous: %s
+Incoming: %s useEffect [() => {
+		if (dialogue.phase !== "lines") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		if (dialogue.index + 1 < script.lines.length) {
+			setDialogue({
+				phase: "lines",
+				scriptId: dialogue.scriptId,
+				index: dialogue.index + 1
+			});
+			return;
+		}
+		const node = viewRef.current.choices.find((candidate) => candidate.nodeId === script.choiceNodeId);
+		setChoiceIndex(0);
+		if (!node) {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.resolvedOptionId !== null) {
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.available) {
+			setDialogue({
+				phase: "choice",
+				scriptId: dialogue.scriptId
+			});
+		} else {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		}
+	}, false, 0, (optionId) => {
+		if (dialogue.phase !== "choice") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		const result = session.dispatch({
+			actionType: "choice.make",
+			actorId: "player_local",
+			params: {
+				nodeId: script.choiceNodeId,
+				optionId
+			}
+		});
+		if (result.status === "accepted") {
+			void runMorrow(result.eventIds[result.eventIds.length - 1]);
+			runNpcs();
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+			const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+			if (fresh.ending) {
+				worldRef.current?.playSfx("ending-sting");
+				showToast(`Ending reached: ${fresh.ending.title}.`);
+			} else {
+				worldRef.current?.playSfx("choice-lock");
+				showToast("Decision committed to canonical state. The street has answered.");
+			}
+		} else {
+			showToast(describeRejection(result));
+		}
+	}, () => {
+		setIntroOpen(false);
+		try {
+			window.localStorage.setItem("last_blink_intro_seen", "1");
+		} catch {}
+	}, closed, [object Object], false, true, false, false, , () => {
+		setMuted((current) => {
+			const next = !current;
+			worldRef.current?.setMuted(next);
+			return next;
+		});
+	}, () => {
+		const readout = buildPulseReadout(view, playerTile);
+		worldRef.current?.triggerInvestigativePulse();
+		setPulseReadout(readout);
+		window.clearTimeout(pulseTimerRef.current);
+		pulseTimerRef.current = window.setTimeout(() => setPulseReadout(null), 14e3);
+		showToast(readout.summary);
+	}] [() => {
+		if (dialogue.phase !== "lines") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		if (dialogue.index + 1 < script.lines.length) {
+			setDialogue({
+				phase: "lines",
+				scriptId: dialogue.scriptId,
+				index: dialogue.index + 1
+			});
+			return;
+		}
+		const node = viewRef.current.choices.find((candidate) => candidate.nodeId === script.choiceNodeId);
+		setChoiceIndex(0);
+		if (!node) {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.resolvedOptionId !== null) {
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.available) {
+			setDialogue({
+				phase: "choice",
+				scriptId: dialogue.scriptId
+			});
+		} else {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		}
+	}, false, 0, (optionId) => {
+		if (dialogue.phase !== "choice") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		const result = session.dispatch({
+			actionType: "choice.make",
+			actorId: "player_local",
+			params: {
+				nodeId: script.choiceNodeId,
+				optionId
+			}
+		});
+		if (result.status === "accepted") {
+			void runMorrow(result.eventIds[result.eventIds.length - 1]);
+			runNpcs();
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+			const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+			if (fresh.ending) {
+				worldRef.current?.playSfx("ending-sting");
+				showToast(`Ending reached: ${fresh.ending.title}.`);
+			} else {
+				worldRef.current?.playSfx("choice-lock");
+				showToast("Decision committed to canonical state. The street has answered.");
+			}
+		} else {
+			showToast(describeRejection(result));
+		}
+	}, () => {
+		setIntroOpen(false);
+		try {
+			window.localStorage.setItem("last_blink_intro_seen", "1");
+		} catch {}
+	}, closed, [object Object], false, true, false, false, , false, () => {
+		setMuted((current) => {
+			const next = !current;
+			worldRef.current?.setMuted(next);
+			return next;
+		});
+	}, () => {
+		const readout = buildPulseReadout(view, playerTile);
+		worldRef.current?.triggerInvestigativePulse();
+		setPulseReadout(readout);
+		window.clearTimeout(pulseTimerRef.current);
+		pulseTimerRef.current = window.setTimeout(() => setPulseReadout(null), 14e3);
+		showToast(readout.summary);
+	}] @ http://127.0.0.1:4174/@vite/client:367
+[18041973ms] [ERROR] [vite] SyntaxError: Identifier 'challenge' has already been declared @ http://127.0.0.1:4174/@vite/client:367
+[18041981ms] [ERROR] [vite] Failed to reload /src/ui/TimelineShowcase.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
