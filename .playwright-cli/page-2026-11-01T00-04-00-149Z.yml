@@ -1,0 +1,99 @@
+- generic [ref=f2e3]:
+  - generic:
+    - banner [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - heading "BLINK" [level=1] [ref=f2e6]
+        - generic [ref=f2e7]: A RIN Adventure
+      - navigation "Investigation tools" [ref=f2e8]:
+        - button "Roadmap" [pressed] [ref=f2e9] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f2e10]: ⬡
+        - button "MORROW" [pressed] [ref=f2e12] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f2e13]: ◎
+        - button "ECHO" [ref=f2e15] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f2e16]: 𝘎
+        - button "Case Board" [ref=f2e18] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f2e19]: ⮹
+      - generic [ref=f2e21]:
+        - button "V1 /1" [ref=f2e22] [cursor=pointer]:
+          - generic [ref=f2e24]: V1
+          - generic [ref=f2e25]: /1
+        - button "PULSE [Q]" [ref=f2e26] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f2e27]: 📡
+        - button "DAY MODE" [ref=f2e29] [cursor=pointer]
+        - button "AI DIAG" [ref=f2e30] [cursor=pointer]
+        - 'button "FX: HIGH" [ref=f2e31] [cursor=pointer]'
+        - button "AUDIO" [ref=f2e32] [cursor=pointer]
+        - button "SAVE" [ref=f2e33] [cursor=pointer]
+    - generic [ref=f2e35]:
+      - status [ref=f2e37]:
+        - paragraph [ref=f2e38]: ASTER / RELAY STREET
+        - paragraph [ref=f2e39]: Baking the district…
+      - status [ref=f2e40]
+    - complementary "Investigation Roadmap" [ref=f2e41]:
+      - heading "Investigation Roadmap" [level=2] [ref=f2e44]
+      - list [ref=f2e45]:
+        - listitem [ref=f2e46]:
+          - generic [ref=f2e47]: uncertain
+          - strong [ref=f2e48]: Hardware Count vs City Clock Reset
+          - generic [ref=f2e49]: Ward authority records show all Aster district clocks synchronized and reset at midnight.
+        - listitem [ref=f2e50]:
+          - generic [ref=f2e51]: uncertain
+          - strong [ref=f2e52]: Authorized Dispatch vs Unsealed Courier
+          - generic [ref=f2e53]: Handwritten dispatch slip states an authorized sealed courier left for Relay 7 at 03:14.
+        - listitem [ref=f2e54]:
+          - generic [ref=f2e55]: theory
+          - strong [ref=f2e56]: Inconclusive — material evidence is missing
+          - generic [ref=f2e57]: The case has useful leads and contradictions, but it does not yet establish what MORROW knew, what alternatives it had, and whether the harm was foreseeable.
+        - listitem [ref=f2e58]:
+          - generic [ref=f2e59]: missing
+          - strong [ref=f2e60]: "Missing check: Archival incident ledger"
+          - generic [ref=f2e61]: The archive ledger shows the district clock reset was ordered from the civic authority, not caused by the outage.
+        - listitem [ref=f2e62]:
+          - generic [ref=f2e63]: missing
+          - strong [ref=f2e64]: "Missing check: Held medical shipment"
+          - generic [ref=f2e65]: A clinic shipment was held for six hours because the freight line required a manual MORROW clearance that never arrived.
+        - listitem [ref=f2e66]:
+          - generic [ref=f2e67]: missing
+          - strong [ref=f2e68]: "Missing check: Plaza civic terminal"
+          - generic [ref=f2e69]: The public terminal shows the MORROW oversight channel accepting a manual root token every night at 03:14.
+        - listitem [ref=f2e70]:
+          - generic [ref=f2e71]: lead
+          - strong [ref=f2e72]: "Optional lead: Relay 7 maintenance log"
+          - generic [ref=f2e73]: North kerb terminal · direct hardware counter read
+        - listitem [ref=f2e74]:
+          - generic [ref=f2e75]: lead
+          - strong [ref=f2e76]: "Optional lead: Ward dispatch slip"
+          - generic [ref=f2e77]: North walk board · handwritten desk log
+        - listitem [ref=f2e78]:
+          - generic [ref=f2e79]: lead
+          - strong [ref=f2e80]: "Optional lead: Ivo's account"
+          - generic [ref=f2e81]: South walk stall · eyewitness account from stallholder
+    - complementary "MORROW Policy Assistant" [ref=f2e82]:
+      - generic [ref=f2e84]:
+        - generic [aria-hidden] [ref=f2e85]: ⩚
+        - generic [ref=f2e86]:
+          - heading "MORROW" [level=2] [ref=f2e87]
+          - paragraph [ref=f2e88]: Policy Assistant
+      - generic [ref=f2e89]:
+        - generic [ref=f2e90]:
+          - generic [ref=f2e91]: "Investigation Risk:"
+          - generic [ref=f2e92]: ● LOW
+        - generic [ref=f2e93]:
+          - paragraph [ref=f2e94]: "Proposed Action:"
+          - button "Monitor Frequencies" [ref=f2e95] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f2e96]: 👁
+        - paragraph [ref=f2e98]: "Reason: Curfew enforcement standard protocol. Curfew active."
+    - complementary "Branch Comparison" [ref=f2e99]:
+      - generic [ref=f2e100]:
+        - generic [aria-hidden] [ref=f2e101]: ⋔
+        - heading "Branch Comparison" [level=2] [ref=f2e102]
+      - generic [ref=f2e103]:
+        - generic [aria-hidden] [ref=f2e104]:
+          - generic [ref=f2e105]: V1
+          - generic [ref=f2e109]: V2
+        - generic [ref=f2e112]:
+          - generic [ref=f2e113]: "Shared: 3 events"
+          - generic [ref=f2e114]: Single branch
+        - button "View Details" [ref=f2e115] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f2e117]: →
+    - generic [aria-hidden]: WASD move · E interact · Q Pulse Scan · B BLINK · C ECHO · N NPCs · L Ledger · Esc close

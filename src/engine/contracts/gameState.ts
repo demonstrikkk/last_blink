@@ -13,6 +13,8 @@ import { choiceSchema } from './choice.js';
 import { anchorSchema } from './anchor.js';
 import { branchSchema } from './branch.js';
 import { playerProfileSchema } from './playerProfile.js';
+import { caseLinkSchema, caseHypothesisSchema } from './caseBoard.js';
+import { challengeResultSchema } from './challenge.js';
 
 /**
  * Canonical, branch-scoped world state. Everything here is derived by applying
@@ -30,6 +32,9 @@ export const gameStateSchema = z
     seed: z.string().min(1).max(80),
     facts: z.record(z.string(), factSchema),
     choices: z.array(choiceSchema).max(512),
+    caseLinks: z.array(caseLinkSchema).max(512),
+    hypotheses: z.array(caseHypothesisSchema).max(128),
+    challengeResults: z.array(challengeResultSchema).max(64),
     anchors: z.array(anchorSchema).max(256),
     /** Lineage including the current branch. */
     branches: z.array(branchSchema).min(1).max(64),
@@ -60,6 +65,21 @@ export const gameStateSchema = z
     for (const choice of state.choices) {
       if (choice.branchId !== state.branchId || choice.sessionId !== state.sessionId) {
         ctx.addIssue({ code: 'custom', message: `choice ${choice.choiceId} is out of scope` });
+      }
+    }
+    for (const link of state.caseLinks) {
+      if (link.branchId !== state.branchId || link.sessionId !== state.sessionId) {
+        ctx.addIssue({ code: 'custom', message: `case link ${link.linkId} is out of scope` });
+      }
+    }
+    for (const hypothesis of state.hypotheses) {
+      if (hypothesis.branchId !== state.branchId || hypothesis.sessionId !== state.sessionId) {
+        ctx.addIssue({ code: 'custom', message: `hypothesis ${hypothesis.hypothesisId} is out of scope` });
+      }
+    }
+    for (const result of state.challengeResults) {
+      if (result.branchId !== state.branchId || result.sessionId !== state.sessionId) {
+        ctx.addIssue({ code: 'custom', message: `challenge result ${result.challengeId} is out of scope` });
       }
     }
     for (const anchor of state.anchors) {

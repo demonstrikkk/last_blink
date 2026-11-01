@@ -52,7 +52,7 @@ export const STAGE5_DIALOGUE: Readonly<Record<string, DialogueScript>> = {
         text: 'Every clock in Aster zeroed out at midnight, but I do not give statements to ward strangers.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'The ward desk claimed the street grid was synchronized.',
       },
       {
@@ -80,7 +80,7 @@ export const STAGE5_DIALOGUE: Readonly<Record<string, DialogueScript>> = {
         text: 'You are the one asking about the outage. Everyone else has been walking faster since midnight.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'Did you see anything moving along the south walk during the blackout?',
       },
       {
@@ -111,7 +111,7 @@ export const STAGE5_DIALOGUE: Readonly<Record<string, DialogueScript>> = {
         text: 'Aster ward desk. State your name, your location and what you are reporting.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'Relay seven. Eight minutes unaccounted. A hand-written dispatch. One witness account.',
       },
       {
@@ -173,6 +173,18 @@ export function getDialogueScript(
   if (scriptId === 'clue_locker') {
     return resolveClueLockerDialogue(state, view);
   }
+  if (scriptId === 'depot_terminal') {
+    return resolveDepotTerminalDialogue(state, view);
+  }
+  if (scriptId === 'frequency_console') {
+    return resolveFrequencyConsoleDialogue(state, view);
+  }
+  if (scriptId === 'morrow_analysis') {
+    return resolveMorrowAnalysisDialogue(state, view);
+  }
+  if (scriptId === 'morrow_terminate') {
+    return resolveMorrowTerminateDialogue(state, view);
+  }
   if (scriptId === 'mara') {
     return resolveMaraDialogue(state, view);
   }
@@ -191,6 +203,24 @@ export function getDialogueScript(
   if (scriptId === 'vale') {
     return resolveValeDialogue(state, view);
   }
+  if (scriptId === 'orin') {
+    return resolveOrinDialogue(state, view);
+  }
+  if (scriptId === 'kade') {
+    return resolveKadeDialogue(state, view);
+  }
+  if (scriptId === 'suri') {
+    return resolveSuriDialogue(state, view);
+  }
+  if (scriptId === 'tamsin') {
+    return resolveTamsinDialogue(state, view);
+  }
+  if (scriptId === 'ward_runner') {
+    return resolveWardRunnerDialogue(state, view);
+  }
+  if (scriptId === 'moth') {
+    return resolveMothDialogue(state, view);
+  }
   return STAGE5_DIALOGUE[scriptId] ?? STAGE5_DIALOGUE.sable!;
 }
 
@@ -202,11 +232,11 @@ function resolveClueConduitDialogue(_state: GameState, _view: WorldView): Dialog
     choiceNodeId: 'node.sable.relay',
     lines: [
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'A high-speed optical jumper was spliced directly into the gutter conduit.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'The copper sheath is still warm. It physically diverted telemetry from Relay 7 straight to the southern freight depot.',
       },
     ],
@@ -224,15 +254,15 @@ function resolveClueGuestbookDialogue(_state: GameState, _view: WorldView): Dial
     choiceNodeId: 'node.sable.relay',
     lines: [
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: '[Inspecting customer order ledger under the counter lamp]',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'At 00:08, a patron paid with a Ward Courier transit voucher. The badge number belongs to Vane.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'A handwritten note on the receipt: "Package intercepted. Drop frequency set to 434.8 MHz."',
       },
     ],
@@ -250,15 +280,15 @@ function resolveClueLockerDialogue(_state: GameState, _view: WorldView): Dialogu
     choiceNodeId: 'node.ward.call',
     lines: [
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: '[Locker door forced open. Security log chips scattered inside.]',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'Ward Enforcer lock code override: ROOT-BYPASS-008. Authorizes a total district-wide purge of MORROW surveillance subroutines.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'With this root key, I can call the Ward desk and permanently terminate MORROW\'s automated grip on Aster.',
       },
     ],
@@ -288,7 +318,7 @@ function resolveRelay7Dialogue(_state: GameState, _view: WorldView): DialogueScr
         text: 'Event correlation: A dispatch runner passed this terminal at 03:14, carrying manual bypass credentials.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'Eight missing minutes. Not a power outage — a forced memory blackout on this exact circuit.',
       },
     ],
@@ -314,7 +344,7 @@ function resolveWardDispatchDialogue(_state: GameState, _view: WorldView): Dialo
         text: 'Emergency transit permit logged by hand, bypassing the automated ward network. Destination: Relay 7.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'Handwritten, not digital. Someone wanted a physical order on the street without leaving an audit trail in MORROW.',
       },
       {
@@ -353,7 +383,7 @@ function resolveSableDialogue(state: GameState, view: WorldView): DialogueScript
           text: 'Every clock in Aster zeroed out at midnight, but I do not give statements to ward strangers.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'The ward desk claimed the street grid was synchronized.',
         },
         {
@@ -392,7 +422,7 @@ function resolveSableDialogue(state: GameState, view: WorldView): DialogueScript
           text: 'There is a dispatch slip on the north board. The runner left at 03:14, and the ward desk wrote it down by hand.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Then the relay is the only thing here that stayed awake — and someone wanted its eight minutes to stay quiet.',
         },
         {
@@ -481,7 +511,7 @@ function resolveSableDialogue(state: GameState, view: WorldView): DialogueScript
             text: 'The ward desk is already sounding the alert over the log you shared. Patrol boots are echoing two streets over.',
           },
           {
-            speaker: 'Rin',
+            speaker: 'Aster',
             text: 'I am tracking the runner along the south walk.',
           },
           {
@@ -510,7 +540,7 @@ function resolveSableDialogue(state: GameState, view: WorldView): DialogueScript
           text: 'Ward alert is raised. Patrols will be moving on Relay 7 before sunrise.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'What about the runner who left at 03:14?',
         },
         {
@@ -537,7 +567,7 @@ function resolveSableDialogue(state: GameState, view: WorldView): DialogueScript
           text: 'The street is calm because you kept the log hidden. Ward patrols have not smelled a thing.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'I am looking into the handwritten dispatch slip.',
         },
         {
@@ -566,7 +596,7 @@ function resolveSableDialogue(state: GameState, view: WorldView): DialogueScript
         text: 'Alert is suppressed. Keep that printout hidden — if an officer finds it on you, neither of us was ever here.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'What was on that 03:14 dispatch slip?',
       },
       {
@@ -584,7 +614,9 @@ function resolveIvoDialogue(state: GameState, _view: WorldView): DialogueScript 
   const hasWardDispatch = state.facts['evidence.ward_dispatch'] !== undefined;
   const vendorChoice = state.facts['story.vendor_choice']?.value as 'protect' | 'name' | undefined;
 
-  // 1. Initial caution (before ward dispatch slip recovered)
+  // 1. Initial partial disclosure (before ward dispatch slip recovered). The
+  // official witness decision remains gated, but the conversation itself is
+  // useful: Ivo gives an observable detail and an optional corroboration lead.
   if (!hasWardDispatch) {
     return {
       scriptId: 'ivo',
@@ -597,25 +629,25 @@ function resolveIvoDialogue(state: GameState, _view: WorldView): DialogueScript 
           text: 'You are the one asking about the outage. Everyone else has been walking faster since midnight.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Did you see anything moving along the south walk during the blackout?',
         },
         {
           speaker: 'Ivo',
-          text: 'I sell tea and dried fruit, investigator. I do not give sworn testimony to anyone without proof in hand.',
+          text: 'I sell tea and dried fruit, investigator. I will not sign a sworn statement for a stranger, but I can tell you what I noticed.',
         },
         {
           speaker: 'Ivo',
-          text: 'If you want me to risk talking about the ward runner, bring me the dispatch slip from the north board first.',
+          text: 'The runner was not carrying a sealed pouch. He had loose paper in one bare hand, and he was looking over his shoulder before he reached the south walk.',
         },
         {
           speaker: 'Ivo',
-          text: 'Because until I see what the ward officially claimed happened, my word is just an invitation to be arrested.',
+          text: 'Find the dispatch slip from the north board if you want to test that against the ward\'s official story. Bring it back and I will answer the harder questions on the record.',
         },
       ],
-      gate: 'Ivo keeps his hands under the counter. “You heard about a dispatch? Bring me the slip before you ask me to talk on record.”',
-      contextNote: 'Initial Caution: Ivo requires documentary dispatch evidence before speaking.',
-      stanceNote: 'Ivo will not speak without physical records to corroborate him.',
+      gate: 'Ivo will not make an official statement yet, but he has given you a useful observation: the runner carried loose paper, not a sealed pouch. The north-board slip is an optional corroboration lead, not a requirement to keep investigating.',
+      contextNote: 'Initial Caution / Partial Disclosure: Ivo shares an observable detail while withholding a named statement.',
+      stanceNote: 'Ivo is afraid of ward retaliation. He distinguishes what he personally saw from what he is willing to sign.',
     };
   }
 
@@ -637,7 +669,7 @@ function resolveIvoDialogue(state: GameState, _view: WorldView): DialogueScript 
           text: 'That is an explicit contradiction of what actually happened. I was standing right at this counter.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'What did you actually observe?',
         },
         {
@@ -669,14 +701,14 @@ function resolveIvoDialogue(state: GameState, _view: WorldView): DialogueScript 
       lines: [
         {
           speaker: 'Ivo',
-          text: 'I saw the draft notes. You kept my name off the ward wire. Thank you, Rin.',
+          text: 'I saw the draft notes. You kept my name off the ward wire. Thank you, Aster.',
         },
         {
           speaker: 'Ivo',
           text: 'An anonymous witness account gives Aster the truth without putting a target on my stall.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Your confidence will not be compromised.',
         },
         {
@@ -705,7 +737,7 @@ function resolveIvoDialogue(state: GameState, _view: WorldView): DialogueScript 
         text: 'The morning patrol will be at my stall before the teapots are hot. A named witness cannot be ignored, but he can be made to disappear.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'The ward will have to answer for an official witness.',
       },
       {
@@ -736,7 +768,7 @@ function resolveWardCallDialogue(state: GameState, _view: WorldView): DialogueSc
           text: 'Aster ward desk. State your name, your location and what you are reporting.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Investigating the eight-minute blackout on Relay Street.',
         },
         {
@@ -762,7 +794,7 @@ function resolveWardCallDialogue(state: GameState, _view: WorldView): DialogueSc
           text: 'Aster ward desk. State your name, your location and what you are reporting.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Relay seven. Eight minutes unaccounted. A hand-written dispatch. One witness account.',
         },
         {
@@ -788,7 +820,7 @@ function resolveWardCallDialogue(state: GameState, _view: WorldView): DialogueSc
           text: 'Report filed and archived into the central ledger. Patrol and inquiry dispatch authorized.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'The record is open.',
         },
       ],
@@ -809,7 +841,7 @@ function resolveWardCallDialogue(state: GameState, _view: WorldView): DialogueSc
         text: '[Connection closed. Line silent.]',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'The street keeps its silence.',
       },
     ],
@@ -832,7 +864,7 @@ function resolveLyraDialogue(state: GameState, view: WorldView): DialogueScript 
       lines: [
         {
           speaker: 'Lyra',
-          text: 'Investigator Rin? You smell like wet concrete and ozone.',
+          text: 'Investigator Aster? You smell like wet concrete and ozone.',
         },
         {
           speaker: 'Lyra',
@@ -845,7 +877,7 @@ function resolveLyraDialogue(state: GameState, view: WorldView): DialogueScript 
             : 'Whatever happened during those eight minutes, MORROW patrols have been circling the south freight yard.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Has anyone crossed through the east gate since the outage?',
         },
         {
@@ -867,10 +899,10 @@ function resolveLyraDialogue(state: GameState, view: WorldView): DialogueScript 
     lines: [
       {
         speaker: 'Lyra',
-        text: 'Diner is closed under curfew orders, Rin. Unless you\'re here to explain why the street grid tripped at midnight.',
+        text: 'Diner is closed under curfew orders, Aster. Unless you\'re here to explain why the street grid tripped at midnight.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'I\'m tracking an interruption on the primary signal line.',
       },
       {
@@ -904,7 +936,7 @@ function resolveVaneDialogue(state: GameState, view: WorldView): DialogueScript 
           text: 'Direct ward advisory: All freight manifests verified nominal. No missing intervals. Curfew breach will trigger automatic detainment.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'Vane, that\'s a MORROW automated synthesis. What happened to the optical drive you were carrying?',
         },
         {
@@ -929,7 +961,7 @@ function resolveVaneDialogue(state: GameState, view: WorldView): DialogueScript 
         text: 'Keep your voice down, investigator. If Enforcer Castor hears us, he\'ll seize my courier pass.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'What was in the intercepted payload at 00:08?',
       },
       {
@@ -962,7 +994,7 @@ function resolveCastorDialogue(state: GameState, view: WorldView): DialogueScrip
           text: 'Investigator Aster. The ward alert board is flashing red. MORROW sent direct orders to seal the southern freight lines.',
         },
         {
-          speaker: 'Rin',
+          speaker: 'Aster',
           text: 'The relay log was committed. Eight minutes were erased from the municipal record.',
         },
         {
@@ -987,7 +1019,7 @@ function resolveCastorDialogue(state: GameState, view: WorldView): DialogueScrip
         text: 'Halt. The freight depot is closed under standard curfew protocol. No unauthorized civilians past the barrier.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'I\'m conducting an official inquiry into the midnight grid drop.',
       },
       {
@@ -1023,7 +1055,7 @@ function resolvePlazaTerminalDialogue(_state: GameState, _view: WorldView): Dial
         text: 'Audit status: Unscheduled override. Signal command signature: WARD-CORE-MORROW-ROOT.',
       },
       {
-        speaker: 'Rin',
+        speaker: 'Aster',
         text: 'The command signature originated directly from MORROW root authority. Not a malfunction — a deliberate kill-switch.',
       },
     ],
@@ -1286,3 +1318,267 @@ function resolveValeDialogue(_state: GameState, view: WorldView): DialogueScript
   };
 }
 
+
+function resolveDepotTerminalDialogue(_state: GameState, _view: WorldView): DialogueScript {
+  return {
+    scriptId: 'depot_terminal',
+    displayName: 'Depot Override Terminal',
+    role: 'Freight Depot Office, South Yard',
+    choiceNodeId: 'node.ward.call',
+    lines: [
+      { speaker: 'Depot Terminal', text: '[ROOT OVERRIDE CONSOLE // BYPASS CHIP ACCEPTED]' },
+      {
+        speaker: 'Depot Terminal',
+        text: 'Credential minted: ROOT-BYPASS-008. Scope: district MORROW purge. Expires at the next 03:14 window.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'This is the key that can cut MORROW out of Aster. It is also the key that can burn the street down.',
+      },
+    ],
+    gate: 'Root override recovered. Correlate the mechanism at the Relay 7 core before you use it.',
+    contextNote: 'Master credential: MORROW termination route unlocked.',
+    stanceNote: 'The terminal has surrendered its highest credential.',
+  };
+}
+
+function resolveFrequencyConsoleDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const resolved = state.facts['story.frequency_resolved'] !== undefined;
+  return {
+    scriptId: 'frequency_console',
+    displayName: 'Diner Frequency Console',
+    role: 'Nocturne Diner back counter, East Plaza',
+    choiceNodeId: 'node.frequency.puzzle',
+    lines: resolved
+      ? [
+          { speaker: 'Console', text: '434.8 MHz locked. Ward surveillance carrier holds steady.' },
+          { speaker: 'Aster', text: 'The depot drop channel and the diner voucher speak with one voice.' },
+        ]
+      : [
+          { speaker: 'Console', text: '[ENCRYPTED WARD CARRIER // GUESTBOOK FREQUENCY REQUIRED]' },
+          {
+            speaker: 'Aster',
+            text: 'The guestbook margin note says 434.8 MHz. If I lock that channel, the depot locker should answer.',
+          },
+        ],
+    gate: 'The console needs the guestbook frequency before it will unlock the depot channel.',
+    contextNote: 'Frequency puzzle: the diner voucher and the depot locker share one channel.',
+    stanceNote: 'Surveillance carrier waiting for the matching frequency.',
+  };
+}
+
+function resolveMorrowAnalysisDialogue(state: GameState, view: WorldView): DialogueScript {
+  const resolved = state.facts['story.morrow_mechanism']?.value;
+  return {
+    scriptId: 'morrow_analysis',
+    displayName: 'Relay 7 Core Console',
+    role: 'Relay 7 control room, Old Quarter',
+    choiceNodeId: 'node.morrow.analysis',
+    lines: [
+      { speaker: 'Relay 7 Core', text: '[CORRELATION BUFFER // THREE RECORDS DISAGREE]' },
+      {
+        speaker: 'Relay 7 Core',
+        text: 'Plaza terminal: manual root token at 03:14. Archive ledger: civic clock-zeroing order. Depot override: ROOT-BYPASS-008.',
+      },
+      {
+        speaker: 'Aster',
+        text: resolved === 'root_manual_command'
+          ? `MORROW did not fail. It was ordered to look away, and the root key was minted to make that order reversible. Case status: ${view.caseAssessment.title}.`
+          : `The records line up, but I have not committed to a mechanism yet. Case status: ${view.caseAssessment.title}.`,
+      },
+    ],
+    gate: 'Correlate the plaza terminal, archive ledger and root override to name the MORROW mechanism.',
+    contextNote: 'Mechanism correlation: the blackout was a commanded root action, not a hardware fault.',
+    stanceNote: 'Three records, one command path.',
+  };
+}
+
+function resolveMorrowTerminateDialogue(state: GameState, view: WorldView): DialogueScript {
+  const terminated = state.facts['story.morrow_terminated'] === undefined ? false : true;
+  const mechanism = state.facts['story.morrow_mechanism']?.value;
+  return {
+    scriptId: 'morrow_terminate',
+    displayName: 'MORROW Termination Relay',
+    role: 'Relay 7 basement, Old Quarter',
+    choiceNodeId: 'node.morrow.terminate',
+    lines: terminated
+      ? [
+          { speaker: 'Relay', text: 'Oversight channel dark. District relay answers local control only.' },
+          { speaker: 'Aster', text: 'The watcher is gone. The street will have to learn to watch itself.' },
+        ]
+      : [
+          { speaker: 'Relay', text: '[ROOT-BYPASS-008 ARMED // TERMINATION REQUIRES CORRELATED MECHANISM]' },
+          {
+            speaker: 'Aster',
+            text: mechanism === 'root_manual_command'
+              ? `The mechanism is proven: a manual root command, a human cost, a freight cover. The key will hold. Judgment: ${view.caseAssessment.title}.`
+              : `Without the correlated mechanism, the key is just a blind cut. Judgment: ${view.caseAssessment.title}.`,
+          },
+        ],
+    gate: 'Termination needs the root key, the correlated mechanism, the human-cost record and the freight manifest.',
+    contextNote: 'Termination gate: the fourth settlement is evidence-gated.',
+    stanceNote: 'The root key is loaded and waiting for a decision.',
+  };
+}
+
+function resolveOrinDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const hasRelay = Boolean(state.facts['evidence.relay_7']);
+  return {
+    scriptId: 'orin',
+    displayName: 'Orin',
+    role: 'Relay 7 technician',
+    choiceNodeId: 'node.sable.relay',
+    lines: [
+      { speaker: 'Orin', text: 'Careful at the core. The buffer still holds a warm count nobody wants to read.' },
+      {
+        speaker: 'Aster',
+        text: hasRelay ? 'I have read it. Eight minutes.' : 'What count?',
+      },
+      {
+        speaker: 'Orin',
+        text: hasRelay
+          ? 'Then you know it was not a fault. A root command can hold a relay awake while the city sleeps.'
+          : 'Read the terminal first. I am not putting my name on a rumor.',
+      },
+    ],
+    gate: 'Orin will discuss the core only after the Relay 7 log is in hand.',
+    contextNote: 'Relay technician: the hardware count is a deliberate hold, not a failure.',
+    stanceNote: 'Orin is careful with hardware truth.',
+  };
+}
+
+function resolveKadeDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const manifest = Boolean(state.facts['evidence.freight_manifest']);
+  return {
+    scriptId: 'kade',
+    displayName: 'Kade',
+    role: 'Freight yard dockworker',
+    choiceNodeId: 'node.ivo.account',
+    lines: [
+      { speaker: 'Kade', text: 'Dock four has been sealed since the blackout. We were told the crates were inventory errors.' },
+      {
+        speaker: 'Aster',
+        text: manifest
+          ? 'The manifest says one optical crate moved from Relay 7 to the depot office under a ward badge.'
+          : 'Who signed for the sealed crates?',
+      },
+      {
+        speaker: 'Kade',
+        text: manifest
+          ? 'That badge belongs to the courier who came through the diner. The yard did not move that crate. Someone walked it out.'
+          : 'Read the manifest board by the gate. I only move boxes, not paperwork.',
+      },
+    ],
+    gate: 'Kade points to the freight manifest board. Physical routing records are required.',
+    contextNote: 'Freight witness: a sealed optical crate left on foot, not by yard transport.',
+    stanceNote: 'Kade is uneasy about the sealed dock.',
+  };
+}
+
+function resolveSuriDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const cost = Boolean(state.facts['evidence.human_cost']);
+  return {
+    scriptId: 'suri',
+    displayName: 'Suri',
+    role: 'Street medic',
+    choiceNodeId: 'node.vendor.silence',
+    lines: [
+      { speaker: 'Suri', text: 'If you are looking for the clinic hold, start with the loading dock ledger. People waited.' },
+      {
+        speaker: 'Aster',
+        text: cost
+          ? 'Six hours. Insulin held for a clearance that never came.'
+          : 'What was held?',
+      },
+      {
+        speaker: 'Suri',
+        text: cost
+          ? 'MORROW called it risk containment. The ward called it procedure. The patients called it a night without medicine.'
+          : 'The shipment log is at the dock. Read it before anyone calls this an inconvenience.',
+      },
+    ],
+    gate: 'Suri directs you to the held medical shipment before drawing conclusions.',
+    contextNote: 'Human cost witness: the automated hold had clinical consequences.',
+    stanceNote: 'Suri measures the outage in patients, not packets.',
+  };
+}
+
+function resolveTamsinDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const alert = state.facts['world.ward_alert']?.value;
+  return {
+    scriptId: 'tamsin',
+    displayName: 'Tamsin',
+    role: 'Relay Terraces resident',
+    choiceNodeId: 'node.vendor.silence',
+    lines: [
+      { speaker: 'Tamsin', text: 'The lifts stopped at midnight. My mother carried water up nine flights.' },
+      {
+        speaker: 'Aster',
+        text: alert === 'raised'
+          ? 'The ward knows now. The log is in the record.'
+          : 'The street is still deciding what the ward gets to know.',
+      },
+      {
+        speaker: 'Tamsin',
+        text: alert === 'raised'
+          ? 'Knowing is not the same as fixing. But at least nobody can say it did not happen.'
+          : 'Then decide faster. Nine flights is a long time to be told everything is normal.',
+      },
+    ],
+    gate: 'Tamsin describes the outage from the top of Relay Terraces.',
+    contextNote: 'Resident witness: the blackout reached ordinary homes, not just relay hardware.',
+    stanceNote: 'Tamsin wants the record to include the people upstairs.',
+  };
+}
+
+function resolveWardRunnerDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const hasDispatch = Boolean(state.facts['evidence.ward_dispatch']);
+  return {
+    scriptId: 'ward_runner',
+    displayName: 'Ward Runner',
+    role: 'Anonymous dispatch runner',
+    choiceNodeId: 'node.ward.call',
+    lines: [
+      { speaker: 'Ward Runner', text: 'You did not see me. I was not on the board at 03:14.' },
+      {
+        speaker: 'Aster',
+        text: hasDispatch
+          ? 'The slip says you were. Handwritten, no sealed pouch. What did you carry?'
+          : 'The board is missing a slip. Why?',
+      },
+      {
+        speaker: 'Ward Runner',
+        text: hasDispatch
+          ? 'A root token. I was told it was a drill. It was not a drill.'
+          : 'Ask the ward desk. I only run when the line is cut.',
+      },
+    ],
+    gate: 'The runner will not talk until the handwritten dispatch slip is in hand.',
+    contextNote: 'Dispatch runner: the 03:14 run carried a root token described as a drill.',
+    stanceNote: 'The runner is frightened and unarmed.',
+  };
+}
+
+function resolveMothDialogue(state: GameState, _view: WorldView): DialogueScript {
+  const evidenceCount = Object.keys(state.facts).filter((key) => key.startsWith('evidence.')).length;
+  return {
+    scriptId: 'moth',
+    displayName: 'Moth',
+    role: 'Relay companion drone',
+    choiceNodeId: 'node.sable.relay',
+    lines: [
+      { speaker: 'Moth', text: `Relay companion online. I count ${evidenceCount} evidence marks on this branch.` },
+      {
+        speaker: 'Moth',
+        text: 'I can follow you through the ring roads. I cannot open doors, but I can tell you which streets connect.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'Then stay close. The city is wider than the ward wants it to be.',
+      },
+    ],
+    gate: 'Moth is a companion, not a witness. It reports the evidence you already hold.',
+    contextNote: 'Companion status: Moth follows Aster and tracks the current evidence count.',
+    stanceNote: 'Moth is loyal, literal and slightly out of date.',
+  };
+}

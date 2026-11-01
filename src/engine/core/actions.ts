@@ -15,6 +15,8 @@ import {
 } from '../contracts/primitives.js';
 import { morrowReasonCodeSchema, morrowResponseSchema } from '../contracts/morrow.js';
 import { npcDecisionProposalSchema } from '../contracts/npcDecisionProposal.js';
+import { caseRelationSchema } from '../contracts/caseBoard.js';
+import { challengeTypeSchema } from '../contracts/challenge.js';
 
 /** The untrusted shape a caller may submit to GameSession.dispatch. */
 export const gameActionSchema = z.strictObject({
@@ -81,6 +83,30 @@ export const npcProposeParamsSchema = z.strictObject({
   fallbackReason: z.enum(['policy_exception', 'invalid_output']).nullable().default(null),
 });
 
+export const caseLinkParamsSchema = z.strictObject({
+  linkId: z.string().regex(/^[a-z][a-z0-9_]{3,80}$/),
+  leftEvidenceId: z.string().regex(/^[a-z][a-z0-9_]{1,60}$/),
+  rightEvidenceId: z.string().regex(/^[a-z][a-z0-9_]{1,60}$/),
+  relation: caseRelationSchema,
+  note: z.string().trim().min(1).max(400),
+});
+
+export const caseHypothesisParamsSchema = z.strictObject({
+  hypothesisId: z.string().regex(/^[a-z][a-z0-9_]{3,80}$/),
+  text: z.string().trim().min(3).max(240),
+  supportingEvidenceIds: z.array(z.string().regex(/^[a-z][a-z0-9_]{1,60}$/)).max(24),
+  opposingEvidenceIds: z.array(z.string().regex(/^[a-z][a-z0-9_]{1,60}$/)).max(24),
+});
+
+export const challengeCompleteParamsSchema = z.strictObject({
+  challengeId: z.string().regex(/^[a-z][a-z0-9_]{3,80}$/),
+  challengeType: challengeTypeSchema,
+  answer: z.union([
+    z.object({ order: z.array(z.string().regex(/^[a-z][a-z0-9_]{1,60}$/)).min(1).max(12) }),
+    z.object({ question: z.enum(['ask_route_seal', 'declare_slip_definitive']) }),
+  ]),
+});
+
 export type ParsedAction =
   | { actionType: 'session.noop'; actorId: z.infer<typeof actorIdSchema>; params: Record<string, never> }
   | {
@@ -122,4 +148,19 @@ export type ParsedAction =
       actionType: 'npc.propose';
       actorId: z.infer<typeof actorIdSchema>;
       params: z.infer<typeof npcProposeParamsSchema>;
+    }
+  | {
+      actionType: 'case.link';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof caseLinkParamsSchema>;
+    }
+  | {
+      actionType: 'case.hypothesis';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof caseHypothesisParamsSchema>;
+    }
+  | {
+      actionType: 'challenge.complete';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof challengeCompleteParamsSchema>;
     };

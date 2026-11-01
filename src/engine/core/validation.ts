@@ -5,6 +5,9 @@ import {
   advanceTickParamsSchema,
   anchorParamsSchema,
   choiceMakeParamsSchema,
+  caseLinkParamsSchema,
+  caseHypothesisParamsSchema,
+  challengeCompleteParamsSchema,
   evidenceCollectParamsSchema,
   factAssertParamsSchema,
   forkParamsSchema,
@@ -215,6 +218,74 @@ export function validateAction(
         ok: true,
         action: { actionType: 'choice.make', actorId: action.actorId, params: params.data },
       };
+    }
+
+    case 'case.link': {
+      const params = caseLinkParamsSchema.safeParse(action.params);
+      if (!params.success) return fail('invalid_action', 'case.link requires two evidence ids, a relation, and a note');
+      if (params.data.leftEvidenceId === params.data.rightEvidenceId) {
+        return fail('invalid_action', 'a case link needs two distinct evidence records');
+      }
+      const definitions = [params.data.leftEvidenceId, params.data.rightEvidenceId].map((evidenceId) =>
+        content.evidence.find((candidate) => candidate.evidenceId === evidenceId),
+      );
+      if (definitions.some((definition) => !definition)) return fail('unknown_target', 'case links may only use content evidence');
+      if (definitions.some((definition) => state.facts[definition!.factKey] === undefined)) {
+        return fail('invalid_action', 'case links may only use collected evidence');
+      }
+      const existing = state.caseLinks.find((link) => link.linkId === params.data.linkId);
+      if (existing && (existing.leftEvidenceId !== params.data.leftEvidenceId || existing.rightEvidenceId !== params.data.rightEvidenceId)) {
+        return fail('invalid_action', 'a case link id cannot be reassigned to different evidence');
+      }
+      if (existing && existing.relation === params.data.relation && existing.note === params.data.note) {
+        return fail('duplicate', 'this case connection is already recorded', { linkId: existing.linkId });
+      }
+      return { ok: true, action: { actionType: 'case.link', actorId: action.actorId, params: params.data } };
+    }
+
+    case 'case.hypothesis': {
+      const params = caseHypothesisParamsSchema.safeParse(action.params);
+      if (!params.success) return fail('invalid_action', 'case.hypothesis requires text and evidence attachments');
+      const allEvidence = [...params.data.supportingEvidenceIds, ...params.data.opposingEvidenceIds];
+      if (new Set(allEvidence).size !== allEvidence.length) return fail('invalid_action', 'hypothesis evidence cannot be duplicated');
+      for (const evidenceId of allEvidence) {
+        const definition = content.evidence.find((candidate) => candidate.evidenceId === evidenceId);
+        if (!definition) return fail('unknown_target', 'hypotheses may only cite content evidence', { evidenceId });
+        if (state.facts[definition.factKey] === undefined) return fail('invalid_action', 'hypotheses may only cite collected evidence', { evidenceId });
+      }
+      const existing = state.hypotheses.find((hypothesis) => hypothesis.hypothesisId === params.data.hypothesisId);
+      if (existing && existing.text === params.data.text &&
+        JSON.stringify(existing.supportingEvidenceIds) === JSON.stringify(params.data.supportingEvidenceIds) &&
+        JSON.stringify(existing.opposingEvidenceIds) === JSON.stringify(params.data.opposingEvidenceIds)) {
+        return fail('duplicate', 'this hypothesis revision is already recorded', { hypothesisId: existing.hypothesisId });
+      }
+      return { ok: true, action: { actionType: 'case.hypothesis', actorId: action.actorId, params: params.data } };
+    }
+
+    case 'challenge.complete': {
+      const params = challengeCompleteParamsSchema.safeParse(action.params);
+      if (!params.success) return fail('invalid_action', 'challenge.complete has an invalid answer shape');
+      if (state.challengeResults.some((result) => result.challengeId === params.data.challengeId)) {
+        return fail('duplicate', 'this challenge has already been completed', { challengeId: params.data.challengeId });
+      }
+      if (params.data.challengeType === 'timeline_reconstruction') {
+        if (!('order' in params.data.answer) || params.data.answer.order.join(',') !== 'relay_7_log,ward_dispatch,vendor_testimony') {
+          return fail('invalid_action', 'the recorded timeline order does not match the authored evidence', { challengeId: params.data.challengeId });
+        }
+        const required = ['relay_7_log', 'ward_dispatch', 'vendor_testimony'];
+        if (required.some((id) => !content.evidence.some((item) => item.evidenceId === id && state.facts[item.factKey] !== undefined))) {
+          return fail('invalid_action', 'timeline reconstruction requires the three collected records', { required });
+        }
+      } else {
+        if (!('question' in params.data.answer) || params.data.answer.question !== 'ask_route_seal') {
+          return fail('invalid_action', 'that response does not validate the witness contradiction');
+        }
+        const required = ['ward_dispatch', 'vendor_testimony'];
+        if (required.some((id) => !content.evidence.some((item) => item.evidenceId === id && state.facts[item.factKey] !== undefined))) {
+          return fail('invalid_action', 'contradiction questioning requires both the slip and the witness account', { required });
+        }
+      }
+      return { ok: true, action: { actionType: 'challenge.complete', actorId: action.actorId, params: params.data } };
     }
 
     case 'morrow.intervene': {

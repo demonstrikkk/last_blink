@@ -1,0 +1,103 @@
+[     363ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:15802
+[    1276ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 2234202ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234209ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234210ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234210ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234211ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234211ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234229ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234230ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234232ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234232ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234240ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234240ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234256ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234256ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234257ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234257ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234258ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234258ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234260ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234261ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234262ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234262ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2234262ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2234263ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2241575ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2241575ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2241575ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2241576ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2241576ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2241577ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2241578ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2241578ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2241579ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2241580ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2241580ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2241581ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2246541ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2246541ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2246542ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2246542ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2246543ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2246543ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2252482ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2252482ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2252483ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2252483ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2252483ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2252485ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2255851ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2255851ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2255852ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2255853ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2255853ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2255855ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2255861ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2255861ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2255862ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2255862ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2255863ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2255863ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269307ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269308ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269308ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269308ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269309ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269309ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269329ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269329ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269330ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269330ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269344ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269344ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269346ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269347ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269347ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269348ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2269348ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2269348ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2279916ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2279917ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2284772ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2284773ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2284781ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793494032168' does not provide an export named 'evidenceIdSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 2284781ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 2298595ms] TypeError: challengeResults is not iterable
+    at deriveInvestigationRoadmap (http://127.0.0.1:4174/src/world/worldView.ts?t=1793494083067:93:23)
+    at deriveWorldView (http://127.0.0.1:4174/src/world/worldView.ts?t=1793494083067:290:12)
+    at GameScreen (http://127.0.0.1:4174/src/App.tsx?t=1793494096433:125:15)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:14140:12)
+    at renderWithHooks (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:4398:19)
+    at updateFunctionComponent (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:5773:16)
+    at beginWork (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:6389:20)
+    at runWithFiberInDEV (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:942:66)
+    at performUnitOfWork (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9146:92)
+    at workLoopSync (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9042:37)
+[ 2298566ms] [WARNING] %s
+
+%s
+ An error occurred in the <GameScreen> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://127.0.0.1:4174/@vite/client:367
+[ 2349386ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756

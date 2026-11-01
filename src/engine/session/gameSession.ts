@@ -21,6 +21,12 @@ import {
   type BranchId,
   type Choice,
   type ChoiceMadeEvent,
+  type CaseLinkEvent,
+  type CaseHypothesisUpdatedEvent,
+  type ChallengeCompletedEvent,
+  type ChallengeResult,
+  type CaseLink,
+  type CaseHypothesis,
   type EndingReachedEvent,
   type Fact,
   type FactAssertedEvent,
@@ -234,15 +240,17 @@ export class DeterministicGameSession implements GameSession {
   private readonly listeners = new Set<(snapshot: GameSnapshot) => void>();
   private readonly ids: IdFactory;
   private readonly content: GameContent;
+  private readonly deps: GameSessionDeps;
 
   private constructor(
-    private readonly deps: GameSessionDeps,
+    deps: GameSessionDeps,
     content: GameContent,
     state: GameState,
     ids: IdFactory,
     initialEvents: readonly GameEvent[] = [],
     branchStates?: ReadonlyMap<BranchId, { state: GameState; events: readonly GameEvent[] }>,
   ) {
+    this.deps = deps;
     this.content = content;
     this.sessionId = state.sessionId;
     this.state = state;
@@ -321,6 +329,9 @@ export class DeterministicGameSession implements GameSession {
       seed: options.seed,
       facts: {},
       choices: [],
+      caseLinks: [],
+      hypotheses: [],
+      challengeResults: [],
       anchors: [],
       branches: [branch],
       player: options.player,
@@ -801,6 +812,99 @@ export class DeterministicGameSession implements GameSession {
         const ruled = this.runRules(state, actionId);
         state = ruled.state;
         produced.push(...ruled.eventIds);
+        break;
+      }
+
+      case 'case.link': {
+        const eventId = this.ids.next('evt_') as GameEventId;
+        const previous = state.caseLinks.find((link) => link.linkId === action.params.linkId);
+        const link: CaseLink = {
+          schemaVersion: CONTRACT_VERSION,
+          linkId: action.params.linkId,
+          sessionId: state.sessionId,
+          branchId: state.branchId,
+          leftEvidenceId: action.params.leftEvidenceId,
+          rightEvidenceId: action.params.rightEvidenceId,
+          relation: action.params.relation,
+          note: action.params.note,
+          createdAtTick: previous?.createdAtTick ?? state.tick,
+          revisedAtTick: state.tick,
+        };
+        const event: CaseLinkEvent = {
+          ...this.envelope(state, eventId, state.tick, action.actorId, source, actionId),
+          type: 'case.linked',
+          payload: { link },
+        };
+        state = this.apply(state, event);
+        produced.push(eventId);
+        break;
+      }
+
+      case 'case.hypothesis': {
+        const eventId = this.ids.next('evt_') as GameEventId;
+        const previous = state.hypotheses.find((hypothesis) => hypothesis.hypothesisId === action.params.hypothesisId);
+        const support = action.params.supportingEvidenceIds.length;
+        const opposition = action.params.opposingEvidenceIds.length;
+        const status: CaseHypothesis['status'] = opposition > support
+          ? 'contradicted'
+          : support > opposition
+            ? 'supported'
+            : support === 0
+              ? 'open'
+              : 'inconclusive';
+        const hypothesis: CaseHypothesis = {
+          schemaVersion: CONTRACT_VERSION,
+          hypothesisId: action.params.hypothesisId,
+          sessionId: state.sessionId,
+          branchId: state.branchId,
+          text: action.params.text,
+          supportingEvidenceIds: [...action.params.supportingEvidenceIds],
+          opposingEvidenceIds: [...action.params.opposingEvidenceIds],
+          status,
+          createdAtTick: previous?.createdAtTick ?? state.tick,
+          revisedAtTick: state.tick,
+        };
+        const event: CaseHypothesisUpdatedEvent = {
+          ...this.envelope(state, eventId, state.tick, action.actorId, source, actionId),
+          type: 'case.hypothesis.updated',
+          payload: { hypothesis },
+        };
+        state = this.apply(state, event);
+        produced.push(eventId);
+        break;
+      }
+
+      case 'challenge.complete': {
+        const eventId = this.ids.next('evt_') as GameEventId;
+        const timeline = action.params.challengeType === 'timeline_reconstruction';
+        const result: ChallengeResult = {
+          schemaVersion: CONTRACT_VERSION,
+          challengeId: action.params.challengeId,
+          challengeType: action.params.challengeType,
+          outcome: timeline ? 'verified_sequence' : 'verified_contradiction_follow_up',
+          sessionId: state.sessionId,
+          branchId: state.branchId,
+          evidenceIds: timeline
+            ? ['relay_7_log', 'ward_dispatch', 'vendor_testimony']
+            : ['ward_dispatch', 'vendor_testimony'],
+          explanation: timeline
+            ? 'The three collected records support a plausible sequence, while their timestamp conflict remains unresolved.'
+            : 'The dispatch slip and witness account establish a contradiction worth pursuing; the question does not identify who altered the record.',
+          establishes: timeline
+            ? 'Relay 7 record precedes the dispatch record, which precedes the witness recollection.'
+            : 'The official sealed-route claim conflicts with the witness account of loose paper and a fleeing runner.',
+          remainsUnknown: timeline
+            ? 'The eight-minute clock discrepancy and authorship of the dispatch remain unknown.'
+            : 'Who altered or authored the dispatch slip remains unknown.',
+          completedAtTick: state.tick,
+        };
+        const event: ChallengeCompletedEvent = {
+          ...this.envelope(state, eventId, state.tick, action.actorId, source, actionId),
+          type: 'challenge.completed',
+          payload: { result },
+        };
+        state = this.apply(state, event);
+        produced.push(eventId);
         break;
       }
 

@@ -66,6 +66,20 @@ describe('stage 8 - ECHO grounded retrieval', () => {
     expect(answer.summary).toContain('cannot establish');
   });
 
+  it('evaluates a player hypothesis without promoting overlap to proof', async () => {
+    const harness = await streetHarness();
+    collect(harness, 'relay_7_log');
+    const answer = echo(harness).ask({
+      kind: 'hypothesis',
+      text: 'MORROW altered the witness memory',
+    });
+    expect(answer.status).toBe('partial');
+    expect(answer.claims.some((claim) => claim.kind === 'inference')).toBe(true);
+    expect(answer.claims.some((claim) => claim.text.includes('does not establish'))).toBe(true);
+    expect(answer.missing).toContain('an explicit causal event proving the hypothesis');
+    expectSubstantiveClaimsCited(answer);
+  });
+
   it('cites the fact and its source event when it can answer', async () => {
     const harness = await streetHarness();
     collect(harness, 'relay_7_log');
@@ -230,5 +244,28 @@ describe('stage 8 - ECHO grounded retrieval', () => {
     expect(answer.claims.some((claim) => claim.citations.some((c) => c.kind === 'branch'))).toBe(
       true,
     );
+  });
+
+  it('reports a validated challenge outcome with its event citation', async () => {
+    const harness = await streetHarness();
+    for (const evidenceId of ['relay_7_log', 'ward_dispatch', 'vendor_testimony']) {
+      collect(harness, evidenceId);
+    }
+    const result = harness.session.dispatch({
+      actionType: 'challenge.complete',
+      actorId: 'player_local',
+      params: {
+        challengeId: 'challenge_timeline_relay7',
+        challengeType: 'timeline_reconstruction',
+        answer: { order: ['relay_7_log', 'ward_dispatch', 'vendor_testimony'] },
+      },
+    });
+    expect(result.status).toBe('accepted');
+
+    const answer = echo(harness).ask({ kind: 'situation' });
+    const claim = answer.claims.find((candidate) => candidate.text.includes('timeline_reconstruction'));
+    expect(claim?.kind).toBe('derived_conclusion');
+    expect(claim?.text).toContain('Still unknown');
+    expect(claim?.citations.some((citation) => citation.label.includes('challenge.completed'))).toBe(true);
   });
 });

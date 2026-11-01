@@ -52,6 +52,18 @@ export function buildMorrowObservation(
     .sort((left, right) => (left.nodeId < right.nodeId ? -1 : left.nodeId > right.nodeId ? 1 : 0))
     .map((choice) => ({ nodeId: choice.nodeId, optionId: choice.optionId }));
 
+  const recentMorrowResponses = events
+    .filter((event) => event.type === 'morrow.intervened')
+    .slice(-16)
+    .map((event) => event.type === 'morrow.intervened' ? event.payload.response : null)
+    .filter((response): response is NonNullable<typeof response> => response !== null);
+  const predictedNextMove = choices.length === 0
+    ? 'investigate_an_unresolved_record'
+    : evidenceKeys.length < 3
+      ? 'correlate_an_independent_witness_or_record'
+      : 'test_the_current_theory_or_open_a_branch';
+  const completedChallenges = state.challengeResults.map((result) => result.challengeId);
+
   const features = {
     evidenceKeys,
     evidenceCount: evidenceKeys.length,
@@ -65,6 +77,11 @@ export function buildMorrowObservation(
     lastResponse: morrowResponseOf(state),
     escalation: morrowEscalationOf(state),
     recentEventTypes: events.slice(-limit).map((event) => event.type),
+    recentMorrowResponses,
+    completedChallenges,
+    contradictionQuestioned: state.challengeResults.some((result) => result.challengeType === 'contradiction_questioning'),
+    timelineReconstructed: state.challengeResults.some((result) => result.challengeType === 'timeline_reconstruction'),
+    predictedNextMove,
     endingId: state.endingId,
   } as const;
 

@@ -87,6 +87,38 @@ async function playToOpenRecord(harness: SessionHarness): Promise<void> {
 }
 
 describe('stage 7 - MORROW deterministic policy loop', () => {
+  it('accepts a typed provider proposal through the same engine boundary', async () => {
+    const harness = await streetHarness();
+    const deterministic = createDeterministicMorrowPolicy();
+    let calls = 0;
+    const controller = new MorrowController(harness.session, {
+      clock: harness.clock,
+      model: {
+        async propose(observation) {
+          calls += 1;
+          return deterministic.propose(observation);
+        },
+      },
+    });
+    const turn = await controller.runAsync();
+    expect(calls).toBe(1);
+    expect(turn?.fallback).toBe(false);
+    expect(turn?.result.status).toBe('accepted');
+    expect(harness.session.getState().facts['morrow.response']?.value).toBe('observe');
+  });
+
+  it('falls back deterministically when the provider bridge fails', async () => {
+    const harness = await streetHarness();
+    const controller = new MorrowController(harness.session, {
+      clock: harness.clock,
+      model: { async propose() { throw new Error('provider timeout'); } },
+    });
+    const turn = await controller.runAsync();
+    expect(turn?.fallback).toBe(true);
+    expect(turn?.result.status).toBe('accepted');
+    expect(turn?.proposal.deterministic).toBe(true);
+  });
+
   it('observes an untouched session without inventing pressure', async () => {
     const harness = await streetHarness();
     const controller = new MorrowController(harness.session, { clock: harness.clock });
@@ -272,6 +304,40 @@ describe('stage 7 - MORROW deterministic policy loop', () => {
     expect(turn?.fallback).toBe(true);
     expect(turn?.proposal.response).toBe('observe');
     expect(morrowProposalSchema.safeParse(turn?.proposal).success).toBe(true);
+  });
+
+  it('adapts to a validated investigation challenge rather than raw evidence count', async () => {
+    const plain = await streetHarness('stage7-adaptation-plain');
+    const challenged = await streetHarness('stage7-adaptation-challenged');
+    for (const harness of [plain, challenged]) {
+      new MorrowController(harness.session, { clock: harness.clock }).run();
+      collect(harness, 'relay_7_log');
+      new MorrowController(harness.session, { clock: harness.clock }).run();
+      collect(harness, 'ward_dispatch');
+      collect(harness, 'vendor_testimony');
+    }
+
+    const plainTurn = new MorrowController(plain.session, { clock: plain.clock }).plan();
+    expect(plainTurn.proposal.response).toBe('restrict');
+    expect(plainTurn.proposal.reasonCodes).not.toContain('CHALLENGE_ADAPTED');
+    expect(plainTurn.observation.features.timelineReconstructed).toBe(false);
+
+    const challenge = challenged.session.dispatch({
+      actionType: 'challenge.complete',
+      actorId: 'player_local',
+      params: {
+        challengeId: 'challenge_timeline_relay7',
+        challengeType: 'timeline_reconstruction',
+        answer: { order: ['relay_7_log', 'ward_dispatch', 'vendor_testimony'] },
+      },
+    });
+    expect(challenge.status).toBe('accepted');
+
+    const challengedTurn = new MorrowController(challenged.session, { clock: challenged.clock }).plan();
+    expect(challengedTurn.proposal.response).toBe('restrict');
+    expect(challengedTurn.proposal.reasonCodes).toContain('CHALLENGE_ADAPTED');
+    expect(challengedTurn.observation.features.timelineReconstructed).toBe(true);
+    expect(challengedTurn.observation.features.completedChallenges).toEqual(['challenge_timeline_relay7']);
   });
 
   it('keeps observations schema-valid and scoped to the active branch', async () => {

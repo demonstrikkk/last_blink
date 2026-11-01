@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { StaticContentPort } from '../src/engine/index.js';
 import { STAGE5_CONTENT } from '../src/content/stage5Content.js';
 import { deriveWorldView, targetAvailable } from '../src/world/worldView.js';
+import { getDialogueScript } from '../src/content/stage5Dialogue.js';
 import { WORLD_TARGETS } from '../src/world/district.js';
 import { createHarness } from './helpers.js';
 
@@ -36,22 +37,58 @@ function choose(
 }
 
 describe('Stage 5 world view projection', () => {
+  it('lets Ivo provide a useful partial account before the dispatch slip', async () => {
+    const { session } = await stage5Harness();
+    const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    const script = getDialogueScript('ivo', session.getState(), view);
+
+    expect(script.lines.some((line) => line.text.includes('not carrying a sealed pouch'))).toBe(true);
+    expect(script.lines.some((line) => line.text.includes('north board'))).toBe(true);
+    expect(script.gate).toContain('optional corroboration lead');
+    expect(script.grantsEvidenceId).toBeUndefined();
+  });
+
+  it('projects an information-driven roadmap instead of a mandatory character sequence', async () => {
+    const { session } = await stage5Harness();
+    let view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+
+    expect(view.roadmap.some((item) => item.kind === 'lead')).toBe(true);
+    expect(view.roadmap.some((item) => item.label === 'Talk to Sable')).toBe(false);
+    expect(view.roadmap.some((item) => item.label === "Hear Ivo's account")).toBe(false);
+
+    collect(session, 'ward_dispatch');
+    collect(session, 'vendor_testimony');
+    view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    expect(view.roadmap.some((item) => item.kind === 'uncertain')).toBe(true);
+    expect(view.roadmap.some((item) => item.label.includes('Authorized Dispatch'))).toBe(true);
+  });
+
+  it('deepens Ivo questioning after the slip', async () => {
+    const { session } = await stage5Harness();
+    collect(session, 'ward_dispatch');
+    const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    const script = getDialogueScript('ivo', session.getState(), view);
+
+    expect(script.grantsEvidenceId).toBe('vendor_testimony');
+    expect(script.lines.some((line) => line.text.includes('explicit contradiction'))).toBe(true);
+  });
+
   it('projects the investigation objectives and gated evidence', async () => {
     const { session } = await stage5Harness();
     const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
 
-    expect(view.evidence).toHaveLength(3);
-    expect(view.evidenceTotal).toBe(3);
+    expect(view.evidence).toHaveLength(12);
+    expect(view.evidenceTotal).toBe(12);
     expect(view.objectives).toHaveLength(6);
     expect(view.currentObjective?.objectiveId).toBe('obj_read_relay');
     expect(view.phase).toBe('arrival');
-    expect(view.choices).toHaveLength(3);
+    expect(view.choices).toHaveLength(6);
     expect(view.choice?.nodeId).toBe('node.sable.relay');
     expect(view.choice?.available).toBe(false);
     expect(view.choice?.missing).toEqual(['evidence.relay_7']);
 
     expect(targetAvailable(view, 'relay_7_log')).toBe(true);
-    expect(targetAvailable(view, 'ward_dispatch')).toBe(false);
+    expect(targetAvailable(view, 'ward_dispatch')).toBe(true);
     expect(targetAvailable(view, 'sable')).toBe(true);
     expect(targetAvailable(view, 'ivo')).toBe(true);
     expect(targetAvailable(view, 'ward_call')).toBe(true);
@@ -93,6 +130,30 @@ describe('Stage 5 world view projection', () => {
       'story.relay_choice_resolved',
       'story.vendor_choice_resolved',
     ]);
+  });
+
+  it('derives evidence links and an inconclusive case before material harm is established', async () => {
+    const { session } = await stage5Harness();
+    collect(session, 'ward_dispatch');
+    collect(session, 'vendor_testimony');
+    const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    const contradiction = view.caseAssessment.links.find((link) => link.relation === 'contradicts');
+
+    expect(view.caseAssessment.verdict).toBe('inconclusive');
+    expect(contradiction?.established).toBe(true);
+    expect(view.caseAssessment.explanation).toContain('does not yet establish');
+  });
+
+  it('recognizes a grounded disproportionate MORROW case from collected material evidence', async () => {
+    const { session } = await stage5Harness();
+    for (const evidenceId of ['human_cost', 'plaza_terminal', 'depot_terminal']) collect(session, evidenceId);
+    const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+
+    expect(view.caseAssessment.verdict).toBe('unjustified');
+    expect(view.caseAssessment.supportingEvidenceIds).toEqual(
+      expect.arrayContaining(['plaza_terminal', 'depot_terminal']),
+    );
+    expect(view.caseAssessment.contradictoryEvidenceIds).toContain('human_cost');
   });
 
   it('projects the full causal state and ending after the final call', async () => {

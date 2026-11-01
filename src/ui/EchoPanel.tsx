@@ -18,14 +18,15 @@ interface EchoPanelProps {
   readonly activeBranchId: string;
 }
 
-type Mode = 'situation' | 'fact' | 'decision' | 'morrow' | 'ending' | 'compare';
+type Mode = 'situation' | 'fact' | 'decision' | 'morrow' | 'ending' | 'hypothesis' | 'compare';
 
 const MODES: readonly { readonly id: Mode; readonly label: string }[] = [
   { id: 'situation', label: 'Situation' },
   { id: 'fact', label: 'Fact' },
   { id: 'decision', label: 'Decision' },
-  { id: 'morrow', label: 'MORROW' },
+  { id: 'morrow', label: 'MORROW audit' },
   { id: 'ending', label: 'Ending' },
+  { id: 'hypothesis', label: 'Test theory' },
   { id: 'compare', label: 'Compare' },
 ];
 
@@ -45,6 +46,7 @@ export function EchoPanel({
   const [mode, setMode] = useState<Mode>('situation');
   const [factKey, setFactKey] = useState('evidence.relay_7');
   const [nodeId, setNodeId] = useState('node.sable.relay');
+  const [hypothesis, setHypothesis] = useState('MORROW altered the witness memory');
   const [otherBranchId, setOtherBranchId] = useState<string>('');
   const [answer, setAnswer] = useState<EchoAnswer | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +68,8 @@ export function EchoPanel({
         return { kind: 'morrow' };
       case 'ending':
         return { kind: 'ending' };
+      case 'hypothesis':
+        return hypothesis.trim() ? { kind: 'hypothesis', text: hypothesis.trim() } : null;
       case 'compare': {
         const other = otherBranchId || fallbackOther;
         return other
@@ -117,8 +121,9 @@ export function EchoPanel({
         </header>
 
         <p className="echo-intro mono">
-          &gt; PROVENANCE ARCHIVE: ECHO queries strictly canonical facts, events, and rules
-          within timeline isolation. Foreign branches are accessible only via explicit comparison.
+          &gt; READ-ONLY PROVENANCE ARCHIVE: ECHO explains canonical facts, events, rules and
+          MORROW audit records within timeline isolation. ECHO cannot command MORROW,
+          alter surveillance, change evidence, or write game state.
         </p>
 
         <div className="echo-modes" role="group" aria-label="Query mode selection">
@@ -162,6 +167,13 @@ export function EchoPanel({
                 </option>
               ))}
             </select>
+          </label>
+        ) : null}
+
+        {mode === 'hypothesis' ? (
+          <label className="echo-field">
+            <span className="mono">&gt; THEORY TO TEST</span>
+            <input value={hypothesis} onChange={(event) => setHypothesis(event.target.value)} className="mono" />
           </label>
         ) : null}
 
@@ -222,6 +234,15 @@ export function EchoPanel({
                     ))}
                   </ul>
                 ) : null}
+                <p className="mono echo-plain-label">
+                  {claim.kind === 'recorded_fact' || claim.kind === 'recorded_event'
+                    ? 'RECORDED: this is what the canonical log establishes.'
+                    : claim.kind === 'derived_conclusion'
+                      ? 'DERIVED: this follows from recorded rules and facts.'
+                      : claim.kind === 'inference'
+                        ? 'HYPOTHESIS: plausible, but not proof.'
+                        : 'UNKNOWN: the current records cannot establish this.'}
+                </p>
               </article>
             ))}
 

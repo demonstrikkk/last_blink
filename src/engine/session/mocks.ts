@@ -59,7 +59,11 @@ export class InMemoryPersistence implements PersistencePort {
 }
 
 export class StaticContentPort implements ContentPort {
-  constructor(private readonly content: GameContent = STAGE3_CONTENT) {}
+  private readonly content: GameContent;
+
+  constructor(content: GameContent = STAGE3_CONTENT) {
+    this.content = content;
+  }
 
   async load(): Promise<GameContent> {
     return gameContentSchema.parse(structuredClone(this.content));

@@ -8,7 +8,7 @@ import {
   type NpcObservation,
 } from '../contracts/index.js';
 import { hashCanonical } from '../core/hash.js';
-import { IVO, SABLE } from '../../content/npcContent.js';
+import { IVO, SABLE, STAGE9_NPC_LIST } from '../../content/npcContent.js';
 
 export interface NpcPolicy {
   readonly npcId: NpcId;
@@ -112,6 +112,46 @@ export function createIvoPolicy(): NpcPolicy {
       );
     },
   };
+}
+
+/**
+ * Default cognition for every authored city NPC. It observes the facts the
+ * definition allows and proposes a single no-op turn when the investigation
+ * has produced visible evidence. Unregistered characters therefore never
+ * freeze the turn loop: the controller can always fall back to this policy.
+ */
+export function createDefaultPolicy(definition: NpcDefinition): NpcPolicy {
+  const policyId = `policy.npc.${definition.memoryNamespace}.scripted`;
+  return {
+    npcId: definition.npcId,
+    policyId,
+    policyVersion: POLICY_VERSION,
+    evaluate(observation, memory) {
+      const visibleEvidence = observation.visibleFacts.filter((fact) =>
+        fact.key.startsWith('evidence.'),
+      );
+      if (visibleEvidence.length === 0) return null;
+      const latest = visibleEvidence[visibleEvidence.length - 1]!.key;
+      return noopProposal(
+        observation,
+        definition,
+        policyId,
+        memory.length > 0
+          ? `${definition.displayName} is holding position; ${latest} is already on the branch.`
+          : `${definition.displayName} acknowledges ${latest} and requests no world change.`,
+        memory.length > 0 ? 0.5 : 0.55,
+      );
+    },
+  };
+}
+
+/** Every authored NPC gets a registered policy; Sable and Ivo keep bespoke ones. */
+export function createAllPolicies(): readonly NpcPolicy[] {
+  return STAGE9_NPC_LIST.map((definition) => {
+    if (definition.npcId === SABLE.npcId) return createSablePolicy();
+    if (definition.npcId === IVO.npcId) return createIvoPolicy();
+    return createDefaultPolicy(definition);
+  });
 }
 
 export function createFallbackProposal(

@@ -56,6 +56,7 @@ export type EchoQuery =
   | { readonly kind: 'decision'; readonly nodeId: string; readonly branchId?: BranchId }
   | { readonly kind: 'morrow'; readonly branchId?: BranchId }
   | { readonly kind: 'ending'; readonly branchId?: BranchId }
+  | { readonly kind: 'hypothesis'; readonly text: string; readonly branchId?: BranchId }
   | {
       readonly kind: 'compare';
       readonly baseBranchId: BranchId;
@@ -132,10 +133,16 @@ function label(config: { readonly title: string }): string {
  * branch's post-fork events during a single-branch query.
  */
 export class EchoService {
+  private readonly session: GameSession;
+  private readonly content: GameContent;
+
   constructor(
-    private readonly session: GameSession,
-    private readonly content: GameContent,
-  ) {}
+    session: GameSession,
+    content: GameContent,
+  ) {
+    this.session = session;
+    this.content = content;
+  }
 
   ask(query: EchoQuery): EchoAnswer {
     switch (query.kind) {
@@ -149,6 +156,8 @@ export class EchoService {
         return this.explainMorrow(query.branchId);
       case 'ending':
         return this.explainEnding(query.branchId);
+      case 'hypothesis':
+        return this.explainHypothesis(query.text, query.branchId);
       case 'compare':
         return this.explainComparison(query.baseBranchId, query.otherBranchId);
       default: {
@@ -194,6 +203,19 @@ export class EchoService {
         kind: 'unavailable',
         text: 'No evidence fact has been recorded on this branch yet.',
         citations: [],
+      });
+    }
+
+    for (const result of scope.state.challengeResults) {
+      const event = [...scope.events]
+        .reverse()
+        .find((candidate) =>
+          candidate.type === 'challenge.completed' &&
+          candidate.payload.result.challengeId === result.challengeId);
+      claims.push({
+        kind: 'derived_conclusion',
+        text: `${result.challengeType} established: ${result.establishes} Still unknown: ${result.remainsUnknown}`,
+        citations: event ? [eventCitation(event, 'Validated challenge')] : [],
       });
     }
 
@@ -428,7 +450,7 @@ export class EchoService {
       );
       claims.push({
         kind: 'recorded_event',
-        text: `MORROW applied "${event.payload.response}" at sequence ${event.sequenceNo}, escalation ${event.payload.escalation}, reasons ${event.payload.reasonCodes.join(', ')}.`,
+        text: `MORROW applied "${event.payload.response}" at sequence ${event.sequenceNo}, escalation ${event.payload.escalation}, reasons ${event.payload.reasonCodes.join(', ')}. The engine accepted the intervention; this record does not by itself prove intent or memory alteration.`,
         citations: [
           eventCitation(event, 'MORROW intervention'),
           ...(proposal ? [eventCitation(proposal, 'Accepted proposal')] : []),
@@ -441,7 +463,7 @@ export class EchoService {
       if (event.payload.status !== 'rejected') continue;
       claims.push({
         kind: 'recorded_event',
-        text: `MORROW proposed "${event.payload.response}" but the engine rejected it: ${event.payload.reason ?? 'no reason recorded'}.`,
+        text: `MORROW proposed "${event.payload.response}" under ${event.payload.policyId} ${event.payload.policyVersion} from observation ${event.payload.observationId}, but the engine rejected it: ${event.payload.reason ?? 'no reason recorded'}.`,
         citations: [eventCitation(event, 'Rejected proposal')],
       });
     }
@@ -567,6 +589,40 @@ export class EchoService {
     );
   }
 
+  explainHypothesis(text: string, branchId?: BranchId): EchoAnswer {
+    const query: EchoQuery = { kind: 'hypothesis', text, branchId };
+    const scope = this.scope(branchId);
+    if (!scope) return this.unknown(query, 'That timeline is not retained in this session.', [text]);
+    const normalized = text.toLowerCase();
+    const relevantFacts = Object.values(scope.state.facts).filter((fact) => {
+      const haystack = `${fact.key} ${JSON.stringify(fact.value)} ${fact.source.ref}`.toLowerCase();
+      return normalized.split(/\s+/).some((word) => word.length > 3 && haystack.includes(word));
+    }).slice(0, 8);
+    const claims: EchoClaim[] = relevantFacts.map((fact) => ({
+      kind: 'recorded_fact',
+      text: `This hypothesis overlaps with the recorded ${fact.key}: ${JSON.stringify(fact.value)}.`,
+      citations: [factCitation(fact)],
+    }));
+    const missing = relevantFacts.length === 0
+      ? ['a canonical fact or event matching the proposed theory']
+      : ['an explicit causal event proving the hypothesis'];
+    claims.push({
+      kind: relevantFacts.length > 0 ? 'inference' : 'unavailable',
+      text: relevantFacts.length > 0
+        ? 'The records make this hypothesis worth testing, but overlap is not proof of causation or responsibility.'
+        : 'No canonical record currently supports this hypothesis in the active branch.',
+      citations: relevantFacts.length > 0 ? relevantFacts.map(factCitation) : [],
+    });
+    claims.push({
+      kind: 'unavailable',
+      text: 'This query does not establish that MORROW altered a person’s memory; look for a recorded mechanism, not only a contradiction.',
+      citations: [],
+    });
+    return this.answer(query, scope, relevantFacts.length > 0 ? 'partial' : 'unknown',
+      `Hypothesis review on ${this.branchLabel(scope)}: ${relevantFacts.length} overlapping canonical record${relevantFacts.length === 1 ? '' : 's'}.`,
+      claims, missing);
+  }
+
   explainComparison(baseBranchId: BranchId, otherBranchId: BranchId): EchoAnswer {
     const query: EchoQuery = { kind: 'compare', baseBranchId, otherBranchId };
     let comparison;
@@ -630,6 +686,22 @@ export class EchoService {
       claims.push({
         kind: 'derived_conclusion',
         text: `${choice.nodeId}: V${base.timelineIndex + 1} chose ${choice.baseOptionId ?? 'nothing'}, V${other.timelineIndex + 1} chose ${choice.otherOptionId ?? 'nothing'}.`,
+        citations: [branchCitation(base), branchCitation(other)],
+      });
+    }
+
+    const baseMorrow = this.session
+      .getLineageEvents(baseBranchId)
+      .filter((event) => event.type === 'morrow.intervened')
+      .map((event) => event.type === 'morrow.intervened' ? `${event.payload.response} (#${event.sequenceNo})` : '');
+    const otherMorrow = this.session
+      .getLineageEvents(otherBranchId)
+      .filter((event) => event.type === 'morrow.intervened')
+      .map((event) => event.type === 'morrow.intervened' ? `${event.payload.response} (#${event.sequenceNo})` : '');
+    if (baseMorrow.length > 0 || otherMorrow.length > 0) {
+      claims.push({
+        kind: 'recorded_event',
+        text: `MORROW interventions by branch: V${base.timelineIndex + 1} = ${baseMorrow.join(', ') || 'none'}; V${other.timelineIndex + 1} = ${otherMorrow.join(', ') || 'none'}.`,
         citations: [branchCitation(base), branchCitation(other)],
       });
     }

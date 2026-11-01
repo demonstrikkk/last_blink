@@ -66,7 +66,7 @@ describe('frozen contract registry', () => {
   });
 
   it('documents the full event vocabulary', () => {
-    expect(EVENT_TYPES).toHaveLength(12);
+    expect(EVENT_TYPES).toHaveLength(15);
     expect(new Set(EVENT_TYPES).size).toBe(EVENT_TYPES.length);
   });
 

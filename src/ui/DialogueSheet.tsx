@@ -17,6 +17,8 @@ interface DialogueSheetProps {
   readonly onChoose: (optionId: string) => void;
   readonly onHighlight: (index: number) => void;
   readonly onClose: () => void;
+  readonly presentedEvidenceId: string | null;
+  readonly onPresentEvidence: (evidenceId: string) => void;
 }
 
 function portraitForSpeaker(name: string): string {
@@ -53,6 +55,8 @@ export function DialogueSheet({
   onChoose,
   onHighlight,
   onClose,
+  presentedEvidenceId,
+  onPresentEvidence,
 }: DialogueSheetProps) {
   const primaryRef = useRef<HTMLButtonElement>(null);
 
@@ -106,6 +110,26 @@ export function DialogueSheet({
             <p id="dialogue-body" className="dialogue-text">
               {line.text}
             </p>
+            {view.collectedEvidence.length > 0 ? (
+              <details className="dialogue-evidence-presentation">
+                <summary>Present collected evidence</summary>
+                <div className="button-row">
+                  {view.collectedEvidence.map((evidence) => (
+                    <button
+                      key={evidence.evidenceId}
+                      type="button"
+                      className={`btn btn-quiet${presentedEvidenceId === evidence.evidenceId ? ' choice-active' : ''}`}
+                      onClick={() => onPresentEvidence(evidence.evidenceId)}
+                    >
+                      {evidence.label}
+                    </button>
+                  ))}
+                </div>
+                {presentedEvidenceId ? (
+                  <p className="dialogue-evidence-note mono">Presented record remains a claim or observation; it does not rewrite the witness account.</p>
+                ) : null}
+              </details>
+            ) : null}
             <div className="dialogue-actions">
               <button ref={primaryRef} type="button" className="btn btn-primary" onClick={onAdvance}>
                 {lineIndex + 1 === lineCount ? 'Hear the question' : 'Continue'}
@@ -184,7 +208,7 @@ export function DialogueSheet({
                   />
                 </div>
                 <div>
-                  <p className="micro">EVIDENCE GATE // PREREQUISITE UNMET</p>
+                 <p className="micro">DECISION READINESS // MORE EVIDENCE NEEDED</p>
                   <h2 id="dialogue-speaker" className="dialogue-speaker">
                     {script.displayName}
                   </h2>
@@ -192,7 +216,7 @@ export function DialogueSheet({
                 </div>
               </div>
               <div className="dialogue-meta">
-                <span className="mono dialogue-progress dialogue-blocked-tag">BLOCKED</span>
+                <span className="mono dialogue-progress dialogue-blocked-tag">PARTIAL / RETURN</span>
               </div>
             </header>
             <p id="dialogue-body" className="dialogue-text">
@@ -200,7 +224,7 @@ export function DialogueSheet({
             </p>
             {node && node.missing.length > 0 ? (
               <p className="dialogue-requirements mono">
-                Required prior evidence: {node.missing.join(', ')}
+                Missing for this decision, not for exploration: {node.missing.join(', ')}
               </p>
             ) : null}
             <div className="dialogue-actions">

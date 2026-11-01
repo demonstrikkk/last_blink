@@ -130,6 +130,15 @@ export function rebaseState(state: GameState, branch: Branch, branchId: BranchId
     anchors: state.anchors.map((anchor) =>
       anchor.branchId === branchId ? anchor : { ...anchor, branchId },
     ),
+    caseLinks: state.caseLinks.map((link) =>
+      link.branchId === branchId ? link : { ...link, branchId },
+    ),
+    hypotheses: state.hypotheses.map((hypothesis) =>
+      hypothesis.branchId === branchId ? hypothesis : { ...hypothesis, branchId },
+    ),
+    challengeResults: state.challengeResults.map((result) =>
+      result.branchId === branchId ? result : { ...result, branchId },
+    ),
     branches: [...state.branches.filter((item) => item.branchId !== branchId), branch],
   };
 }

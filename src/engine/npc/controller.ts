@@ -18,9 +18,9 @@ import type { NpcMemoryPort } from './memory.js';
 import { InMemoryNpcMemory } from './memory.js';
 import { buildNpcObservation } from './observation.js';
 import {
+  createAllPolicies,
+  createDefaultPolicy,
   createFallbackProposal,
-  createIvoPolicy,
-  createSablePolicy,
   type NpcPolicy,
 } from './policy.js';
 import { STAGE9_NPC_DEFINITIONS } from '../../content/npcContent.js';
@@ -53,12 +53,14 @@ export class NpcCognitionController {
   private readonly memory: NpcMemoryPort;
   private readonly clock: ClockPort;
   private readonly evaluatedTicks = new Set<string>();
+  private readonly session: GameSession;
 
   constructor(
-    private readonly session: GameSession,
+    session: GameSession,
     options: NpcCognitionControllerOptions = {},
   ) {
-    const configured = options.policies ?? [createSablePolicy(), createIvoPolicy()];
+    this.session = session;
+    const configured = options.policies ?? createAllPolicies();
     for (const policy of configured) this.policies.set(policy.npcId, policy);
     this.definitions = options.definitions ?? STAGE9_NPC_DEFINITIONS;
     this.memory = options.memory ?? new InMemoryNpcMemory();
@@ -74,8 +76,7 @@ export class NpcCognitionController {
 
   run(npcId: NpcId, options: NpcRunOptions = {}): NpcCognitionTurn | null {
     const definition = this.definitionFor(npcId);
-    const policy = this.policies.get(npcId);
-    if (!policy) throw new Error(`no Stage 9 policy registered for ${npcId}`);
+    const policy = this.policies.get(npcId) ?? createDefaultPolicy(definition);
 
     const observation = this.observe(npcId);
     const tickKey = `${observation.branchId}\u0000${npcId}\u0000${observation.tick}`;

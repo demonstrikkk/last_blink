@@ -19,6 +19,9 @@ interface HudTopBarProps {
   readonly onSave: () => void;
   readonly onOpenBlink: () => void;
   readonly onPulse?: () => void;
+  readonly timeMode: 'day' | 'night';
+  readonly onToggleTimeMode: () => void;
+  readonly onOpenDiagnostics: () => void;
 }
 
 export function HudTopBar({
@@ -40,6 +43,9 @@ export function HudTopBar({
   onSave,
   onOpenBlink,
   onPulse,
+  timeMode,
+  onToggleTimeMode,
+  onOpenDiagnostics,
 }: HudTopBarProps) {
   return (
     <header className="hud-topbar" role="banner">
@@ -56,7 +62,7 @@ export function HudTopBar({
           aria-pressed={showObjectives}
         >
           <span className="pill-glyph glyph-hex" aria-hidden="true">⬡</span>
-          <span>Objectives</span>
+           <span>Roadmap</span>
         </button>
 
         <button
@@ -86,7 +92,7 @@ export function HudTopBar({
           aria-pressed={showLedger}
         >
           <span className="pill-glyph glyph-ledger" aria-hidden="true">⮹</span>
-          <span>Ledger</span>
+           <span>Case Board</span>
         </button>
       </nav>
 
@@ -113,6 +119,13 @@ export function HudTopBar({
             <span>PULSE [Q]</span>
           </button>
         ) : null}
+
+        <button type="button" className="hud-tool-btn mono" onClick={onToggleTimeMode}>
+          {timeMode === 'night' ? 'DAY MODE' : 'NIGHT MODE'}
+        </button>
+        <button type="button" className="hud-tool-btn mono" onClick={onOpenDiagnostics} title="Developer AI diagnostics">
+          AI DIAG
+        </button>
 
         <button
           type="button"

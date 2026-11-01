@@ -24,7 +24,7 @@ import {
  * contract; see docs/adr/0016-morrow-echo-additive-contracts.md.
  */
 export const MORROW_POLICY_ID = 'policy.morrow.deterministic';
-export const MORROW_POLICY_VERSION = '1.0.0';
+export const MORROW_POLICY_VERSION = '1.1.0';
 export const MORROW_POLICY_OWNER = 'ai-runtime';
 
 /** Hard ceiling on escalation. The engine refuses anything above this. */
@@ -76,6 +76,11 @@ export const morrowObservationFeaturesSchema = z.strictObject({
   lastResponse: morrowResponseSchema.nullable(),
   escalation: z.number().int().min(0).max(MAX_MORROW_ESCALATION),
   recentEventTypes: z.array(z.string().trim().min(1).max(48)).max(32),
+  recentMorrowResponses: z.array(morrowResponseSchema).max(16),
+  completedChallenges: z.array(z.string().trim().min(1).max(80)).max(16),
+  contradictionQuestioned: z.boolean(),
+  timelineReconstructed: z.boolean(),
+  predictedNextMove: z.string().trim().min(1).max(80),
   endingId: z.string().trim().min(1).max(64).nullable(),
 });
 

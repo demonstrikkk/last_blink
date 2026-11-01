@@ -12,12 +12,12 @@ const sable = WORLD_TARGETS.find((target) => target.id === 'sable')!;
 
 describe('interaction proximity', () => {
   it('selects the nearest target in range', () => {
-    const standingNextToAnchor = { x: 12 * 16 + 8, y: 15 * 16 + 15 };
+    const standingNextToAnchor = { x: anchor.x, y: anchor.y + 10 };
     expect(findInteractionTarget(standingNextToAnchor)?.id).toBe('anchor_lamp');
   });
 
   it('returns null when nothing is in range', () => {
-    expect(findInteractionTarget({ x: 24 * 16, y: 10 * 16 })).toBeNull();
+    expect(findInteractionTarget({ x: 80, y: 80 })).toBeNull();
   });
 
   it('respects per-target range', () => {

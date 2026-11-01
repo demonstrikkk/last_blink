@@ -129,6 +129,41 @@ export function reduceGameState(state: GameState, event: GameEvent): GameState {
       };
     }
 
+    case 'case.linked': {
+      const { link } = event.payload;
+      invariant(event.tick === state.tick, 'invalid_tick', 'case link must use the current tick');
+      invariant(link.sessionId === state.sessionId && link.branchId === state.branchId, 'scope_mismatch', 'case link is out of scope');
+      invariant(link.createdAtTick <= state.tick && link.revisedAtTick === state.tick, 'invalid_tick', 'case link revision tick is invalid');
+      const existing = state.caseLinks.find((candidate) => candidate.linkId === link.linkId);
+      if (existing) {
+        invariant(existing.leftEvidenceId === link.leftEvidenceId && existing.rightEvidenceId === link.rightEvidenceId, 'case_link_conflict', 'case link identity cannot change');
+        return { ...base, caseLinks: state.caseLinks.map((candidate) => candidate.linkId === link.linkId ? link : candidate) };
+      }
+      return { ...base, caseLinks: [...state.caseLinks, link] };
+    }
+
+    case 'case.hypothesis.updated': {
+      const { hypothesis } = event.payload;
+      invariant(event.tick === state.tick, 'invalid_tick', 'hypothesis must use the current tick');
+      invariant(hypothesis.sessionId === state.sessionId && hypothesis.branchId === state.branchId, 'scope_mismatch', 'hypothesis is out of scope');
+      invariant(hypothesis.createdAtTick <= state.tick && hypothesis.revisedAtTick === state.tick, 'invalid_tick', 'hypothesis revision tick is invalid');
+      const existing = state.hypotheses.find((candidate) => candidate.hypothesisId === hypothesis.hypothesisId);
+      if (existing) {
+        invariant(existing.sessionId === hypothesis.sessionId, 'case_hypothesis_conflict', 'hypothesis identity conflict');
+        return { ...base, hypotheses: state.hypotheses.map((candidate) => candidate.hypothesisId === hypothesis.hypothesisId ? hypothesis : candidate) };
+      }
+      return { ...base, hypotheses: [...state.hypotheses, hypothesis] };
+    }
+
+    case 'challenge.completed': {
+      const { result } = event.payload;
+      invariant(event.tick === state.tick, 'invalid_tick', 'challenge must use the current tick');
+      invariant(result.sessionId === state.sessionId && result.branchId === state.branchId, 'scope_mismatch', 'challenge result is out of scope');
+      invariant(result.completedAtTick === state.tick, 'invalid_tick', 'challenge result tick is invalid');
+      invariant(!state.challengeResults.some((candidate) => candidate.challengeId === result.challengeId), 'duplicate_challenge', 'challenge already completed');
+      return { ...base, challengeResults: [...state.challengeResults, result] };
+    }
+
     case 'rule.evaluated': {
       invariant(event.tick === state.tick, 'invalid_tick', 'rule evaluation must use the current tick');
       return base;

@@ -544,6 +544,84 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
         { kind: 'set_ending', endingId: 'ending.ward_inquiry' },
       ],
     },
+    // Clue-chain correlation. Each rule only adds a derived fact; the player
+    // still has to make the explicit decision at the console.
+    {
+      schemaVersion: CONTRACT_VERSION,
+      ruleId: 'rul_optical_depot_link',
+      description: 'The jumper, manifest and diner voucher agree on one relay-to-depot route.',
+      priority: 72,
+      enabled: true,
+      condition: {
+        kind: 'all',
+        of: [
+          { kind: 'fact', key: 'evidence.optical_jumper', op: 'exists' },
+          { kind: 'fact', key: 'evidence.freight_manifest', op: 'exists' },
+          { kind: 'fact', key: 'evidence.diner_guestbook', op: 'exists' },
+          { kind: 'not', of: { kind: 'fact', key: 'story.relay_depot_link', op: 'exists' } },
+        ],
+      },
+      effects: [
+        {
+          kind: 'assert_fact',
+          key: 'story.relay_depot_link',
+          value: 'confirmed',
+          confidence: 0.94,
+          sourceRef: 'rule.rul_optical_depot_link',
+        },
+      ],
+    },
+    {
+      schemaVersion: CONTRACT_VERSION,
+      ruleId: 'rul_frequency_match',
+      description: 'The tuned 434.8 MHz channel matches the frequency found in the depot locker.',
+      priority: 71,
+      enabled: true,
+      condition: {
+        kind: 'all',
+        of: [
+          { kind: 'fact', key: 'evidence.surveillance_frequency', op: 'exists' },
+          { kind: 'fact', key: 'evidence.depot_locker', op: 'exists' },
+          { kind: 'not', of: { kind: 'fact', key: 'story.frequency_match', op: 'exists' } },
+        ],
+      },
+      effects: [
+        {
+          kind: 'assert_fact',
+          key: 'story.frequency_match',
+          value: '434.8MHz',
+          confidence: 0.95,
+          sourceRef: 'rule.rul_frequency_match',
+        },
+      ],
+    },
+
+    // The fourth, additive ending. It requires the termination decision and
+    // never competes with the three ward-call endings.
+    {
+      schemaVersion: CONTRACT_VERSION,
+      ruleId: 'rul_ending_second_settlement',
+      description: 'Severing MORROW with the root key while holding the human-cost record settles the street differently.',
+      priority: 53,
+      enabled: true,
+      condition: {
+        kind: 'all',
+        of: [
+          { kind: 'fact', key: 'story.morrow_terminated', op: 'eq', value: true },
+          { kind: 'not', of: { kind: 'fact', key: 'story.ending_id', op: 'exists' } },
+        ],
+      },
+      effects: [
+        {
+          kind: 'assert_fact',
+          key: 'story.ending_id',
+          value: 'ending.second_settlement',
+          confidence: 1,
+          sourceRef: 'rule.rul_ending_second_settlement',
+        },
+        { kind: 'set_ending', endingId: 'ending.second_settlement' },
+      ],
+    },
   ],
   evidence: [
     {
@@ -579,7 +657,8 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       sourceRef: 'record.ward.dispatch_board',
       sourceKind: 'record',
       confidence: 0.95,
-      requires: ['evidence.relay_7'],
+       // Independent field record: the player can find it before the relay log.
+       requires: [],
     },
     {
       evidenceId: 'vendor_testimony',
@@ -596,7 +675,152 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       sourceRef: 'testimony.ivo.stall',
       sourceKind: 'testimony',
       confidence: 0.8,
-      requires: ['evidence.relay_7', 'evidence.ward_dispatch'],
+       // Independent testimony: corroboration is stronger with the slip, but
+       // Ivo is not forced into an arbitrary visit order.
+       requires: [],
+    },
+    {
+      evidenceId: 'clue_conduit',
+      factKey: 'evidence.optical_jumper',
+      label: 'Optical jumper cable',
+      summary:
+        'A warm optical jumper sits spliced into the West Alley drainage conduit. Its sheath runs under the ring road toward Relay 7 and the freight depot.',
+      value: {
+        hardware: 'optical_jumper',
+        splice: 'west_alley_gutter',
+        route: ['relay_7', 'freight_depot'],
+        warmth: 'still_live',
+      },
+      sourceRef: 'record.west_alley.drainage_conduit',
+      sourceKind: 'record',
+      confidence: 0.92,
+       requires: [],
+    },
+    {
+      evidenceId: 'clue_guestbook',
+      factKey: 'evidence.diner_guestbook',
+      label: 'Nocturne guestbook',
+      summary:
+        'A ward courier voucher was signed at 00:08. The margin note sets a drop frequency of 434.8 MHz.',
+      value: {
+        voucher: 'ward_courier',
+        badge: 'vane',
+        time: '00:08',
+        frequency: '434.8MHz',
+      },
+      sourceRef: 'record.nocturne.guestbook',
+      sourceKind: 'record',
+      confidence: 0.88,
+       requires: [],
+    },
+    {
+      evidenceId: 'surveillance_frequency',
+      factKey: 'evidence.surveillance_frequency',
+      label: 'Tuned surveillance channel',
+      summary:
+        'The diner frequency console locks onto 434.8 MHz, the same channel the deputy used for the depot drop.',
+      value: { frequency: '434.8MHz', channel: 'morrow_surveillance', tuned: true },
+      sourceRef: 'record.nocturne.frequency_console',
+      sourceKind: 'record',
+      confidence: 0.9,
+       requires: [],
+    },
+    {
+      evidenceId: 'archive_record',
+      factKey: 'evidence.archive_record',
+      label: 'Archival incident ledger',
+      summary:
+        'The archive ledger shows the district clock reset was ordered from the civic authority, not caused by the outage.',
+      value: {
+        order: 'civic_clock_zeroing',
+        signedBy: 'directorate',
+        contradicts: 'relay_hardware_counter',
+      },
+      sourceRef: 'record.archive.incident_ledger',
+      sourceKind: 'record',
+      confidence: 0.9,
+       requires: [],
+    },
+    {
+      evidenceId: 'human_cost',
+      factKey: 'evidence.human_cost',
+      label: 'Held medical shipment',
+      summary:
+        'A clinic shipment was held for six hours because the freight line required a manual MORROW clearance that never arrived.',
+      value: {
+        shipment: 'clinic_insulin',
+        heldHours: 6,
+        cause: 'morrow_clearance_hold',
+      },
+      sourceRef: 'record.clinic.held_shipment',
+      sourceKind: 'record',
+      confidence: 0.86,
+       requires: [],
+    },
+    {
+      evidenceId: 'freight_log',
+      factKey: 'evidence.freight_manifest',
+      label: 'Freight manifest',
+      summary:
+        'The manifest records a sealed optical crate routed from Relay 7 to the depot office, signed by the same ward badge as the diner voucher.',
+      value: {
+        crate: 'optical_relay_module',
+        from: 'relay_7',
+        to: 'depot_office',
+        badge: 'vane',
+      },
+      sourceRef: 'record.freight.manifest_board',
+      sourceKind: 'record',
+      confidence: 0.9,
+       requires: [],
+    },
+    {
+      evidenceId: 'plaza_terminal',
+      factKey: 'evidence.plaza_terminal',
+      label: 'Plaza civic terminal',
+      summary:
+        'The public terminal shows the MORROW oversight channel accepting a manual root token every night at 03:14.',
+      value: {
+        channel: 'morrow_oversight',
+        tokenWindow: '03:14',
+        auth: 'manual_root',
+      },
+      sourceRef: 'record.plaza.civic_terminal',
+      sourceKind: 'record',
+      confidence: 0.84,
+       requires: [],
+    },
+    {
+      evidenceId: 'clue_locker',
+      factKey: 'evidence.depot_locker',
+      label: 'Enforcer locker contents',
+      summary:
+        'The depot locker held a frequency log and a ward root bypass chip. The log matches the 434.8 MHz drop channel.',
+      value: {
+        locker: 'depot_enforcer',
+        frequency: '434.8MHz',
+        chip: 'ward_root_bypass',
+      },
+      sourceRef: 'record.depot.locker',
+      sourceKind: 'record',
+      confidence: 0.94,
+       requires: [],
+    },
+    {
+      evidenceId: 'depot_terminal',
+      factKey: 'evidence.override_root',
+      label: 'Root override key',
+      summary:
+        'The depot terminal accepted the bypass chip and printed ROOT-BYPASS-008, the credential that can sever MORROW from the district relay.',
+      value: {
+        code: 'ROOT-BYPASS-008',
+        scope: 'district_morrow_purge',
+        terminal: 'depot_office',
+      },
+      sourceRef: 'record.depot.override_terminal',
+      sourceKind: 'record',
+      confidence: 0.97,
+       requires: [],
     },
   ],
   choices: [
@@ -681,6 +905,95 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
         },
       ],
     },
+    {
+      nodeId: 'node.frequency.puzzle',
+      prompt: 'The diner console holds a locked ward channel. Do you tune it?',
+      requires: ['evidence.diner_guestbook'],
+      options: [
+        {
+          optionId: 'tune',
+          label: 'Lock the 434.8 MHz channel',
+          detail: 'Match the guestbook frequency and confirm the depot drop channel.',
+          effects: [
+            {
+              key: 'evidence.surveillance_frequency',
+              value: { frequency: '434.8MHz', channel: 'morrow_surveillance', tuned: true },
+            },
+            { key: 'story.frequency_resolved', value: true },
+          ],
+          consequenceKeys: ['evidence.surveillance_frequency', 'story.frequency_match'],
+        },
+        {
+          optionId: 'leave',
+          label: 'Leave the console untouched',
+          detail: 'The channel stays locked. The depot locker will not open without it.',
+          effects: [
+            { key: 'story.frequency_ignored', value: true },
+            { key: 'story.frequency_choice_resolved', value: true },
+          ],
+          consequenceKeys: ['evidence.surveillance_frequency'],
+        },
+      ],
+    },
+    {
+      nodeId: 'node.morrow.analysis',
+      prompt: 'The Relay 7 core holds three records that disagree. Do you correlate them?',
+      requires: ['evidence.override_root', 'evidence.plaza_terminal', 'evidence.archive_record'],
+      options: [
+        {
+          optionId: 'correlate',
+          label: 'Correlate the mechanism',
+          detail: 'Tie the 03:14 window, the archive order and the root override to one mechanism.',
+          effects: [
+            { key: 'story.morrow_mechanism', value: 'root_manual_command' },
+            { key: 'story.morrow_analysis_resolved', value: true },
+          ],
+          consequenceKeys: ['story.morrow_mechanism', 'story.ending_id'],
+        },
+        {
+          optionId: 'withhold',
+          label: 'Leave the records separate',
+          detail: 'You will not be able to explain the termination if you sever MORROW.',
+          effects: [
+            { key: 'story.morrow_mechanism', value: 'unresolved' },
+            { key: 'story.morrow_analysis_resolved', value: true },
+          ],
+          consequenceKeys: ['story.morrow_mechanism'],
+        },
+      ],
+    },
+    {
+      nodeId: 'node.morrow.terminate',
+      prompt: 'ROOT-BYPASS-008 is loaded. What happens to MORROW tonight?',
+      requires: [
+        'evidence.override_root',
+        'story.morrow_mechanism',
+        'evidence.human_cost',
+        'evidence.freight_manifest',
+      ],
+      options: [
+        {
+          optionId: 'terminate',
+          label: 'Sever MORROW from the district relay',
+          detail: 'The root key purges the oversight routines. Aster wakes without the watcher.',
+          effects: [
+            { key: 'story.morrow_terminated', value: true },
+            { key: 'story.morrow_termination_resolved', value: true },
+          ],
+          consequenceKeys: ['story.ending_id', 'world.morrow_scrutiny'],
+        },
+        {
+          optionId: 'spare',
+          label: 'Hold the key and walk away',
+          detail: 'MORROW keeps watching, but the key stays in your hand.',
+          effects: [
+            { key: 'story.morrow_spared', value: true },
+            { key: 'story.morrow_termination_resolved', value: true },
+          ],
+          consequenceKeys: ['story.ending_id', 'world.morrow_scrutiny'],
+        },
+      ],
+    },
   ],
   objectives: [
     {
@@ -738,6 +1051,12 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       title: 'Ward Inquiry',
       summary:
         'The account reaches the ward, but the chain is broken or a name is exposed. Aster gets an inquiry instead of an answer.',
+    },
+    {
+      endingId: 'ending.second_settlement',
+      title: 'The Second Settlement',
+      summary:
+        'The root key severs MORROW from the district relay. With the human cost in hand, Aster wakes to a street that answers only to itself.',
     },
   ],
 });

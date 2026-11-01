@@ -14,6 +14,7 @@ import {
   type BranchId,
   type DeterministicGameSession,
   type GameEventId,
+  type MorrowModelPort,
 } from './engine/index.js';
 import { createBrowserSession } from './session/runtime.js';
 import { STAGE5_CONTENT } from './content/stage5Content.js';
@@ -24,7 +25,7 @@ import {
   type DialogueScript,
 } from './content/stage5Dialogue.js';
 import { PhaserHost, type WorldHandle } from './game/PhaserHost.js';
-import { WORLD_TARGETS, type WorldTarget } from './world/district.js';
+import { ALL_WORLD_TARGETS, SPAWN, TILE, type WorldTarget } from './world/district.js';
 import { deriveWorldView } from './world/worldView.js';
 import type { MoveInput } from './world/movement.js';
 import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
@@ -38,6 +39,8 @@ import { ObjectivesCard } from './ui/hud/ObjectivesCard.js';
 import { MorrowCard } from './ui/hud/MorrowCard.js';
 import { EchoCard } from './ui/hud/EchoCard.js';
 import { BranchCard } from './ui/hud/BranchCard.js';
+import { Minimap } from './ui/Minimap.js';
+import { AiDiagnosticsPanel } from './ui/AiDiagnosticsPanel.js';
 
 type DialogueState =
   | { phase: 'closed' }
@@ -114,13 +117,19 @@ function GameScreen({
   const view = deriveWorldView(state, STAGE5_CONTENT);
 
   const [dialogue, setDialogue] = useState<DialogueState>({ phase: 'closed' });
+  const [presentedEvidenceId, setPresentedEvidenceId] = useState<string | null>(null);
   const [choiceIndex, setChoiceIndex] = useState(0);
   const [promptTargetId, setPromptTargetId] = useState<string | null>(null);
+  const [playerTile, setPlayerTile] = useState({
+    x: Math.floor(SPAWN.x / TILE),
+    y: Math.floor(SPAWN.y / TILE),
+  });
   const [worldReady, setWorldReady] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [blinkOpen, setBlinkOpen] = useState(false);
   const [echoOpen, setEchoOpen] = useState(false);
   const [npcOpen, setNpcOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [showObjectives, setShowObjectives] = useState(true);
   const [showMorrow, setShowMorrow] = useState(true);
   const [showEcho, setShowEcho] = useState(false);
@@ -130,6 +139,13 @@ function GameScreen({
   const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [quality, setQuality] = useState<'high' | 'low'>('high');
+  const [timeMode, setTimeMode] = useState<'day' | 'night'>(() => {
+    try {
+      return window.localStorage.getItem('last-blink-time-mode') === 'day' ? 'day' : 'night';
+    } catch {
+      return 'night';
+    }
+  });
   const [blinkGlitch, setBlinkGlitch] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>(initialRestored ? 'restored' : 'idle');
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -148,7 +164,7 @@ function GameScreen({
   const worldRef = useRef<WorldHandle | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
 
-  const promptTarget = WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
+  const promptTarget = ALL_WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
   const activeScript: DialogueScript | null =
     dialogue.phase === 'closed'
       ? null
@@ -160,6 +176,15 @@ function GameScreen({
   useEffect(() => {
     worldRef.current?.setMuted(muted);
   }, [muted, worldReady]);
+
+  useEffect(() => {
+    worldRef.current?.setTimeMode(timeMode);
+    try {
+      window.localStorage.setItem('last-blink-time-mode', timeMode);
+    } catch {
+      // Presentation preference is optional; gameplay remains canonical.
+    }
+  }, [timeMode, worldReady]);
 
   useEffect(
     () => () => {
@@ -175,14 +200,31 @@ function GameScreen({
     toastTimer.current = window.setTimeout(() => setToast(null), 5200);
   }, []);
 
-  const morrow = useMemo(
-    () => new MorrowController(session, { clock: createSystemClock() }),
-    [session],
-  );
+  const morrow = useMemo(() => {
+    let token: string | null = null;
+    const apiBase = (import.meta.env.VITE_GAME_API_URL as string | undefined) ?? 'http://127.0.0.1:8787';
+    const model: MorrowModelPort = {
+      async propose(observation) {
+        if (!token) {
+          const auth = await fetch(`${apiBase}/api/auth/anonymous`, { method: 'POST', body: '{}' });
+          if (!auth.ok) throw new Error(`AI authentication failed (${auth.status})`);
+          token = ((await auth.json()) as { token: string }).token;
+        }
+        const response = await fetch(`${apiBase}/api/ai/morrow`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ observation, requestId: `morrow_${observation.observationId}` }),
+        });
+        if (!response.ok) throw new Error(`MORROW provider bridge failed (${response.status})`);
+        return (await response.json() as { proposal: Awaited<ReturnType<MorrowModelPort['propose']>> }).proposal;
+      },
+    };
+    return new MorrowController(session, { clock: createSystemClock(), model });
+  }, [session]);
 
   const runMorrow = useCallback(
-    (eventId?: GameEventId) => {
-      const turn = morrow.run({ triggerEventId: eventId ?? null });
+    async (eventId?: GameEventId) => {
+      const turn = await morrow.runAsync({ triggerEventId: eventId ?? null });
       if (!turn) return;
       worldRef.current?.playSfx('ui-error');
       if (turn.result.status === 'accepted') {
@@ -242,7 +284,7 @@ function GameScreen({
         params: { evidenceId },
       });
       if (result.status === 'accepted') {
-        runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
+        void runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
         runNpcs();
         worldRef.current?.playSfx('evidence-found');
         showToast(`Evidence logged: ${label ?? evidenceId}.`);
@@ -263,6 +305,41 @@ function GameScreen({
     }
   }, [session, showToast]);
 
+  const updateCaseLink = useCallback((params: {
+    linkId: string;
+    leftEvidenceId: string;
+    rightEvidenceId: string;
+    relation: 'supports' | 'contradicts' | 'corroborates' | 'uncertain';
+    note: string;
+  }) => {
+    const result = session.dispatch({ actionType: 'case.link', actorId: 'player_local', params });
+    showToast(result.status === 'accepted' ? 'Case connection saved to this timeline.' : describeRejection(result));
+  }, [session, showToast]);
+
+  const updateHypothesis = useCallback((params: {
+    hypothesisId: string;
+    text: string;
+    supportingEvidenceIds: string[];
+    opposingEvidenceIds: string[];
+  }) => {
+    const result = session.dispatch({ actionType: 'case.hypothesis', actorId: 'player_local', params });
+    showToast(result.status === 'accepted' ? 'Hypothesis revision saved to this timeline.' : describeRejection(result));
+  }, [session, showToast]);
+
+  const makeCaseChoice = useCallback((nodeId: string, optionId: string) => {
+    const result = session.dispatch({ actionType: 'choice.make', actorId: 'player_local', params: { nodeId, optionId } });
+    showToast(result.status === 'accepted' ? 'Challenge result committed to the canonical record.' : describeRejection(result));
+  }, [session, showToast]);
+
+  const completeChallenge = useCallback((params: {
+    challengeId: string;
+    challengeType: 'timeline_reconstruction' | 'contradiction_questioning';
+    answer: { order: string[] } | { question: 'ask_route_seal' | 'declare_slip_definitive' };
+  }) => {
+    const result = session.dispatch({ actionType: 'challenge.complete', actorId: 'player_local', params });
+    showToast(result.status === 'accepted' ? 'Validated challenge result recorded on this timeline.' : describeRejection(result));
+  }, [session, showToast]);
+
   const openDialogue = useCallback(
     (scriptId: string) => {
       const script = getDialogueScript(scriptId, session.getState(), viewRef.current);
@@ -279,7 +356,7 @@ function GameScreen({
             params: { evidenceId: script.grantsEvidenceId },
           });
           if (result.status === 'accepted') {
-            runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
+            void runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
             runNpcs();
             worldRef.current?.playSfx('evidence-found');
             showToast(`Testimony recorded: ${evidence.label}.`);
@@ -290,6 +367,7 @@ function GameScreen({
       }
 
       setChoiceIndex(0);
+      setPresentedEvidenceId(null);
       setDialogue({ phase: 'lines', scriptId, index: 0 });
       worldRef.current?.playSfx('ui-open');
     },
@@ -299,7 +377,7 @@ function GameScreen({
   const handleTarget = useCallback(
     (targetId: string) => {
       if (pausedRef.current) return;
-      const target: WorldTarget | undefined = WORLD_TARGETS.find((item) => item.id === targetId);
+      const target: WorldTarget | undefined = ALL_WORLD_TARGETS.find((item) => item.id === targetId);
       if (!target) return;
 
       if (target.kind === 'evidence') {
@@ -348,7 +426,7 @@ function GameScreen({
         params: { nodeId: script.choiceNodeId, optionId },
       });
       if (result.status === 'accepted') {
-        runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
+        void runMorrow(result.eventIds[result.eventIds.length - 1] as GameEventId | undefined);
         runNpcs();
         setDialogue({ phase: 'resolved', scriptId: dialogue.scriptId });
         const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
@@ -367,6 +445,19 @@ function GameScreen({
   );
 
   const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
+
+  const presentEvidence = useCallback((evidenceId: string) => {
+    const evidence = viewRef.current.evidence.find((item) => item.evidenceId === evidenceId);
+    if (!evidence?.collected) return;
+    setPresentedEvidenceId(evidenceId);
+    const scriptName = activeScript?.displayName ?? 'The witness';
+    const response = scriptName === 'Ivo' && evidenceId === 'ward_dispatch'
+      ? 'Ivo studies the slip, then points to the missing seal. “That is what the ward says. It is not what I saw.”'
+      : scriptName === 'Sable' && evidenceId === 'relay_7_log'
+        ? 'Sable leans over the hardware count. “Now you have a reading, not a rumor. Ask me about the eight minutes.”'
+        : `${scriptName} acknowledges ${evidence.label}. The record is now part of the question, not proof of the conclusion.`;
+    setNpcNotice(response);
+  }, [activeScript]);
 
   const branches = session.listBranches();
   const comparison =
@@ -590,7 +681,8 @@ function GameScreen({
   };
 
   return (
-    <div className="game-shell">
+      <div className="game-shell">
+      <div className={`game-theme game-theme-${timeMode}`} data-time-mode={timeMode}>
       <HudTopBar
         view={view}
         showObjectives={showObjectives}
@@ -609,8 +701,11 @@ function GameScreen({
         onToggleMute={toggleMute}
         onSave={() => void save()}
         onOpenBlink={() => setBlinkOpen(true)}
-        onPulse={triggerPulse}
-      />
+         onPulse={triggerPulse}
+         timeMode={timeMode}
+         onToggleTimeMode={() => setTimeMode((mode) => (mode === 'night' ? 'day' : 'night'))}
+         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+       />
 
       <div className="game-viewport">
         <div className={`world-frame${blinkGlitch ? ' world-frame-blink-glitch' : ''}`}>
@@ -620,9 +715,11 @@ function GameScreen({
             getTouchInput={() => touchRef.current}
             onPrompt={setPromptTargetId}
             onInteract={handleTarget}
+            onPlayerTile={(x, y) => setPlayerTile({ x, y })}
             onReady={() => setWorldReady(true)}
             worldRef={worldRef}
             quality={quality}
+            timeMode={timeMode}
           />
 
           {!worldReady ? (
@@ -705,12 +802,14 @@ function GameScreen({
       {/* ---- Floating HUD Cards ---- */}
       {showObjectives ? <ObjectivesCard view={view} /> : null}
 
+      {worldReady ? <Minimap playerTile={playerTile} view={view} /> : null}
+
       {showMorrow ? (
         <MorrowCard
           view={view}
           notice={morrowNotice}
           onTriggerReview={() => {
-            runMorrow();
+            void runMorrow();
             worldRef.current?.playSfx('ui-error');
           }}
         />
@@ -743,6 +842,8 @@ function GameScreen({
           onChoose={choose}
           onHighlight={setChoiceIndex}
           onClose={closeDialogue}
+          presentedEvidenceId={presentedEvidenceId}
+          onPresentEvidence={presentEvidence}
         />
       ) : null}
 
@@ -781,6 +882,7 @@ function GameScreen({
         open={ledgerOpen}
         onClose={() => setLedgerOpen(false)}
         state={state}
+        view={view}
         hash={hash}
         events={session.getLineageEvents()}
         branches={branches}
@@ -791,13 +893,19 @@ function GameScreen({
         isDurable={true}
         onSave={() => void save()}
         onRestart={restart}
+        onUpdateCaseLink={updateCaseLink}
+        onUpdateHypothesis={updateHypothesis}
+        onMakeCaseChoice={makeCaseChoice}
+        onCompleteChallenge={completeChallenge}
       />
+
+      <AiDiagnosticsPanel open={diagnosticsOpen} onClose={() => setDiagnosticsOpen(false)} />
 
       {/* ---- Keyboard hints overlay ---- */}
       <div className="hud-keyhints mono" aria-hidden="true">
         WASD move · E interact · Q Pulse Scan · B BLINK · C ECHO · N NPCs · L Ledger · Esc close
       </div>
+      </div>
     </div>
   );
 }
-

@@ -15,6 +15,7 @@ export interface WorldHandle {
   triggerTimelineShift(): void;
   triggerInvestigativePulse(): void;
   setQuality(quality: 'high' | 'low'): void;
+  setTimeMode(mode: 'day' | 'night'): void;
 }
 
 interface PhaserHostProps {
@@ -23,9 +24,11 @@ interface PhaserHostProps {
   readonly getTouchInput: () => MoveInput;
   readonly onPrompt: (targetId: string | null) => void;
   readonly onInteract: (targetId: string) => void;
+  readonly onPlayerTile?: (tileX: number, tileY: number) => void;
   readonly onReady: () => void;
   readonly worldRef: RefObject<WorldHandle | null>;
   readonly quality?: 'high' | 'low';
+  readonly timeMode?: 'day' | 'night';
 }
 
 /**
@@ -61,6 +64,7 @@ export function PhaserHost(props: PhaserHostProps) {
         getTouchInput: () => liveRef.current.getTouchInput(),
         onPrompt: (targetId) => liveRef.current.onPrompt(targetId),
         onInteract: (targetId) => liveRef.current.onInteract(targetId),
+        onPlayerTile: (tileX, tileY) => liveRef.current.onPlayerTile?.(tileX, tileY),
         onReady: () => {
           if (!game) return;
           const scene = game.scene.getScene('DistrictScene') as unknown as DistrictSceneApi;
@@ -71,9 +75,13 @@ export function PhaserHost(props: PhaserHostProps) {
             triggerTimelineShift: () => scene.triggerTimelineShift(),
             triggerInvestigativePulse: () => scene.triggerInvestigativePulse(),
             setQuality: (quality) => scene.setQuality(quality),
+            setTimeMode: (mode) => scene.setTimeMode(mode),
           };
           if (liveRef.current.quality) {
             scene.setQuality(liveRef.current.quality);
+          }
+          if (liveRef.current.timeMode) {
+            scene.setTimeMode(liveRef.current.timeMode);
           }
           liveRef.current.onReady();
         },

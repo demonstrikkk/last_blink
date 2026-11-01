@@ -56,6 +56,31 @@ export interface DiscrepancyView {
   readonly status: 'active' | 'resolved' | 'pending';
 }
 
+export interface EvidenceLinkView {
+  readonly leftEvidenceId: string;
+  readonly rightEvidenceId: string;
+  readonly relation: 'supports' | 'contradicts' | 'corroborates' | 'impacts';
+  readonly explanation: string;
+  readonly established: boolean;
+}
+
+export interface CaseAssessmentView {
+  readonly verdict: 'justified' | 'unjustified' | 'inconclusive';
+  readonly title: string;
+  readonly explanation: string;
+  readonly supportingEvidenceIds: readonly string[];
+  readonly contradictoryEvidenceIds: readonly string[];
+  readonly missingEvidenceIds: readonly string[];
+  readonly links: readonly EvidenceLinkView[];
+}
+
+export interface RoadmapItemView {
+  readonly id: string;
+  readonly kind: 'established' | 'uncertain' | 'theory' | 'missing' | 'lead' | 'decision';
+  readonly label: string;
+  readonly detail: string;
+}
+
 export interface EndingView {
   readonly endingId: string;
   readonly title: string;
@@ -95,11 +120,20 @@ export interface WorldView {
   readonly dispatchContinuity: string | null;
   readonly vendorConfidence: string | null;
   readonly morrowScrutiny: string | null;
+  readonly relayDepotLink: string | null;
+  readonly frequencyMatch: string | null;
+  readonly morrowMechanism: string | null;
+  readonly morrowTerminated: boolean;
+  readonly morrowSparred: boolean;
+  readonly frequencyResolved: boolean;
   readonly evidence: readonly EvidenceView[];
   readonly collectedEvidence: readonly EvidenceView[];
   readonly objectives: readonly ObjectiveView[];
   readonly currentObjective: ObjectiveView | null;
   readonly discrepancies: readonly DiscrepancyView[];
+  readonly caseAssessment: CaseAssessmentView;
+  readonly challengeResults: GameState['challengeResults'];
+  readonly roadmap: readonly RoadmapItemView[];
   readonly choices: readonly ChoiceView[];
   readonly choice: ChoiceView | null;
   readonly choiceResolved: boolean;
@@ -123,6 +157,161 @@ function asString(value: unknown): string | null {
 
 function missingKeys(state: GameState, requires: readonly string[]): string[] {
   return requires.filter((key) => state.facts[key] === undefined);
+}
+
+function deriveCaseAssessment(
+  evidence: readonly EvidenceView[],
+  morrowMechanism: string | null,
+): CaseAssessmentView {
+  const collected = new Set(evidence.filter((item) => item.collected).map((item) => item.evidenceId));
+  const has = (id: string): boolean => collected.has(id);
+  const linkDefinitions = [
+    {
+      leftEvidenceId: 'ward_dispatch',
+      rightEvidenceId: 'vendor_testimony',
+      relation: 'contradicts',
+      explanation: 'The slip claims a sealed authorized courier; Ivo describes loose paper and a fleeing runner.',
+    },
+    {
+      leftEvidenceId: 'relay_7_log',
+      rightEvidenceId: 'archive_record',
+      relation: 'contradicts',
+      explanation: 'The relay counted an eight-minute local interruption while the archive describes a city-wide reset.',
+    },
+    {
+      leftEvidenceId: 'clue_guestbook',
+      rightEvidenceId: 'surveillance_frequency',
+      relation: 'corroborates',
+      explanation: 'The guestbook frequency and the tuned console both identify 434.8 MHz.',
+    },
+    {
+      leftEvidenceId: 'plaza_terminal',
+      rightEvidenceId: 'depot_terminal',
+      relation: 'supports',
+      explanation: 'A recurring manual root-token window is consistent with the bypass credential recovered at the depot.',
+    },
+    {
+      leftEvidenceId: 'human_cost',
+      rightEvidenceId: 'freight_log',
+      relation: 'impacts',
+      explanation: 'The clearance hold affected a medical shipment while the same route moved relay hardware through freight.',
+    },
+  ] as const;
+  const links: EvidenceLinkView[] = linkDefinitions.map((link): EvidenceLinkView => ({
+    ...link,
+    established: has(link.leftEvidenceId) && has(link.rightEvidenceId),
+  }));
+
+  const supportingEvidenceIds = evidence
+    .filter((item) => item.collected && ['relay_7_log', 'plaza_terminal', 'depot_terminal', 'archive_record'].includes(item.evidenceId))
+    .map((item) => item.evidenceId);
+  const contradictoryEvidenceIds = evidence
+    .filter((item) => item.collected && ['vendor_testimony', 'human_cost'].includes(item.evidenceId))
+    .map((item) => item.evidenceId);
+  const missingEvidenceIds = evidence
+    .filter((item) => !item.collected && ['human_cost', 'plaza_terminal', 'depot_terminal', 'archive_record'].includes(item.evidenceId))
+    .map((item) => item.evidenceId);
+
+  const base = { supportingEvidenceIds, contradictoryEvidenceIds, missingEvidenceIds, links };
+  if (has('human_cost') && (has('plaza_terminal') || morrowMechanism === 'root_manual_command') && (has('depot_terminal') || has('archive_record'))) {
+    return {
+      ...base,
+      verdict: 'unjustified',
+      title: 'Unjustified or disproportionate',
+      explanation: 'The case links a deliberate manual intervention to foreseeable medical harm, without evidence that the response was proportionate to the stated risk.',
+    };
+  }
+  if (has('relay_7_log') && has('archive_record') && !has('human_cost') && has('plaza_terminal')) {
+    return {
+      ...base,
+      verdict: 'justified',
+      title: 'Justified by the available record',
+      explanation: 'The available technical record supports deliberate containment, while the material human-cost record has not been established.',
+    };
+  }
+  return {
+    ...base,
+    verdict: 'inconclusive',
+    title: 'Inconclusive — material evidence is missing',
+    explanation: 'The case has useful leads and contradictions, but it does not yet establish what MORROW knew, what alternatives it had, and whether the harm was foreseeable.',
+  };
+}
+
+function deriveInvestigationRoadmap(
+  evidence: readonly EvidenceView[],
+  discrepancies: readonly DiscrepancyView[],
+  assessment: CaseAssessmentView,
+  choices: readonly ChoiceView[],
+  challengeResults: GameState['challengeResults'],
+): readonly RoadmapItemView[] {
+  const items: RoadmapItemView[] = [];
+  for (const result of challengeResults) {
+    items.push({
+      id: `challenge:${result.challengeId}`,
+      kind: 'established',
+      label: result.challengeType === 'timeline_reconstruction' ? 'Timeline sequence recorded' : 'Dispatch contradiction questioned',
+      detail: `${result.establishes} Unknown: ${result.remainsUnknown}`,
+    });
+  }
+  const collected = evidence.filter((item) => item.collected);
+  for (const item of collected.slice(0, 3)) {
+    items.push({
+      id: `established:${item.evidenceId}`,
+      kind: 'established',
+      label: item.label,
+      detail: `${item.verificationStatus === 'verified_record' ? 'Recorded fact' : 'Witness claim'} · ${item.discoveryContext}`,
+    });
+  }
+
+  for (const discrepancy of discrepancies.filter((item) => item.status !== 'resolved')) {
+    items.push({
+      id: `uncertain:${discrepancy.id}`,
+      kind: 'uncertain',
+      label: discrepancy.title,
+      detail: discrepancy.status === 'pending'
+        ? discrepancy.claim
+        : `${discrepancy.claim} / ${discrepancy.contradiction}`,
+    });
+  }
+
+  items.push({
+    id: 'theory:morrow',
+    kind: 'theory',
+    label: assessment.title,
+    detail: assessment.explanation,
+  });
+
+  for (const evidenceId of assessment.missingEvidenceIds.slice(0, 3)) {
+    const item = evidence.find((candidate) => candidate.evidenceId === evidenceId);
+    if (item) {
+      items.push({
+        id: `missing:${evidenceId}`,
+        kind: 'missing',
+        label: `Missing check: ${item.label}`,
+        detail: item.summary,
+      });
+    }
+  }
+
+  for (const item of evidence.filter((candidate) => candidate.available && !candidate.collected).slice(0, 3)) {
+    items.push({
+      id: `lead:${item.evidenceId}`,
+      kind: 'lead',
+      label: `Optional lead: ${item.label}`,
+      detail: item.discoveryContext,
+    });
+  }
+
+  for (const choice of choices.filter((candidate) => candidate.available)) {
+    items.push({
+      id: `decision:${choice.nodeId}`,
+      kind: 'decision',
+      label: `Decision ready: ${choice.prompt}`,
+      detail: 'This is available from the evidence currently on the record; it is not a required route through the city.',
+    });
+  }
+
+  return items.slice(0, 12);
 }
 
 function choiceView(
@@ -257,6 +446,7 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
   ];
 
   const choices = content.choices.map((node) => choiceView(state, node));
+  const caseAssessment = deriveCaseAssessment(evidence, asString(factValue(state, 'story.morrow_mechanism')));
   const choiceNode = choices[0] ?? null;
   const committed = choiceNode
     ? state.choices.find((candidate) => candidate.nodeId === choiceNode.nodeId)
@@ -291,11 +481,20 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
     dispatchContinuity: asString(factValue(state, 'world.dispatch_continuity')),
     vendorConfidence: asString(factValue(state, 'world.vendor_confidence')),
     morrowScrutiny: asString(factValue(state, 'world.morrow_scrutiny')),
+    relayDepotLink: asString(factValue(state, 'story.relay_depot_link')),
+    frequencyMatch: asString(factValue(state, 'story.frequency_match')),
+    morrowMechanism: asString(factValue(state, 'story.morrow_mechanism')),
+    morrowTerminated: factValue(state, 'story.morrow_terminated') === true,
+    morrowSparred: factValue(state, 'story.morrow_sparred') === true,
+    frequencyResolved: factValue(state, 'story.frequency_resolved') === true,
     evidence,
     collectedEvidence: evidence.filter((item) => item.collected),
     objectives,
     currentObjective: objectives.find((objective) => !objective.done) ?? null,
     discrepancies,
+    caseAssessment,
+    challengeResults: state.challengeResults,
+    roadmap: deriveInvestigationRoadmap(evidence, discrepancies, caseAssessment, choices, state.challengeResults),
     choices,
     choice: choiceNode,
     choiceResolved: committed !== undefined,
@@ -347,5 +546,24 @@ export function targetAvailable(view: WorldView, targetId: string): boolean {
   const evidenceItem = view.evidence.find((item) => item.evidenceId === targetId);
   if (evidenceItem) return evidenceItem.available;
   if (targetId === 'anchor_lamp') return view.anchors.length === 0;
+
+  const nodeResolved = (nodeId: string): boolean =>
+    view.choices.find((node) => node.nodeId === nodeId)?.resolvedOptionId !== null;
+
+  if (targetId === 'frequency_console') {
+    const node = view.choices.find((candidate) => candidate.nodeId === 'node.frequency.puzzle');
+    return Boolean(node?.available);
+  }
+  if (targetId === 'morrow_analysis') {
+    const node = view.choices.find((candidate) => candidate.nodeId === 'node.morrow.analysis');
+    return Boolean(node?.available);
+  }
+  if (targetId === 'morrow_terminate') {
+    const node = view.choices.find((candidate) => candidate.nodeId === 'node.morrow.terminate');
+    return Boolean(node?.available);
+  }
+  if (targetId === 'ward_call') {
+    return !nodeResolved('node.ward.call');
+  }
   return true;
 }

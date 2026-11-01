@@ -18,3 +18,5 @@ export * from './memoryRecord.js';
 export * from './modelManifest.js';
 export * from './registry.js';
 export * from './fixtures.js';
+export * from './caseBoard.js';
+export * from './challenge.js';

@@ -91,22 +91,18 @@ describe('Stage 5 evidence prerequisites and provenance', () => {
     expect(fact?.confidence).toBe(0.8);
   });
 
-  it('rejects the dispatch slip before the relay log and names the missing fact', async () => {
+  it('allows independent dispatch discovery before the relay log', async () => {
     const { session } = await stage5Harness();
     const result = collect(session, 'ward_dispatch');
-    expect(result.status).toBe('rejected');
-    expect(result.rejection?.code).toBe('invalid_action');
-    expect(result.rejection?.details.missing).toEqual(['evidence.relay_7']);
-    expect(session.getState().facts['evidence.ward_dispatch']).toBeUndefined();
+    expectAccepted(result);
+    expect(session.getState().facts['evidence.ward_dispatch']).toBeDefined();
   });
 
-  it('rejects testimony before the dispatch slip exists', async () => {
+  it('allows testimony discovery before the dispatch slip exists', async () => {
     const { session } = await stage5Harness();
-    expectAccepted(collect(session, 'relay_7_log'));
     const result = collect(session, 'vendor_testimony');
-    expect(result.status).toBe('rejected');
-    expect(result.rejection?.code).toBe('invalid_action');
-    expect(result.rejection?.details.missing).toEqual(['evidence.ward_dispatch']);
+    expectAccepted(result);
+    expect(session.getState().facts['evidence.vendor_testimony']).toBeDefined();
   });
 });
 

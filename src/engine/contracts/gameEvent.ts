@@ -30,6 +30,8 @@ import { factSchema } from './fact.js';
 import { choiceSchema } from './choice.js';
 import { anchorSchema } from './anchor.js';
 import { branchSchema } from './branch.js';
+import { caseLinkSchema, caseHypothesisSchema } from './caseBoard.js';
+import { challengeResultSchema } from './challenge.js';
 
 const baseShape = {
   schemaVersion: contractVersionSchema,
@@ -74,6 +76,18 @@ export const factAssertedEventSchema = event('fact.asserted', {
 
 export const choiceMadeEventSchema = event('choice.made', {
   choice: choiceSchema,
+});
+
+export const caseLinkEventSchema = event('case.linked', {
+  link: caseLinkSchema,
+});
+
+export const caseHypothesisUpdatedEventSchema = event('case.hypothesis.updated', {
+  hypothesis: caseHypothesisSchema,
+});
+
+export const challengeCompletedEventSchema = event('challenge.completed', {
+  result: challengeResultSchema,
 });
 
 export const ruleEvaluatedEventSchema = event('rule.evaluated', {
@@ -136,6 +150,9 @@ export const gameEventSchema = z.discriminatedUnion('type', [
   tickAdvancedEventSchema,
   factAssertedEventSchema,
   choiceMadeEventSchema,
+  caseLinkEventSchema,
+  caseHypothesisUpdatedEventSchema,
+  challengeCompletedEventSchema,
   ruleEvaluatedEventSchema,
   anchorRecordedEventSchema,
   branchForkedEventSchema,
@@ -152,6 +169,9 @@ export type SessionStartedEvent = z.infer<typeof sessionStartedEventSchema>;
 export type TickAdvancedEvent = z.infer<typeof tickAdvancedEventSchema>;
 export type FactAssertedEvent = z.infer<typeof factAssertedEventSchema>;
 export type ChoiceMadeEvent = z.infer<typeof choiceMadeEventSchema>;
+export type CaseLinkEvent = z.infer<typeof caseLinkEventSchema>;
+export type CaseHypothesisUpdatedEvent = z.infer<typeof caseHypothesisUpdatedEventSchema>;
+export type ChallengeCompletedEvent = z.infer<typeof challengeCompletedEventSchema>;
 export type RuleEvaluatedEvent = z.infer<typeof ruleEvaluatedEventSchema>;
 export type AnchorRecordedEvent = z.infer<typeof anchorRecordedEventSchema>;
 export type BranchForkedEvent = z.infer<typeof branchForkedEventSchema>;
@@ -166,6 +186,9 @@ export const EVENT_TYPES: readonly GameEventType[] = [
   'tick.advanced',
   'fact.asserted',
   'choice.made',
+  'case.linked',
+  'case.hypothesis.updated',
+  'challenge.completed',
   'rule.evaluated',
   'anchor.recorded',
   'branch.forked',

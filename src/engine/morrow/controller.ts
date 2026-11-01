@@ -30,6 +30,12 @@ export interface MorrowControllerOptions {
   readonly policy?: MorrowPolicy;
   readonly fallbackPolicy?: MorrowPolicy;
   readonly clock?: ClockPort;
+  /** Optional server-side model bridge. The deterministic policy remains the fallback. */
+  readonly model?: MorrowModelPort;
+}
+
+export interface MorrowModelPort {
+  propose(observation: MorrowObservation): Promise<MorrowProposal>;
 }
 
 const SYSTEM_CLOCK: ClockPort = { nowIso: () => new Date().toISOString() };
@@ -43,15 +49,19 @@ export class MorrowController {
   private readonly policy: MorrowPolicy;
   private readonly fallbackPolicy: MorrowPolicy;
   private readonly clock: ClockPort;
+  private readonly model: MorrowModelPort | undefined;
   private readonly lastObservation = new Map<string, string>();
+  private readonly session: GameSession;
 
   constructor(
-    private readonly session: GameSession,
+    session: GameSession,
     options: MorrowControllerOptions = {},
   ) {
+    this.session = session;
     this.policy = options.policy ?? createDeterministicMorrowPolicy();
     this.fallbackPolicy = options.fallbackPolicy ?? createDeterministicMorrowPolicy();
     this.clock = options.clock ?? SYSTEM_CLOCK;
+    this.model = options.model;
   }
 
   observe(triggerEventId: GameEventId | null = null): MorrowObservation {
@@ -129,6 +139,43 @@ export class MorrowController {
       fallback,
       triggerEventId: observation.triggerEventId,
     };
+  }
+
+  async runAsync(options: MorrowRunOptions = {}): Promise<MorrowTurn | null> {
+    if (!this.model) return this.run(options);
+    const observation = this.observe(options.triggerEventId ?? null);
+    const branchKey = String(observation.branchId);
+    if (!options.force && this.lastObservation.get(branchKey) === observation.observationHash) return null;
+    this.lastObservation.set(branchKey, observation.observationHash);
+
+    let proposal: MorrowProposal;
+    let fallback = false;
+    try {
+      proposal = morrowProposalSchema.parse(await this.model.propose(observation));
+    } catch {
+      fallback = true;
+      proposal = morrowProposalSchema.parse(this.fallbackPolicy.propose(observation));
+    }
+    if (
+      !options.force &&
+      observation.features.lastResponse !== null &&
+      proposal.response === observation.features.lastResponse
+    ) return null;
+    const result = this.session.dispatch({
+      actionType: 'morrow.intervene',
+      actorId: 'system_morrow',
+      params: {
+        proposalId: proposal.proposalId,
+        policyId: proposal.policyId,
+        policyVersion: proposal.policyVersion,
+        observationId: proposal.observationId,
+        observationHash: proposal.observationHash,
+        basedOnStateVersion: proposal.basedOnStateVersion,
+        response: proposal.response,
+        reasonCodes: proposal.reasonCodes,
+      },
+    });
+    return { observation, proposal, result, fallback, triggerEventId: observation.triggerEventId };
   }
 
   /** Forget the posture guard for a branch, e.g. after switching timelines. */

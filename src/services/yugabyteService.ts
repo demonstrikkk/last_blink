@@ -18,17 +18,40 @@ export interface YugabyteConfig {
   readonly database: string;
   readonly user: string;
   readonly password?: string;
-  readonly ssl?: boolean;
+  readonly ssl?: boolean | { readonly ca?: string; readonly rejectUnauthorized?: boolean };
 }
 
 export const DEFAULT_YUGABYTE_CONFIG: YugabyteConfig = {
-  host: 'hackcbs9-0.aws.yugabyte.cloud',
+  host: '',
   port: 5433,
-  database: 'yugabyte',
-  user: 'admin',
-  password: 'T8H9b2CogLvL7dRpQFE6p6Ovm707mN',
-  ssl: true,
+  database: '',
+  user: '',
+  password: undefined,
+  ssl: { rejectUnauthorized: true },
 };
+
+/**
+ * Safe configuration loader for server composition roots. It deliberately has
+ * no usable defaults: a missing DATABASE_URL must produce an offline/mock
+ * adapter rather than silently targeting somebody else's database.
+ */
+export function yugabyteConfigFromEnvironment(env: Record<string, string | undefined> =
+  typeof process === 'undefined' ? {} : process.env): YugabyteConfig {
+  const url = env.DATABASE_URL;
+  if (!url) return DEFAULT_YUGABYTE_CONFIG;
+  const parsed = new URL(url);
+  return {
+    host: parsed.hostname,
+    port: parsed.port ? Number(parsed.port) : 5433,
+    database: decodeURIComponent(parsed.pathname.replace(/^\//, '')),
+    user: decodeURIComponent(parsed.username),
+    password: decodeURIComponent(parsed.password),
+    ssl: {
+      ca: env.DATABASE_SSL_CA,
+      rejectUnauthorized: true,
+    },
+  };
+}
 
 export interface SettlementRow {
   readonly settlementId: string;
@@ -101,6 +124,7 @@ export class YugabyteService {
         return true;
       }
 
+      if (!this.config.host || !this.config.database || !this.config.user) return false;
       const { Pool } = await import('pg');
       const pool = new Pool({
         host: this.config.host,
@@ -108,7 +132,7 @@ export class YugabyteService {
         database: this.config.database,
         user: this.config.user,
         password: this.config.password,
-        ssl: this.config.ssl ? { rejectUnauthorized: false } : undefined,
+        ssl: this.config.ssl === false ? undefined : this.config.ssl,
         connectionTimeoutMillis: 2000,
       });
 

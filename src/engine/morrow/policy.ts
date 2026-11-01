@@ -50,6 +50,8 @@ export function decideMorrowResponse(observation: MorrowObservation): Decision {
   const choices = features.choicesMade;
   const scrutiny = features.scrutiny;
   const depth = phaseRank(features.phase);
+  const tacticCount = features.recentMorrowResponses.length;
+  const challengeDepth = features.completedChallenges.length;
 
   if (features.endingId !== null) {
     return current === 'release'
@@ -65,13 +67,13 @@ export function decideMorrowResponse(observation: MorrowObservation): Decision {
 
   if (current === 'observe') {
     return evidence >= 1 || choices >= 1 || depth >= 1
-      ? { response: 'warn', reasonCodes: ['EVIDENCE_PRESSURE'] }
+      ? { response: 'warn', reasonCodes: [tacticCount > 0 ? 'PREDICTION_UPDATE' : 'EVIDENCE_PRESSURE'] }
       : { response: 'observe', reasonCodes: ['NO_NEW_SIGNAL'] };
   }
 
   if (current === 'warn') {
-    if (scrutiny === 'critical' || evidence >= 3 || choices >= 2 || depth >= 2) {
-      return { response: 'restrict', reasonCodes: ['INVESTIGATION_DEPTH', 'SCRUTINY_RAISED'] };
+    if (scrutiny === 'critical' || evidence >= 3 || choices >= 2 || depth >= 2 || challengeDepth >= 1) {
+      return { response: 'restrict', reasonCodes: ['INVESTIGATION_DEPTH', challengeDepth > 0 ? 'CHALLENGE_ADAPTED' : tacticCount > 1 ? 'TACTIC_ADAPTED' : 'SCRUTINY_RAISED'] };
     }
     if (evidence >= 2 || choices >= 1 || scrutiny === 'elevated') {
       return { response: 'restrict', reasonCodes: ['EVIDENCE_PRESSURE'] };
@@ -132,6 +134,11 @@ export function createDeterministicMorrowPolicy(): MorrowPolicy {
           lastResponse: observation.features.lastResponse,
           escalation: observation.features.escalation,
           endingId: observation.features.endingId,
+          predictedNextMove: observation.features.predictedNextMove,
+          recentMorrowResponses: observation.features.recentMorrowResponses,
+          completedChallenges: observation.features.completedChallenges,
+          contradictionQuestioned: observation.features.contradictionQuestioned,
+          timelineReconstructed: observation.features.timelineReconstructed,
         },
         observationHash: observation.observationHash,
         deterministic: true,

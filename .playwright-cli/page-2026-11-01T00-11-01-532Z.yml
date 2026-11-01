@@ -1,0 +1,119 @@
+- generic [ref=f6e7]:
+  - generic:
+    - banner [ref=f6e8]:
+      - generic [ref=f6e9]:
+        - heading "BLINK" [level=1] [ref=f6e10]
+        - generic [ref=f6e11]: A RIN Adventure
+      - navigation "Investigation tools" [ref=f6e12]:
+        - button "Roadmap" [pressed] [ref=f6e13] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f6e14]: ⬡
+        - button "MORROW" [pressed] [ref=f6e16] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f6e17]: ◎
+        - button "ECHO" [ref=f6e19] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f6e20]: 𝘎
+        - button "Case Board" [ref=f6e22] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f6e23]: ⮹
+      - generic [ref=f6e25]:
+        - button "V1 /1" [ref=f6e26] [cursor=pointer]:
+          - generic [ref=f6e28]: V1
+          - generic [ref=f6e29]: /1
+        - button "PULSE [Q]" [ref=f6e30] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f6e31]: 📡
+        - button "DAY MODE" [ref=f6e33] [cursor=pointer]
+        - button "AI DIAG" [ref=f6e34] [cursor=pointer]
+        - 'button "FX: HIGH" [ref=f6e35] [cursor=pointer]'
+        - button "AUDIO" [ref=f6e36] [cursor=pointer]
+        - button "SAVE" [ref=f6e37] [cursor=pointer]
+    - status [ref=f6e46]
+    - complementary "Investigation Roadmap" [ref=f6e47]:
+      - heading "Investigation Roadmap" [level=2] [ref=f6e50]
+      - list [ref=f6e51]:
+        - listitem [ref=f6e52]:
+          - generic [ref=f6e53]: uncertain
+          - strong [ref=f6e54]: Hardware Count vs City Clock Reset
+          - generic [ref=f6e55]: Ward authority records show all Aster district clocks synchronized and reset at midnight.
+        - listitem [ref=f6e56]:
+          - generic [ref=f6e57]: uncertain
+          - strong [ref=f6e58]: Authorized Dispatch vs Unsealed Courier
+          - generic [ref=f6e59]: Handwritten dispatch slip states an authorized sealed courier left for Relay 7 at 03:14.
+        - listitem [ref=f6e60]:
+          - generic [ref=f6e61]: theory
+          - strong [ref=f6e62]: Inconclusive — material evidence is missing
+          - generic [ref=f6e63]: The case has useful leads and contradictions, but it does not yet establish what MORROW knew, what alternatives it had, and whether the harm was foreseeable.
+        - listitem [ref=f6e64]:
+          - generic [ref=f6e65]: missing
+          - strong [ref=f6e66]: "Missing check: Archival incident ledger"
+          - generic [ref=f6e67]: The archive ledger shows the district clock reset was ordered from the civic authority, not caused by the outage.
+        - listitem [ref=f6e68]:
+          - generic [ref=f6e69]: missing
+          - strong [ref=f6e70]: "Missing check: Held medical shipment"
+          - generic [ref=f6e71]: A clinic shipment was held for six hours because the freight line required a manual MORROW clearance that never arrived.
+        - listitem [ref=f6e72]:
+          - generic [ref=f6e73]: missing
+          - strong [ref=f6e74]: "Missing check: Plaza civic terminal"
+          - generic [ref=f6e75]: The public terminal shows the MORROW oversight channel accepting a manual root token every night at 03:14.
+        - listitem [ref=f6e76]:
+          - generic [ref=f6e77]: lead
+          - strong [ref=f6e78]: "Optional lead: Relay 7 maintenance log"
+          - generic [ref=f6e79]: North kerb terminal · direct hardware counter read
+        - listitem [ref=f6e80]:
+          - generic [ref=f6e81]: lead
+          - strong [ref=f6e82]: "Optional lead: Ward dispatch slip"
+          - generic [ref=f6e83]: North walk board · handwritten desk log
+        - listitem [ref=f6e84]:
+          - generic [ref=f6e85]: lead
+          - strong [ref=f6e86]: "Optional lead: Ivo's account"
+          - generic [ref=f6e87]: South walk stall · eyewitness account from stallholder
+    - complementary "City map and navigation" [ref=f6e88]:
+      - generic [ref=f6e91]:
+        - heading "Aster ring map" [level=2] [ref=f6e92]
+        - paragraph [ref=f6e93]: Relay Terraces · 30,71
+      - img "Map of Aster. Player at Relay Terraces." [ref=f6e570]
+      - generic [ref=f6e95]:
+        - generic [ref=f6e96]: "Nearest: Ivo (0 tiles)"
+        - generic [ref=f6e97]: clue NPC decision
+    - complementary "MORROW Policy Assistant" [ref=f6e101]:
+      - generic [ref=f6e103]:
+        - generic [aria-hidden] [ref=f6e104]: ⩚
+        - generic [ref=f6e105]:
+          - heading "MORROW" [level=2] [ref=f6e106]
+          - paragraph [ref=f6e107]: Policy Assistant
+      - generic [ref=f6e108]:
+        - generic [ref=f6e109]:
+          - generic [ref=f6e110]: "Investigation Risk:"
+          - generic [ref=f6e111]: ● LOW
+        - generic [ref=f6e112]:
+          - paragraph [ref=f6e113]: "Proposed Action:"
+          - button "Monitor Frequencies" [ref=f6e114] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f6e115]: 👁
+        - paragraph [ref=f6e117]: "Reason: Curfew enforcement standard protocol. Curfew active."
+    - complementary "Branch Comparison" [ref=f6e118]:
+      - generic [ref=f6e119]:
+        - generic [aria-hidden] [ref=f6e120]: ⋔
+        - heading "Branch Comparison" [level=2] [ref=f6e121]
+      - generic [ref=f6e122]:
+        - generic [aria-hidden] [ref=f6e123]:
+          - generic [ref=f6e124]: V1
+          - generic [ref=f6e128]: V2
+        - generic [ref=f6e131]:
+          - generic [ref=f6e132]: "Shared: 3 events"
+          - generic [ref=f6e133]: Single branch
+        - button "View Details" [ref=f6e134] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f6e136]: →
+    - dialog [ref=f6e576]:
+      - generic [ref=f6e577]:
+        - banner [ref=f6e578]:
+          - generic [ref=f6e582]:
+            - paragraph [ref=f6e583]: "INVESTIGATION // INITIAL CAUTION / PARTIAL DISCLOSURE: IVO SHARES AN OBSERVABLE DETAIL WHILE WITHHOLDING A NAMED STATEMENT."
+            - heading "Ivo" [level=2] [ref=f6e584]
+            - paragraph [ref=f6e585]: Stallholder, south walk
+          - generic [ref=f6e586]: LINE 1 / 5
+        - paragraph [ref=f6e588]: You are the one asking about the outage. Everyone else has been walking faster since midnight.
+        - generic [ref=f6e589]:
+          - button "Continue Space" [active] [ref=f6e590] [cursor=pointer]:
+            - text: Continue
+            - generic [ref=f6e591]: Space
+          - button "Step away Esc" [ref=f6e592] [cursor=pointer]:
+            - text: Step away
+            - generic [ref=f6e593]: Esc
+    - generic [aria-hidden]: WASD move · E interact · Q Pulse Scan · B BLINK · C ECHO · N NPCs · L Ledger · Esc close

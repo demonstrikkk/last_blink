@@ -38,6 +38,34 @@
   color-scheme: dark;
 }
 
+.game-theme-day {
+  --ink-900: #e9f1ef;
+  --ink-800: #dce8e6;
+  --ink-700: #c4d5d4;
+  --ink-600: #9db5b6;
+  --text-primary: #10212a;
+  --text-secondary: #29434c;
+  --text-muted: #557078;
+  --cyan: #087f91;
+  color: var(--text-primary);
+}
+
+.game-theme-day .hud-topbar,
+.game-theme-day .hud-card,
+.game-theme-day .ledger,
+.game-theme-day .blink-panel,
+.game-theme-day .echo-panel {
+  background: rgba(239, 248, 246, 0.94);
+  color: var(--text-primary);
+}
+
+.game-theme-day .hud-main-title,
+.game-theme-day .hud-card-title,
+.game-theme-day .ledger h2,
+.game-theme-day .echo-panel h2 {
+  color: #10212a;
+}
+
 *,
 *::before,
 *::after {
@@ -522,6 +550,47 @@ kbd {
   top: 60px;
   left: 16px;
   width: 240px;
+}
+
+/* -- City map / navigation -- */
+.hud-minimap-card {
+  bottom: 16px;
+  left: 16px;
+  width: 260px;
+  padding: 12px;
+}
+
+.hud-minimap-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border: 1px solid rgba(56, 225, 232, 0.16);
+  border-radius: 6px;
+  background: #070a0f;
+}
+
+.hud-minimap-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.hud-minimap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.hud-minimap-legend i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 4px;
 }
 
 .hud-pulse-dot {
@@ -1623,6 +1692,221 @@ kbd {
   color: var(--text-secondary);
 }
 
+.case-board-verdict {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--cyan-dim, var(--ink-600));
+  background: color-mix(in srgb, var(--cyan) 5%, transparent);
+}
+
+.case-board-verdict strong {
+  color: var(--cyan);
+}
+
+.case-board-verdict p,
+.case-board-result p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.case-board-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.case-board-picks .btn {
+  font-size: 11px;
+  text-align: left;
+}
+
+.case-board-result {
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border-left: 2px solid var(--cyan);
+  background: var(--ink-900);
+}
+
+.case-link-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.hud-roadmap {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-roadmap-item {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0 7px;
+  border-bottom: 1px solid var(--ink-600);
+}
+
+.hud-roadmap-item strong {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.hud-roadmap-item > span:last-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.hud-roadmap-kind {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.roadmap-uncertain .hud-roadmap-kind,
+.roadmap-missing .hud-roadmap-kind {
+  color: var(--amber, #f0a55a);
+}
+
+.roadmap-lead .hud-roadmap-kind {
+  color: var(--text-secondary);
+}
+
+.case-board-editor,
+.challenge-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ink-600);
+}
+
+.case-board-editor label {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.case-board-editor input,
+.case-board-editor textarea,
+.case-board-editor select {
+  width: 100%;
+  border: 1px solid var(--ink-500);
+  background: var(--ink-900);
+  color: var(--text-primary);
+  padding: 7px;
+  font: inherit;
+}
+
+.case-board-editor textarea {
+  min-height: 54px;
+  resize: vertical;
+}
+
+.challenge-grid h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.challenge-card {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--ink-600);
+  background: color-mix(in srgb, var(--ink-900) 78%, var(--cyan) 22%);
+}
+
+.challenge-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.challenge-feedback {
+  color: var(--text-primary) !important;
+  border-left: 2px solid var(--cyan);
+  padding-left: 8px;
+}
+
+.challenge-order {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.challenge-order li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.challenge-order li .mono {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 10px;
+}
+
+.dialogue-evidence-presentation {
+  margin: 12px 0;
+  border-top: 1px solid var(--ink-600);
+  border-bottom: 1px solid var(--ink-600);
+  padding: 8px 0;
+}
+
+.dialogue-evidence-presentation summary {
+  cursor: pointer;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.dialogue-evidence-note {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.verdict-citations {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.verdict-citations div {
+  display: grid;
+  gap: 2px;
+}
+
+.verdict-citations dt {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.verdict-citations dd {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
 .fact-list,
 .event-list {
   margin: 0;
@@ -1686,6 +1970,137 @@ kbd {
   font-size: 10px;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+.event-id {
+  grid-column: 2 / -1;
+  overflow-wrap: anywhere;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.evidence-ledger-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.evidence-ledger-item {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--ink-600);
+  border-left: 2px solid var(--text-muted);
+  background: color-mix(in srgb, var(--ink-900) 88%, transparent);
+}
+
+.evidence-ledger-item.evidence-collected {
+  border-left-color: var(--cyan);
+}
+
+.evidence-ledger-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.evidence-ledger-head strong {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.evidence-ledger-item > p:not(.evidence-contradiction):not(.evidence-related) {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.evidence-ledger-meta {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.evidence-ledger-meta div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.evidence-ledger-meta dt,
+.evidence-ledger-meta dd {
+  margin: 0;
+  font-size: 10px;
+}
+
+.evidence-ledger-meta dt {
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.evidence-ledger-meta dd {
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+}
+
+.evidence-contradiction {
+  margin: 2px 0 0;
+  padding: 7px;
+  border-left: 2px solid var(--amber, #e2a85d);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.evidence-contradiction .micro {
+  margin-right: 5px;
+  color: var(--amber, #e2a85d);
+}
+
+.evidence-related {
+  margin: 0;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.diagnostics-grid div {
+  padding: 9px;
+  border: 1px solid var(--ink-600);
+}
+
+.diagnostics-grid dt,
+.diagnostics-grid dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.echo-plain-label {
+  margin: 8px 0 0;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.diagnostics-grid dt {
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.diagnostics-grid dd {
+  margin-top: 4px;
+  color: var(--cyan);
 }
 
 .button-row {
@@ -2188,6 +2603,13 @@ kbd {
     padding: 10px;
   }
 
+  .hud-minimap-card {
+    width: 200px;
+    left: 8px;
+    bottom: 10px;
+    padding: 10px;
+  }
+
   .dialogue-sheet {
     bottom: 0;
     width: 100%;
@@ -2210,6 +2632,10 @@ kbd {
   }
 
   .hud-objectives-card {
+    display: none;
+  }
+
+  .hud-minimap-card {
     display: none;
   }
 
