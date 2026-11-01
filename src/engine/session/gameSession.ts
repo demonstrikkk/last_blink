@@ -19,6 +19,8 @@ import {
   type Branch,
   type BranchForkedEvent,
   type BranchId,
+  type CatastropheAvertedEvent,
+  type CatastropheOccurredEvent,
   type Choice,
   type ChoiceMadeEvent,
   type CaseLinkEvent,
@@ -35,7 +37,10 @@ import {
   type GameState,
   type JsonObject,
   type JsonValue,
+  type LoopStartedEvent,
   type MorrowIntervenedEvent,
+  type MorrowPlan,
+  type MorrowPlanSelectedEvent,
   type MorrowProposalEvaluatedEvent,
   type MorrowResponse,
   type NpcProposalEvaluatedEvent,
@@ -47,6 +52,7 @@ import {
   type SourceId,
   type TickAdvancedEvent,
 } from '../contracts/index.js';
+import { DEADLINE_TICK } from '../contracts/loop.js';
 import { morrowEscalationOf, nextMorrowEscalation } from '../morrow/fairness.js';
 import {
   morrowInterveneParamsSchema,
@@ -57,6 +63,8 @@ import { hashCanonical } from '../core/hash.js';
 import { createDeterministicIdFactory, type IdFactory } from '../core/ids.js';
 import { reduceGameState } from '../core/reducer.js';
 import { evaluateRules } from '../core/rules.js';
+import { evaluateCatastrophe } from '../loop/catastrophe.js';
+import { advanceTowardsDeadline, timeCostForAction } from '../time/clock.js';
 import { validateAction, type RejectionCode } from '../core/validation.js';
 import {
   ancestryChain,
@@ -136,6 +144,8 @@ export interface GameSession {
   recordAnchor(label: string): ActionResult;
   forkBranch(anchorId: string, label?: string): ActionResult;
   forkTimeline(anchorId: string, label?: string): ForkTimelineResult;
+  /** Close the failed timeline and open the next loop at 08:00. */
+  resetLoop(label?: string): ActionResult;
   subscribe(listener: (snapshot: GameSnapshot) => void): () => void;
   save(): Promise<SaveEnvelope>;
 }
@@ -316,6 +326,7 @@ export class DeterministicGameSession implements GameSession {
       status: 'active',
       timelineIndex: 0,
       createdAt,
+      forkReason: 'anchor',
     };
 
     const state: GameState = {
@@ -336,12 +347,28 @@ export class DeterministicGameSession implements GameSession {
       branches: [branch],
       player: options.player,
       endingId: null,
+      loop: {
+        index: 1,
+        resetCount: 0,
+        startTick: 0,
+        checkpointFacts: [],
+      },
+      catastrophe: {
+        status: 'pending',
+        occurredAtTick: null,
+        avertedAtTick: null,
+        cause: null,
+        missing: [],
+        sequence: [],
+      },
+      morrowPlan: null,
       lastEventId: null,
       rngCursor: 0,
     };
 
     const session = new DeterministicGameSession(deps, content, state, ids);
     session.emitInitialEvents(content.initialFacts);
+    session.startFirstLoop();
     return session;
   }
 
@@ -570,6 +597,15 @@ export class DeterministicGameSession implements GameSession {
     return { result, branchId: result.status === 'accepted' ? (created?.branchId ?? null) : null };
   }
 
+  /** Return to 08:00 after an 18:00 catastrophe. This opens a new branch. */
+  resetLoop(label = 'Return to 08:00'): ActionResult {
+    return this.dispatch({
+      actionType: 'loop.reset',
+      actorId: PLAYER_ACTOR,
+      params: { label },
+    });
+  }
+
   dispatch(raw: unknown): ActionResult {
     const actionId = this.ids.next('act_') as ActionId;
     const validation = validateAction(this.state, raw, this.content);
@@ -638,7 +674,11 @@ export class DeterministicGameSession implements GameSession {
 
       case 'session.advance_tick': {
         const eventId = this.ids.next('evt_') as GameEventId;
-        const toTick = state.tick + action.params.ticks;
+        const toTick = Math.min(
+          DEADLINE_TICK,
+          state.tick + action.params.ticks,
+        );
+        if (toTick <= state.tick) break;
         const event: TickAdvancedEvent = {
           ...this.envelope(state, eventId, toTick, action.actorId, source, actionId),
           type: 'tick.advanced',
@@ -665,6 +705,8 @@ export class DeterministicGameSession implements GameSession {
           branchId: state.branchId,
           acquiredAtTick: state.tick,
           source: { kind: 'system', ref: action.params.sourceRef },
+          contaminated: false,
+          contaminationSource: null,
         };
         const event: FactAssertedEvent = {
           ...this.envelope(state, eventId, state.tick, action.actorId, source, actionId),
@@ -731,6 +773,7 @@ export class DeterministicGameSession implements GameSession {
           status: 'active',
           timelineIndex: state.branches.length,
           createdAt: this.deps.clock.nowIso(),
+          forkReason: 'anchor',
         };
         const event: BranchForkedEvent = {
           ...this.envelope(state, eventId, state.tick, action.actorId, source, actionId),
@@ -757,6 +800,16 @@ export class DeterministicGameSession implements GameSession {
           sourceRef: definition.sourceRef,
           sourceKind: definition.sourceKind,
           confidence: definition.confidence,
+          // MORROW can only shape what its target remembers. The canonical
+          // record is still the claim Ivo made; the mark records that the claim
+          // passed through a shaped mind, and the plan event is the trace.
+          ...(this.isTestimonyContaminated(state, definition.speakerNpcId)
+            ? {
+                contaminated: true,
+                contaminationSource: definition.speakerNpcId,
+                confidence: Math.max(0.1, definition.confidence - 0.2),
+              }
+            : {}),
         });
         state = asserted.state;
         produced.push(asserted.eventId);
@@ -1012,11 +1065,50 @@ export class DeterministicGameSession implements GameSession {
         break;
       }
 
+      case 'morrow.plan': {
+        const eventId = this.ids.next('evt_') as GameEventId;
+        const plan: MorrowPlan = action.params.plan;
+        const event: MorrowPlanSelectedEvent = {
+          ...this.envelope(
+            state,
+            eventId,
+            state.tick,
+            action.actorId,
+            'policy.morrow' as SourceId,
+            actionId,
+          ),
+          type: 'morrow.plan.selected',
+          payload: { plan },
+        };
+        state = this.apply(state, event);
+        produced.push(eventId);
+        break;
+      }
+
+      case 'loop.reset': {
+        const reset = this.resetLoopState(actionId, action.actorId, action.params.label);
+        state = reset.state;
+        produced.push(...reset.eventIds);
+        break;
+      }
+
       default: {
         const exhaustive: never = action;
         throw new Error(`unhandled action ${String(exhaustive)}`);
       }
     }
+
+    // Engine-owned time: only meaningful actions in the table above spend the
+    // day. UI navigation dispatches session.noop and therefore costs nothing.
+    const timed = this.applyTimeCost(state, action.actionType, actionId);
+    state = timed.state;
+    produced.push(...timed.eventIds);
+
+    // The deadline is checked after the action resolves, so a 17:55 decision
+    // still lands before the 18:00 catastrophe.
+    const outcome = this.checkTimelineOutcome(state, actionId);
+    state = outcome.state;
+    produced.push(...outcome.eventIds);
 
     this.commit(state);
     return this.acceptedResult(action, actionId, source, produced, state);
@@ -1098,6 +1190,8 @@ export class DeterministicGameSession implements GameSession {
         branchId: this.state.branchId,
         acquiredAtTick: 0,
         source: { kind: 'system', ref: initial.sourceRef },
+          contaminated: false,
+          contaminationSource: null,
       };
       const event: FactAssertedEvent = {
         ...this.envelope(this.state, factEventId, 0, SYSTEM_ACTOR, 'engine.bootstrap' as SourceId, null),
@@ -1106,6 +1200,203 @@ export class DeterministicGameSession implements GameSession {
       };
       this.commit(this.apply(this.state, event));
     }
+  }
+
+  /**
+   * The first loop is not a fork: the root branch already exists. This event
+   * pins the 08:00 checkpoint and starts the clock at tick 0.
+   */
+  private startFirstLoop(): void {
+    const checkpointFacts = Object.values(this.state.facts);
+    const eventId = this.ids.next('evt_') as GameEventId;
+    const event: LoopStartedEvent = {
+      ...this.envelope(
+        this.state,
+        eventId,
+        0,
+        SYSTEM_ACTOR,
+        'engine.loop' as SourceId,
+        null,
+      ),
+      type: 'loop.started',
+      payload: {
+        previousLoopIndex: 1,
+        loopIndex: 1,
+        startTick: 0,
+        checkpointFacts,
+        checkpointStateVersion: this.state.stateVersion + 1,
+        checkpointHash: hashCanonical(this.state),
+        reason: 'initial',
+        branch: null,
+      },
+    };
+    this.commit(this.apply(this.state, event));
+  }
+
+  /**
+   * Catastrophe reset. The failed timeline is kept intact; the new branch is
+   * materialised from the loop's 08:00 checkpoint facts, so no save/reload
+   * history is required and no NPC inherits another branch's knowledge.
+   */
+  private resetLoopState(
+    actionId: ActionId,
+    actorId: ActorId,
+    label: string,
+  ): { state: GameState; eventIds: GameEventId[] } {
+    const parent = this.state;
+    const childId = this.ids.next('brn_') as BranchId;
+    const childBranch: Branch = {
+      schemaVersion: CONTRACT_VERSION,
+      branchId: childId,
+      sessionId: parent.sessionId,
+      parentBranchId: parent.branchId,
+      forkedAtAnchorId: null,
+      forkedAtTick: 0,
+      forkedAtStateVersion: parent.stateVersion,
+      forkedAtEventSequenceNo: parent.stateVersion + 1,
+      forkedAtStateHash: hashCanonical(parent),
+      label,
+      status: 'active',
+      timelineIndex: parent.branches.length,
+      createdAt: this.deps.clock.nowIso(),
+      forkReason: 'loop',
+    };
+
+    const checkpointFacts = parent.loop.checkpointFacts.map((fact) =>
+      fact.branchId === childId ? fact : { ...fact, branchId: childId },
+    );
+
+    const eventId = this.ids.next('evt_') as GameEventId;
+    const started: LoopStartedEvent = {
+      ...this.envelope(
+        parent,
+        eventId,
+        0,
+        actorId,
+        'engine.loop' as SourceId,
+        actionId,
+      ),
+      type: 'loop.started',
+      payload: {
+        previousLoopIndex: parent.loop.index,
+        loopIndex: parent.loop.index + 1,
+        startTick: 0,
+        checkpointFacts,
+        checkpointStateVersion: parent.stateVersion + 1,
+        checkpointHash: hashCanonical(parent),
+        reason: 'catastrophe',
+        branch: childBranch,
+      },
+    };
+    const validated = gameEventSchema.parse(started);
+    // Reduce against the failed branch so the reducer can verify the descent,
+    // then rebase the reduced state onto the new branch. The failed runtime is
+    // never mutated, and no save/reload history is needed to restore 08:00.
+    const baseState = rebaseState(reduceGameState(parent, validated), childBranch, childId);
+
+    const runtime: BranchRuntime = {
+      branch: childBranch,
+      state: baseState,
+      hash: hashCanonical(baseState),
+      history: [],
+      events: [validated],
+    };
+    runtime.history[baseState.stateVersion] = baseState;
+    this.runtimes.set(childId, runtime);
+
+    return { state: baseState, eventIds: [eventId] };
+  }
+
+  private isTestimonyContaminated(
+    state: GameState,
+    speakerNpcId: string | null,
+  ): boolean {
+    if (speakerNpcId === null) return false;
+    const plan = state.morrowPlan;
+    if (plan === null) return false;
+    return plan.targets.some((target) => String(target.npcId) === speakerNpcId);
+  }
+
+  private applyTimeCost(
+    state: GameState,
+    actionType: ActionType,
+    actionId: ActionId,
+  ): { state: GameState; eventIds: GameEventId[] } {
+    const cost = timeCostForAction(actionType);
+    if (
+      cost <= 0 ||
+      state.catastrophe.status !== 'pending' ||
+      state.endingId !== null
+    ) {
+      return { state, eventIds: [] };
+    }
+    const fromTick = state.tick;
+    const toTick = advanceTowardsDeadline(fromTick, cost);
+    if (toTick <= fromTick) return { state, eventIds: [] };
+
+    const eventId = this.ids.next('evt_') as GameEventId;
+    const event: TickAdvancedEvent = {
+      ...this.envelope(
+        state,
+        eventId,
+        toTick,
+        SYSTEM_ACTOR,
+        'engine.clock' as SourceId,
+        actionId,
+      ),
+      type: 'tick.advanced',
+      payload: { fromTick, toTick, reason: 'timed' },
+    };
+    return { state: this.apply(state, event), eventIds: [eventId] };
+  }
+
+  private checkTimelineOutcome(
+    state: GameState,
+    actionId: ActionId,
+  ): { state: GameState; eventIds: GameEventId[] } {
+    if (state.catastrophe.status !== 'pending') return { state, eventIds: [] };
+
+    if (state.endingId !== null) {
+      const eventId = this.ids.next('evt_') as GameEventId;
+      const event: CatastropheAvertedEvent = {
+        ...this.envelope(
+          state,
+          eventId,
+          state.tick,
+          SYSTEM_ACTOR,
+          'engine.clock' as SourceId,
+          actionId,
+        ),
+        type: 'catastrophe.averted',
+        payload: { avertedAtTick: state.tick, endingId: state.endingId },
+      };
+      return { state: this.apply(state, event), eventIds: [eventId] };
+    }
+
+    if (state.tick >= DEADLINE_TICK) {
+      const assessment = evaluateCatastrophe(state);
+      const eventId = this.ids.next('evt_') as GameEventId;
+      const event: CatastropheOccurredEvent = {
+        ...this.envelope(
+          state,
+          eventId,
+          state.tick,
+          SYSTEM_ACTOR,
+          'engine.clock' as SourceId,
+          actionId,
+        ),
+        type: 'catastrophe.occurred',
+        payload: {
+          occurredAtTick: state.tick,
+          cause: assessment.cause,
+          missing: [...assessment.missing],
+          sequence: [...assessment.sequence],
+        },
+      };
+      return { state: this.apply(state, event), eventIds: [eventId] };
+    }
+
+    return { state, eventIds: [] };
   }
 
   private envelope(
@@ -1238,6 +1529,8 @@ export class DeterministicGameSession implements GameSession {
         branchId: childId,
         acquiredAtTick: runtime.state.tick,
         source: { kind: 'system', ref: `scar.carry:${scar.key}` },
+          contaminated: false,
+          contaminationSource: null,
       };
       const event: FactAssertedEvent = {
         ...this.envelope(
@@ -1267,6 +1560,8 @@ export class DeterministicGameSession implements GameSession {
       sourceRef: string;
       sourceKind: Fact['source']['kind'];
       confidence: number;
+      contaminated?: boolean;
+      contaminationSource?: Fact['contaminationSource'];
     },
   ): { state: GameState; eventId: GameEventId } {
     const eventId = this.ids.next('evt_') as GameEventId;
@@ -1281,6 +1576,8 @@ export class DeterministicGameSession implements GameSession {
       branchId: state.branchId,
       acquiredAtTick: state.tick,
       source: { kind: spec.sourceKind, ref: spec.sourceRef },
+      contaminated: spec.contaminated ?? false,
+      contaminationSource: spec.contaminationSource ?? null,
     };
     const event: FactAssertedEvent = {
       ...this.envelope(state, eventId, state.tick, actorId, sourceId, actionId),
@@ -1322,6 +1619,8 @@ export class DeterministicGameSession implements GameSession {
           branchId: current.branchId,
           acquiredAtTick: current.tick,
           source: { kind: 'derived', ref: asserted.sourceRef },
+          contaminated: false,
+          contaminationSource: null,
         };
         const factEvent: FactAssertedEvent = {
           ...this.envelope(current, factEventId, current.tick, SYSTEM_ACTOR, 'engine.rules' as SourceId, actionId),

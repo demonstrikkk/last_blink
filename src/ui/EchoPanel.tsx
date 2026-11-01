@@ -8,6 +8,10 @@ import {
   type GameContent,
 } from '../engine/index.js';
 import type { DeterministicGameSession } from '../engine/index.js';
+import {
+  fetchMekoAdvisory,
+  type MekoAdvisoryResponse,
+} from '../session/cloudRuntime.js';
 
 interface EchoPanelProps {
   readonly open: boolean;
@@ -18,7 +22,16 @@ interface EchoPanelProps {
   readonly activeBranchId: string;
 }
 
-type Mode = 'situation' | 'fact' | 'decision' | 'morrow' | 'ending' | 'hypothesis' | 'compare';
+type Mode =
+  | 'situation'
+  | 'fact'
+  | 'decision'
+  | 'morrow'
+  | 'ending'
+  | 'hypothesis'
+  | 'compare'
+  | 'acrossLoops'
+  | 'archive';
 
 const MODES: readonly { readonly id: Mode; readonly label: string }[] = [
   { id: 'situation', label: 'Situation' },
@@ -28,6 +41,8 @@ const MODES: readonly { readonly id: Mode; readonly label: string }[] = [
   { id: 'ending', label: 'Ending' },
   { id: 'hypothesis', label: 'Test theory' },
   { id: 'compare', label: 'Compare' },
+  { id: 'acrossLoops', label: 'Across loops' },
+  { id: 'archive', label: 'Meko archive' },
 ];
 
 /**
@@ -50,6 +65,10 @@ export function EchoPanel({
   const [otherBranchId, setOtherBranchId] = useState<string>('');
   const [answer, setAnswer] = useState<EchoAnswer | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [archiveQuery, setArchiveQuery] = useState('Relay 7 zeroing charge ward protocol');
+  const [archive, setArchive] = useState<MekoAdvisoryResponse | null>(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -80,6 +99,11 @@ export function EchoPanel({
             }
           : null;
       }
+      case 'acrossLoops':
+        return {
+          kind: 'acrossLoops',
+          ...(factKey.trim() ? { evidenceKey: factKey.trim() } : {}),
+        };
       default:
         return null;
     }
@@ -98,6 +122,26 @@ export function EchoPanel({
     } catch (cause) {
       setAnswer(null);
       setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
+  const askArchive = async () => {
+    setArchiveError(null);
+    setArchiveBusy(true);
+    try {
+      const state = session.getState();
+      setArchive(
+        await fetchMekoAdvisory({
+          sessionId: String(state.sessionId),
+          branchId: String(state.branchId),
+          query: archiveQuery,
+        }),
+      );
+    } catch (cause) {
+      setArchive(null);
+      setArchiveError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setArchiveBusy(false);
     }
   };
 
@@ -157,6 +201,30 @@ export function EchoPanel({
           </label>
         ) : null}
 
+        {mode === 'acrossLoops' ? (
+          <label className="echo-field">
+            <span className="mono">&gt; EVIDENCE KEY ACROSS LOOPS (OPTIONAL)</span>
+            <input
+              value={factKey}
+              onChange={(event) => setFactKey(event.target.value)}
+              placeholder="evidence.vendor_testimony"
+              className="mono"
+            />
+          </label>
+        ) : null}
+
+        {mode === 'archive' ? (
+          <label className="echo-field">
+            <span className="mono">&gt; MEKO ARCHIVE QUERY (ADVISORY ONLY)</span>
+            <input
+              value={archiveQuery}
+              onChange={(event) => setArchiveQuery(event.target.value)}
+              placeholder="Relay 7 zeroing charge ward protocol"
+              className="mono"
+            />
+          </label>
+        ) : null}
+
         {mode === 'decision' ? (
           <label className="echo-field">
             <span className="mono">&gt; DECISION NODE</span>
@@ -200,9 +268,66 @@ export function EchoPanel({
           </p>
         ) : null}
 
-        <button type="button" className="btn echo-ask" onClick={ask}>
-          Execute Query ⏎
-        </button>
+        {mode === 'archive' ? (
+          <button
+            type="button"
+            className="btn echo-ask"
+            onClick={() => void askArchive()}
+            disabled={archiveBusy || archiveQuery.trim().length < 2}
+          >
+            {archiveBusy ? 'Querying Meko…' : 'Query Meko archive'}
+          </button>
+        ) : (
+          <button type="button" className="btn echo-ask" onClick={ask}>
+            Execute Query ⏎
+          </button>
+        )}
+
+        {archiveError ? <p className="echo-error mono">{archiveError}</p> : null}
+
+        {mode === 'archive' && archive ? (
+          <section className="echo-answer echo-archive" aria-live="polite">
+            <div className="echo-answer-head">
+              <span className="state-chip echo-status echo-status-unknown mono">
+                ADVISORY: NOT CANONICAL
+              </span>
+              <span className="mono echo-scope">
+                [SOURCE: {archive.source === 'remote' ? 'MEKO / YUGABASE' : 'LOCAL FALLBACK'}]
+              </span>
+            </div>
+            <p className="echo-summary">
+              External archive recall for “{archive.query}”. These excerpts can suggest where to
+              look, but they cannot create evidence, change a fact, or decide an ending.
+            </p>
+            {archive.hits.length > 0 ? (
+              <ul className="echo-archive-hits">
+                {archive.hits.map((hit) => (
+                  <li key={hit.id}>
+                    <span className="mono echo-citation-kind">{hit.source.toUpperCase()}</span>
+                    <p>{hit.text}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="echo-empty mono">
+                [EMPTY] Meko returned no archive passage. The canonical Case Board is unchanged.
+              </p>
+            )}
+            {archive.memories.length > 0 ? (
+              <div className="echo-archive-memories">
+                <p className="mono">&gt; NPC MEMORY RECALL</p>
+                {archive.memories.map((memory, index) => (
+                  <p key={`memory-${index}`}>{memory}</p>
+                ))}
+              </div>
+            ) : null}
+            <p className="echo-missing mono">
+              &gt; MEKO STATUS: {archive.diagnostics.configured ? 'CONFIGURED' : 'NOT CONFIGURED'} ·{' '}
+              {archive.diagnostics.online ? 'ONLINE' : 'FALLBACK'} · DATAPACK{' '}
+              {archive.diagnostics.datapackId ?? 'NONE'}
+            </p>
+          </section>
+        ) : null}
 
         {error ? <p className="echo-error mono">{error}</p> : null}
 

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Zeroing order">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <path d="M14 8h30l8 8v40H14z" fill="#e7e2d3"/>
+  <path d="M44 8v8h8" fill="#c9c2ad"/>
+  <rect x="18" y="12" width="20" height="3" fill="#b91c1c"/>
+  <text x="18" y="26" font-family="monospace" font-size="6" fill="#b91c1c">ZEROING ORDER</text>
+  <path d="M18 31h28M18 36h28M18 41h20" stroke="#64748b" stroke-width="1.5"/>
+  <text x="32" y="52" font-family="monospace" font-size="10" fill="#b91c1c" text-anchor="middle">18:00</text>
+  <circle cx="48" cy="50" r="6" fill="none" stroke="#b91c1c" stroke-width="1.5"/>
+</svg>

@@ -90,6 +90,20 @@ export interface MekoDiagnostics {
   readonly lastError: string | null;
 }
 
+export interface MekoDocumentUpload {
+  readonly filename: string;
+  readonly content: Uint8Array;
+  /** SHA-256 hex digest of the complete file, computed by the caller. */
+  readonly contentHash: string;
+  readonly conversationId?: string;
+}
+
+export interface MekoDocumentReceipt {
+  /** Meko document key used to poll ingestion status. */
+  readonly key: string;
+  readonly alreadyUploaded: boolean;
+}
+
 interface ToolEnvelope {
   readonly payload: unknown;
   readonly sessionId: string | null;
@@ -281,6 +295,86 @@ export class MekoService {
     }
   }
 
+  /**
+   * Uploads one curated archive document into the configured datapack. Meko
+   * returns a presigned POST; the file body goes to object storage and the
+   * document is then indexed asynchronously. Canonical game state is never
+   * touched by this path.
+   */
+  async ingestDocument(input: MekoDocumentUpload): Promise<MekoDocumentReceipt> {
+    if (this.config.offlineOnly) {
+      throw new Error('Meko is offline; cannot ingest archive documents.');
+    }
+    const ready = await this.initialize();
+    if (!ready) throw new Error('Meko MCP session is unavailable.');
+    const conversationId =
+      input.conversationId ?? (await this.ensureConversation('meko_archive_seed'));
+    const head = input.content.subarray(0, 3072);
+
+    const presign = unwrapToolResult(
+      (
+        await this.callTool('knowledgebase_upload_document', {
+          filename: input.filename,
+          size: input.content.byteLength,
+          content_hash: input.contentHash,
+          content_head_base64: Buffer.from(head).toString('base64'),
+          conversation_id: conversationId,
+          datapack_id: this.config.datapackId,
+          agent_id: this.config.agentId,
+        })
+      ).payload,
+    ) as {
+      url?: string;
+      fields?: Record<string, string>;
+      key?: string;
+      already_uploaded?: boolean;
+    };
+
+    const key = presign.key;
+    if (typeof key !== 'string' || key.length === 0) {
+      throw new Error('Meko did not return a document key.');
+    }
+    if (presign.already_uploaded === true) {
+      return { key, alreadyUploaded: true };
+    }
+    if (typeof presign.url !== 'string' || !presign.fields) {
+      throw new Error('Meko did not return an upload target.');
+    }
+
+    const form = new FormData();
+    for (const [name, value] of Object.entries(presign.fields)) {
+      form.append(name, value);
+    }
+    const body = new Uint8Array(input.content.byteLength);
+    body.set(input.content);
+    form.append('file', new Blob([body], { type: 'text/markdown' }), input.filename);
+
+    const upload = await this.fetchImpl(presign.url, { method: 'POST', body: form });
+    if (!upload.ok) {
+      throw new Error(`Meko document upload failed with HTTP ${upload.status}`);
+    }
+    return { key, alreadyUploaded: false };
+  }
+
+  /** Reads ingestion state for a key returned by {@link ingestDocument}. */
+  async documentStatus(documentKey: string, conversationId?: string): Promise<string> {
+    const ready = await this.initialize();
+    if (!ready) throw new Error('Meko MCP session is unavailable.');
+    const conversation =
+      conversationId ?? (await this.ensureConversation('meko_archive_seed'));
+    const result = unwrapToolResult(
+      (
+        await this.callTool('knowledgebase_document_status', {
+          document_key: documentKey,
+          conversation_id: conversation,
+          datapack_id: this.config.datapackId,
+          agent_id: this.config.agentId,
+        })
+      ).payload,
+    ) as { status?: string; state?: string; document_status?: string };
+    return result.status ?? result.state ?? result.document_status ?? 'unknown';
+  }
+
   async searchKnowledgeBase(
     query: string,
     sessionId: string,
@@ -310,18 +404,27 @@ export class MekoService {
         ).payload,
       ) as { results?: Array<Record<string, unknown>> };
       const rows = Array.isArray(result?.results) ? result.results : [];
-      const hits = rows
-        .slice(0, bounded)
-        .map((row, index) => ({
+      const seen = new Set<string>();
+      const hits: MekoContextHit[] = [];
+      for (let index = 0; index < rows.length && hits.length < bounded; index += 1) {
+        const row = rows[index]!;
+        const text = String(row.chunk_text ?? row.content ?? row.text ?? '')
+          .trim()
+          .slice(0, 1200);
+        // Meko can return the same chunk more than once; repeating it in the
+        // archive panel would waste the player's attention.
+        if (text.length === 0 || seen.has(text)) continue;
+        seen.add(text);
+        hits.push({
           id: typeof row.id === 'string' ? row.id : `kb_${index}`,
-          text: String(row.chunk_text ?? row.content ?? row.text ?? '').slice(0, 1200),
+          text,
           score: typeof row.score === 'number' ? row.score : undefined,
-          source: 'knowledge_base' as const,
-        }))
-        .filter((hit) => hit.text.length > 0);
+          source: 'knowledge_base',
+        });
+      }
       if (hits.length === 0) return fallback();
       this.online = true;
-      return { query: trimmed, hits, source: 'remote', truncated: rows.length > bounded };
+      return { query: trimmed, hits, source: 'remote', truncated: rows.length > hits.length };
     } catch (error) {
       this.markFailure(error);
       return fallback();

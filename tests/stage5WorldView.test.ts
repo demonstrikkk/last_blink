@@ -77,12 +77,13 @@ describe('Stage 5 world view projection', () => {
     const { session } = await stage5Harness();
     const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
 
-    expect(view.evidence).toHaveLength(12);
-    expect(view.evidenceTotal).toBe(12);
-    expect(view.objectives).toHaveLength(6);
+    expect(view.evidence).toHaveLength(14);
+    expect(view.evidenceTotal).toBe(14);
+    expect(view.objectives).toHaveLength(8);
+    expect(view.objectives.filter((objective) => objective.optional)).toHaveLength(2);
     expect(view.currentObjective?.objectiveId).toBe('obj_read_relay');
     expect(view.phase).toBe('arrival');
-    expect(view.choices).toHaveLength(6);
+    expect(view.choices).toHaveLength(7);
     expect(view.choice?.nodeId).toBe('node.sable.relay');
     expect(view.choice?.available).toBe(false);
     expect(view.choice?.missing).toEqual(['evidence.relay_7']);
@@ -176,8 +177,43 @@ describe('Stage 5 world view projection', () => {
     expect(view.endingId).toBe('ending.open_record');
     expect(view.ending?.title).toBe('The Open Record');
     expect(view.ending?.summary).toContain('dispatch chain intact');
-    expect(view.objectives.every((objective) => objective.done)).toBe(true);
+    expect(
+      view.objectives.filter((objective) => !objective.optional).every((objective) => objective.done),
+    ).toBe(true);
     expect(view.currentObjective).toBeNull();
+  });
+
+  it('reconstructs the zeroing device and only disarms it with the root override', async () => {
+    const { session } = await stage5Harness();
+    for (const evidenceId of [
+      'clue_conduit',
+      'surveillance_frequency',
+      'archive_record',
+      'zeroing_order',
+      'clue_locker',
+      'detonator_schematic',
+    ]) {
+      collect(session, evidenceId);
+    }
+
+    let view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    expect(view.attackPlan.reconstructed).toBe(true);
+    expect(view.attackPlan.disarmed).toBe(false);
+    expect(view.attackPlan.disarmReady).toBe(false);
+    expect(view.attackPlan.missing).toEqual([]);
+    expect(view.ending).toBeNull();
+    expect(view.choices.find((node) => node.nodeId === 'node.relay.disarm')?.available).toBe(false);
+
+    collect(session, 'depot_terminal');
+    view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    expect(view.attackPlan.disarmReady).toBe(true);
+    expect(view.choices.find((node) => node.nodeId === 'node.relay.disarm')?.available).toBe(true);
+
+    choose(session, 'node.relay.disarm', 'cut');
+    view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    expect(view.attackPlan.disarmed).toBe(true);
+    expect(view.endingId).toBe('ending.disarmed_dawn');
+    expect(view.catastrophe.status).toBe('averted');
   });
 });
 
@@ -198,6 +234,29 @@ describe('Stage 5 world targets', () => {
       expect(target.radius).toBeGreaterThan(0);
       expect(target.tileX).toBeGreaterThan(0);
       expect(target.tileY).toBeGreaterThan(0);
+    }
+  });
+
+  it('anchors every puzzle at its own reachable map tile', async () => {
+    const { session } = await stage5Harness();
+    const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    const puzzles = WORLD_TARGETS.filter((target) => target.kind === 'puzzle');
+
+    expect(puzzles.map((target) => target.puzzle)).toEqual(
+      expect.arrayContaining(['signal', 'timeline', 'contradiction', 'bomb']),
+    );
+    expect(puzzles).toHaveLength(4);
+    for (const target of puzzles) {
+      expect(target.puzzle).toBeDefined();
+      expect(target.radius).toBeGreaterThanOrEqual(28);
+      expect(targetAvailable(view, target.id)).toBe(true);
+    }
+
+    const puzzleTiles = puzzles.map((target) => `${target.tileX},${target.tileY}`);
+    expect(new Set(puzzleTiles).size).toBe(puzzleTiles.length);
+    for (const target of WORLD_TARGETS) {
+      if (target.kind === 'puzzle') continue;
+      expect(puzzleTiles).not.toContain(`${target.tileX},${target.tileY}`);
     }
   });
 });

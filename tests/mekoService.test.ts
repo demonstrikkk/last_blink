@@ -42,9 +42,16 @@ interface Call {
 function fakeMeko(overrides: Partial<Record<string, unknown>> = {}): {
   fetchImpl: typeof fetch;
   calls: Call[];
+  uploads: FormData[];
 } {
   const calls: Call[] = [];
+  const uploads: FormData[] = [];
   const fetchImpl = (async (_url: string | URL | Request, init?: RequestInit) => {
+    if (init?.body instanceof FormData) {
+      uploads.push(init.body);
+      calls.push({ method: 's3-upload', headers: new Headers(init?.headers) });
+      return new Response(null, { status: 204 });
+    }
     const body = JSON.parse(String(init?.body)) as {
       method: string;
       params?: { name?: string; arguments?: Record<string, unknown> };
@@ -81,6 +88,19 @@ function fakeMeko(overrides: Partial<Record<string, unknown>> = {}): {
               },
             ),
           );
+        case 'knowledgebase_upload_document':
+          return sse(
+            toolText(
+              overrides.upload ?? {
+                url: 'https://upload.invalid/presigned',
+                fields: { key: 'archive/veyra.md', policy: 'policy-value' },
+                key: 'doc_key_001',
+                already_uploaded: false,
+              },
+            ),
+          );
+        case 'knowledgebase_document_status':
+          return sse(toolText(overrides.documentStatus ?? { status: 'indexed' }));
         case 'memory_add':
           return sse(toolText({ results: [{ id: 'mem_live_1' }] }));
         case 'memory_search':
@@ -113,7 +133,7 @@ function fakeMeko(overrides: Partial<Record<string, unknown>> = {}): {
     }
     return new Response('', { status: 202 });
   }) as typeof fetch;
-  return { fetchImpl, calls };
+  return { fetchImpl, calls, uploads };
 }
 
 describe('Meko MCP client', () => {
@@ -176,6 +196,51 @@ describe('Meko MCP client', () => {
     const result = await meko.searchKnowledgeBase('records', 'ses_4', 500);
     expect(result.hits.length).toBeLessThanOrEqual(8);
     expect(result.truncated).toBe(true);
+  });
+
+  it('deduplicates repeated knowledge-base chunks', async () => {
+    const { fetchImpl } = fakeMeko({
+      knowledgebase: {
+        results: [
+          { id: 'kb_a', chunk_text: 'Relay 7 lost eight minutes.' },
+          { id: 'kb_b', chunk_text: 'Relay 7 lost eight minutes.' },
+          { id: 'kb_c', chunk_text: 'Ward protocol 14-B preserves records.' },
+        ],
+      },
+    });
+    const meko = new MekoService(onlineConfig, { fetchImpl });
+    const result = await meko.searchKnowledgeBase('Relay 7', 'ses_dedupe', 3);
+    expect(result.hits.map((hit) => hit.text)).toEqual([
+      'Relay 7 lost eight minutes.',
+      'Ward protocol 14-B preserves records.',
+    ]);
+  });
+
+  it('uploads a curated document and reads its ingestion status', async () => {
+    const { fetchImpl, calls, uploads } = fakeMeko();
+    const meko = new MekoService(onlineConfig, { fetchImpl });
+    const content = new TextEncoder().encode('# Archive\n\nRelay 7 lost eight minutes.\n');
+    const receipt = await meko.ingestDocument({
+      filename: 'veyra.md',
+      content,
+      contentHash: 'a'.repeat(64),
+      conversationId: 'conv_live_1',
+    });
+
+    expect(receipt).toEqual({ key: 'doc_key_001', alreadyUploaded: false });
+    const presign = calls.find((call) => call.tool === 'knowledgebase_upload_document');
+    expect(presign?.args).toMatchObject({
+      filename: 'veyra.md',
+      size: content.byteLength,
+      datapack_id: 'dp_test_0001',
+      conversation_id: 'conv_live_1',
+    });
+    expect(uploads).toHaveLength(1);
+    const uploaded = uploads[0]!;
+    expect(uploaded.get('key')).toBe('archive/veyra.md');
+    expect(uploaded.get('file')).toBeInstanceOf(File);
+
+    await expect(meko.documentStatus('doc_key_001', 'conv_live_1')).resolves.toBe('indexed');
   });
 
   it('falls back deterministically on transport failure and reports offline diagnostics', async () => {

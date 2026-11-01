@@ -1,4 +1,12 @@
-import type { GameContent, GameState } from '../engine/index.js';
+import {
+  DEADLINE_TICK,
+  clockLabel,
+  isDeadlineReached,
+  remainingLabel,
+  remainingTicks,
+  type GameContent,
+  type GameState,
+} from '../engine/index.js';
 
 /**
  * The single projection from canonical facts to everything the HUD, the
@@ -45,6 +53,7 @@ export interface ObjectiveView {
   readonly label: string;
   readonly detail: string;
   readonly done: boolean;
+  readonly optional: boolean;
   readonly completionCondition: string;
 }
 
@@ -107,6 +116,50 @@ export interface TimelineView {
   readonly forkedFromAnchorId: string | null;
 }
 
+/** The 08:00 -> 18:00 clock, projected for the HUD. */
+export interface ClockView {
+  readonly label: string;
+  readonly deadlineLabel: string;
+  readonly remainingLabel: string;
+  readonly remainingTicks: number;
+  readonly progress: number;
+  readonly deadlineReached: boolean;
+}
+
+export interface LoopView {
+  readonly index: number;
+  readonly resetCount: number;
+  readonly startLabel: string;
+}
+
+export interface CatastropheView {
+  readonly status: 'pending' | 'occurred' | 'averted';
+  readonly cause: string | null;
+  readonly missing: readonly string[];
+  readonly sequence: readonly string[];
+  readonly occurredAtLabel: string | null;
+}
+
+/** One link in MORROW's reconstructed zeroing device. */
+export interface AttackStepView {
+  readonly stepId: string;
+  readonly label: string;
+  readonly detail: string;
+  readonly evidenceId: string | null;
+  readonly found: boolean;
+  readonly required: boolean;
+}
+
+export interface AttackPlanView {
+  readonly steps: readonly AttackStepView[];
+  /** Every physical link is on the record, so the device is legible. */
+  readonly reconstructed: boolean;
+  /** The countermeasure decision is available: chain + root key. */
+  readonly disarmReady: boolean;
+  readonly disarmed: boolean;
+  readonly missing: readonly string[];
+}
+
 export interface WorldView {
   readonly district: string | null;
   readonly curfew: string | null;
@@ -141,6 +194,13 @@ export interface WorldView {
   readonly endingId: string | null;
   readonly ending: EndingView | null;
   readonly timeline: TimelineView;
+  readonly clock: ClockView;
+  readonly loop: LoopView;
+  readonly catastrophe: CatastropheView;
+  /** Deterministic reconstruction of the zeroing device. */
+  readonly attackPlan: AttackPlanView;
+  /** Plain, non-accusatory pressure lines. Never names a MORROW target. */
+  readonly threats: readonly string[];
   readonly anchors: readonly AnchorView[];
   readonly evidenceFound: number;
   readonly evidenceTotal: number;
@@ -196,6 +256,18 @@ function deriveCaseAssessment(
       relation: 'impacts',
       explanation: 'The clearance hold affected a medical shipment while the same route moved relay hardware through freight.',
     },
+    {
+      leftEvidenceId: 'zeroing_order',
+      rightEvidenceId: 'detonator_schematic',
+      relation: 'supports',
+      explanation: 'The 18:00 civic order and the depot charge schematic describe the same Relay 7 device and carrier.',
+    },
+    {
+      leftEvidenceId: 'clue_conduit',
+      rightEvidenceId: 'surveillance_frequency',
+      relation: 'corroborates',
+      explanation: 'The live optical jumper and the tuned 434.8 MHz carrier are the two halves of the firing path.',
+    },
   ] as const;
   const links: EvidenceLinkView[] = linkDefinitions.map((link): EvidenceLinkView => ({
     ...link,
@@ -203,13 +275,13 @@ function deriveCaseAssessment(
   }));
 
   const supportingEvidenceIds = evidence
-    .filter((item) => item.collected && ['relay_7_log', 'plaza_terminal', 'depot_terminal', 'archive_record'].includes(item.evidenceId))
+    .filter((item) => item.collected && ['relay_7_log', 'plaza_terminal', 'depot_terminal', 'archive_record', 'zeroing_order', 'detonator_schematic', 'clue_conduit'].includes(item.evidenceId))
     .map((item) => item.evidenceId);
   const contradictoryEvidenceIds = evidence
     .filter((item) => item.collected && ['vendor_testimony', 'human_cost'].includes(item.evidenceId))
     .map((item) => item.evidenceId);
   const missingEvidenceIds = evidence
-    .filter((item) => !item.collected && ['human_cost', 'plaza_terminal', 'depot_terminal', 'archive_record'].includes(item.evidenceId))
+    .filter((item) => !item.collected && ['human_cost', 'plaza_terminal', 'depot_terminal', 'archive_record', 'zeroing_order', 'detonator_schematic'].includes(item.evidenceId))
     .map((item) => item.evidenceId);
 
   const base = { supportingEvidenceIds, contradictoryEvidenceIds, missingEvidenceIds, links };
@@ -359,6 +431,75 @@ function describeObjectiveCondition(objectiveId: string, requires: readonly stri
   }
 }
 
+function deriveAttackPlan(state: GameState, evidence: readonly EvidenceView[]): AttackPlanView {
+  const has = (evidenceId: string): boolean =>
+    evidence.some((item) => item.evidenceId === evidenceId && item.collected);
+  const step = (
+    stepId: string,
+    label: string,
+    detail: string,
+    evidenceId: string,
+  ): AttackStepView => ({
+    stepId,
+    label,
+    detail,
+    evidenceId,
+    found: has(evidenceId),
+    required: true,
+  });
+
+  const steps: AttackStepView[] = [
+    step(
+      'route',
+      'Route the trigger',
+      'The optical jumper carries the firing path from the West Alley gutter into Relay 7.',
+      'clue_conduit',
+    ),
+    step(
+      'carrier',
+      'Hold the channel',
+      'The diner console locks 434.8 MHz, the same carrier the depot locker names.',
+      'surveillance_frequency',
+    ),
+    step(
+      'order',
+      'Issue the zeroing order',
+      'The sealed archive order schedules the district zeroing at 18:00.',
+      'zeroing_order',
+    ),
+    step(
+      'charge',
+      'Wire the charge',
+      'The depot schematic ties the jumper and the carrier to the Relay 7 charge.',
+      'detonator_schematic',
+    ),
+  ];
+
+  const disarmed = state.facts['story.bomb_disarmed']?.value === true;
+  const reconstructed = state.facts['story.attack_chain'] !== undefined;
+  const hasRoot = state.facts['evidence.override_root'] !== undefined;
+  const missing = steps.filter((item) => !item.found).map((item) => item.label);
+
+  steps.push({
+    stepId: 'countermeasure',
+    label: disarmed ? 'Charge cut' : 'Cut the charge',
+    detail: disarmed
+      ? 'The carrier is isolated, the jumper is pulled, and ROOT-BYPASS-008 holds the relay.'
+      : 'Safe sequence: isolate the carrier, pull the jumper, load ROOT-BYPASS-008.',
+    evidenceId: 'detonator_schematic',
+    found: disarmed,
+    required: true,
+  });
+
+  return {
+    steps,
+    reconstructed,
+    disarmReady: reconstructed && hasRoot && !disarmed,
+    disarmed,
+    missing,
+  };
+}
+
 export function deriveWorldView(state: GameState, content: GameContent): WorldView {
   const activeBranch = state.branches.find((branch) => branch.branchId === state.branchId);
   const parentBranch = activeBranch?.parentBranchId
@@ -420,6 +561,7 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
     label: definition.label,
     detail: definition.detail,
     done: missingKeys(state, definition.requires).length === 0,
+    optional: definition.optional,
     completionCondition: describeObjectiveCondition(definition.objectiveId, definition.requires),
   }));
 
@@ -468,6 +610,49 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
       }
     : null;
 
+  const clock: ClockView = {
+    label: clockLabel(state.tick),
+    deadlineLabel: clockLabel(DEADLINE_TICK),
+    remainingLabel: remainingLabel(state.tick),
+    remainingTicks: remainingTicks(state.tick),
+    progress: Math.min(1, Math.max(0, state.tick) / DEADLINE_TICK),
+    deadlineReached: isDeadlineReached(state.tick),
+  };
+  const resetCount = state.loop.resetCount;
+  const catastrophe: CatastropheView = {
+    status: state.catastrophe.status,
+    cause: state.catastrophe.cause,
+    missing: state.catastrophe.missing,
+    sequence: state.catastrophe.sequence,
+    occurredAtLabel:
+      state.catastrophe.occurredAtTick === null
+        ? null
+        : clockLabel(state.catastrophe.occurredAtTick),
+  };
+  const threats: string[] = [];
+  const openContradictions = discrepancies.filter(
+    (discrepancy) => discrepancy.status === 'active',
+  ).length;
+  if (openContradictions > 0) {
+    threats.push(
+      `${openContradictions} contradiction${openContradictions === 1 ? '' : 's'} still open on the board.`,
+    );
+  }
+  if (Object.values(state.facts).some((fact) => fact.contaminated === true)) {
+    threats.push('A witness account does not sit still under questioning.');
+  }
+  if (resetCount > 0) {
+    threats.push(`The day has already been lived ${resetCount + 1} times.`);
+  }
+  if (
+    state.facts['story.attack_chain'] !== undefined &&
+    state.facts['story.bomb_disarmed']?.value !== true
+  ) {
+    threats.push('The zeroing charge is reconstructed and still armed.');
+  }
+  if (clock.deadlineReached) threats.push('The 18:00 deadline has passed.');
+  if (threats.length === 0) threats.push('No confirmed threat on the board yet.');
+
   return {
     district: asString(factValue(state, 'world.district')),
     curfew: asString(factValue(state, 'world.curfew')),
@@ -490,7 +675,8 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
     evidence,
     collectedEvidence: evidence.filter((item) => item.collected),
     objectives,
-    currentObjective: objectives.find((objective) => !objective.done) ?? null,
+    currentObjective:
+      objectives.find((objective) => !objective.done && !objective.optional) ?? null,
     discrepancies,
     caseAssessment,
     challengeResults: state.challengeResults,
@@ -509,6 +695,15 @@ export function deriveWorldView(state: GameState, content: GameContent): WorldVi
       parentLabel: parentBranch?.label ?? null,
       forkedFromAnchorId: activeBranch?.forkedAtAnchorId ?? null,
     },
+    clock,
+    loop: {
+      index: state.loop.index,
+      resetCount,
+      startLabel: clockLabel(state.loop.startTick),
+    },
+    catastrophe,
+    attackPlan: deriveAttackPlan(state, evidence),
+    threats,
     anchors: state.anchors.map((anchor) => ({
       anchorId: anchor.anchorId,
       label: anchor.label,
@@ -550,10 +745,6 @@ export function targetAvailable(view: WorldView, targetId: string): boolean {
   const nodeResolved = (nodeId: string): boolean =>
     view.choices.find((node) => node.nodeId === nodeId)?.resolvedOptionId !== null;
 
-  if (targetId === 'frequency_console') {
-    const node = view.choices.find((candidate) => candidate.nodeId === 'node.frequency.puzzle');
-    return Boolean(node?.available);
-  }
   if (targetId === 'morrow_analysis') {
     const node = view.choices.find((candidate) => candidate.nodeId === 'node.morrow.analysis');
     return Boolean(node?.available);

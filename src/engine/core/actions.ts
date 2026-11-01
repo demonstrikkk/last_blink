@@ -17,6 +17,7 @@ import { morrowReasonCodeSchema, morrowResponseSchema } from '../contracts/morro
 import { npcDecisionProposalSchema } from '../contracts/npcDecisionProposal.js';
 import { caseRelationSchema } from '../contracts/caseBoard.js';
 import { challengeTypeSchema } from '../contracts/challenge.js';
+import { morrowPlanSchema } from '../contracts/loop.js';
 
 /** The untrusted shape a caller may submit to GameSession.dispatch. */
 export const gameActionSchema = z.strictObject({
@@ -107,6 +108,18 @@ export const challengeCompleteParamsSchema = z.strictObject({
   ]),
 });
 
+/**
+ * MORROW submits a complete plan; the engine owns the ceiling, the loop scope
+ * and the one-plan-per-loop rule. A plan can never carry a fact key or value.
+ */
+export const morrowPlanParamsSchema = z.strictObject({
+  plan: morrowPlanSchema,
+});
+
+export const loopResetParamsSchema = z.strictObject({
+  label: labelSchema.default('Return to 08:00'),
+});
+
 export type ParsedAction =
   | { actionType: 'session.noop'; actorId: z.infer<typeof actorIdSchema>; params: Record<string, never> }
   | {
@@ -163,4 +176,14 @@ export type ParsedAction =
       actionType: 'challenge.complete';
       actorId: z.infer<typeof actorIdSchema>;
       params: z.infer<typeof challengeCompleteParamsSchema>;
+    }
+  | {
+      actionType: 'morrow.plan';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof morrowPlanParamsSchema>;
+    }
+  | {
+      actionType: 'loop.reset';
+      actorId: z.infer<typeof actorIdSchema>;
+      params: z.infer<typeof loopResetParamsSchema>;
     };

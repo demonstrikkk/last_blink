@@ -13,6 +13,7 @@ export * from './morrow.js';
 export * from './actionResult.js';
 export * from './gameEvent.js';
 export * from './gameState.js';
+export * from './loop.js';
 export * from './saveEnvelope.js';
 export * from './memoryRecord.js';
 export * from './modelManifest.js';

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Signal reconstruction puzzle">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="6" y="14" width="52" height="34" rx="2" fill="#0f1c2e" stroke="#2dd4bf"/>
+  <rect x="10" y="18" width="44" height="20" fill="#071019"/>
+  <path d="M12 32v-6m6 6v-11m6 11v-5m6 5v-9m6 9v-3m6 3v-12m6 12v-6m6 6v-9" stroke="#6ee7e7" stroke-width="2"/>
+  <text x="32" y="46" font-family="monospace" font-size="10" fill="#fbbf24" text-anchor="middle">434.8</text>
+  <text x="32" y="56" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">MHz // LOCKED</text>
+</svg>

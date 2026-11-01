@@ -54,7 +54,10 @@ export {
 import { TILE, GRID_WIDTH, GRID_HEIGHT } from './cityMap.js';
 import { CITY_NPCS, COMPANION_NPC } from '../content/cityNpcs.js';
 
-export type InteractionKind = 'npc' | 'evidence' | 'anchor' | 'decision';
+export type InteractionKind = 'npc' | 'evidence' | 'anchor' | 'decision' | 'puzzle';
+
+/** Stable ids for the map-anchored investigations. */
+export type WorldPuzzleId = 'signal' | 'timeline' | 'contradiction' | 'bomb';
 
 export interface WorldTarget {
   readonly id: string;
@@ -67,6 +70,8 @@ export interface WorldTarget {
   readonly y: number;
   readonly radius: number;
   readonly priority: number;
+  /** Present only for `kind: 'puzzle'` targets. */
+  readonly puzzle?: WorldPuzzleId;
 }
 
 function makeTarget(
@@ -119,6 +124,8 @@ const EVIDENCE_TARGETS: readonly WorldTarget[] = [
   makeTarget('clue_guestbook', 'evidence', 'Diner guestbook', 'Search the counter guestbook', 135, 34),
   makeTarget('clue_locker', 'evidence', 'Enforcer locker', 'Crack the enforcer locker', 109, 66),
   makeTarget('depot_terminal', 'evidence', 'Depot override terminal', 'Recover the root override', 100, 60),
+  makeTarget('zeroing_order', 'evidence', 'Sealed archive annex', 'Read the sealed zeroing order', 92, 34),
+  makeTarget('detonator_schematic', 'evidence', 'Depot maintenance bay', 'Recover the charge schematic', 112, 68),
   makeTarget('freight_log', 'evidence', 'Freight manifest board', 'Inspect the shipping manifest', 110, 82),
   makeTarget('plaza_terminal', 'evidence', 'Plaza civic terminal', 'Scan the civic terminal', 133, 39),
 ];
@@ -131,9 +138,60 @@ const ANCHOR_TARGETS: readonly WorldTarget[] = [
 
 const DECISION_TARGETS: readonly WorldTarget[] = [
   makeTarget('ward_call', 'decision', 'Ward call-box', 'Make the ward call', 124, 43, 3),
-  makeTarget('frequency_console', 'decision', 'Diner frequency console', 'Tune the surveillance frequency', 139, 34, 2),
   makeTarget('morrow_analysis', 'decision', 'Relay 7 core console', 'Correlate the MORROW mechanism', 32, 29, 2),
   makeTarget('morrow_terminate', 'decision', 'MORROW termination relay', 'Open the termination route', 33, 30, 2),
+];
+
+function makePuzzleTarget(
+  id: string,
+  kind: WorldPuzzleId,
+  label: string,
+  prompt: string,
+  tileX: number,
+  tileY: number,
+  priority = 2,
+  radius = 30,
+): WorldTarget {
+  return {
+    ...makeTarget(id, 'puzzle', label, prompt, tileX, tileY, priority, radius),
+    puzzle: kind,
+  };
+}
+
+/**
+ * Puzzles live at the place that supplies their evidence. The diner console
+ * holds the ward channel, the depot board holds the dispatch order, Ivo's stall
+ * holds the contradiction, and the Relay 7 basement holds the charge.
+ */
+const PUZZLE_TARGETS: readonly WorldTarget[] = [
+  makePuzzleTarget(
+    'frequency_console',
+    'signal',
+    'Diner frequency console',
+    'Lock the ward channel',
+    139,
+    34,
+    3,
+  ),
+  makePuzzleTarget(
+    'puzzle_timeline',
+    'timeline',
+    'Ward sequence board',
+    'Reconstruct the dispatch order',
+    59,
+    31,
+    2,
+  ),
+  makePuzzleTarget(
+    'puzzle_contradiction',
+    'contradiction',
+    "Ivo's stall",
+    'Test the testimony against the slip',
+    30,
+    73,
+    3,
+  ),
+  makePuzzleTarget('relay_disarm', 'bomb', 'Zeroing charge', 'Cut the zeroing charge', 34, 28, 3),
 ];
 
 export const WORLD_TARGETS: readonly WorldTarget[] = [
@@ -141,6 +199,7 @@ export const WORLD_TARGETS: readonly WorldTarget[] = [
   ...EVIDENCE_TARGETS,
   ...ANCHOR_TARGETS,
   ...DECISION_TARGETS,
+  ...PUZZLE_TARGETS,
 ];
 
 /** Includes the dynamic companion target at its authored home position. */

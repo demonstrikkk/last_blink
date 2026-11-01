@@ -334,4 +334,45 @@ describe('server HTTP boundary', () => {
       await new Promise<void>((resolve) => isolatedServer.close(() => resolve()));
     }
   });
+
+  it('serves Meko archive recall as advisory context and never as canonical fact', async () => {
+    const mekoServer = await createGameServer(testConfig(), {
+      repository: new InMemoryGameRepository(),
+      meko: new MekoService({ offlineOnly: true }),
+      logger: silentLogger,
+    });
+    const mekoBaseUrl = await listen(mekoServer);
+    try {
+      const unauthorized = await fetch(`${mekoBaseUrl}/api/context/meko`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: 'ses_context', query: 'Relay 7' }),
+      });
+      expect(unauthorized.status).toBe(401);
+
+      const { token } = await auth(mekoBaseUrl);
+      const response = await fetch(
+        `${mekoBaseUrl}/api/context/meko`,
+        authed(token, {
+          sessionId: 'ses_context',
+          branchId: 'main',
+          query: 'Relay 7 zeroing charge ward protocol',
+        }),
+      );
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        advisory: boolean;
+        canonical: boolean;
+        source: string;
+        hits: Array<{ id: string; text: string }>;
+      };
+      expect(body.advisory).toBe(true);
+      expect(body.canonical).toBe(false);
+      expect(body.source).toBe('fallback_local');
+      expect(body.hits.length).toBeGreaterThan(0);
+      expect(body.hits[0]?.id).toMatch(/^fb_/);
+    } finally {
+      await new Promise<void>((resolve) => mekoServer.close(() => resolve()));
+    }
+  });
 });

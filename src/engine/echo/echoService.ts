@@ -61,6 +61,15 @@ export type EchoQuery =
       readonly kind: 'compare';
       readonly baseBranchId: BranchId;
       readonly otherBranchId: BranchId;
+    }
+  | {
+      /**
+       * ECHO's cross-loop ledger. Unlike every single-branch query, this is
+       * intentionally branch-spanning: it reads each retained loop's own state
+       * and never lets one loop's events rewrite another's record.
+       */
+      readonly kind: 'acrossLoops';
+      readonly evidenceKey?: string;
     };
 
 interface Scope {
@@ -160,6 +169,8 @@ export class EchoService {
         return this.explainHypothesis(query.text, query.branchId);
       case 'compare':
         return this.explainComparison(query.baseBranchId, query.otherBranchId);
+      case 'acrossLoops':
+        return this.explainAcrossLoops(query);
       default: {
         const exhaustive: never = query;
         return this.unknown(exhaustive, 'I do not know how to answer that.', []);
@@ -646,16 +657,19 @@ export class EchoService {
     ];
 
     if (comparison.forkPoint) {
+      const checkpoint = comparison.forkPoint;
       claims.push({
         kind: 'recorded_event',
-        text: `The timelines share history up to anchor ${comparison.forkPoint.anchorId} at version ${comparison.forkPoint.stateVersion}.`,
+        text: checkpoint.anchorId
+          ? `The timelines share history up to anchor ${checkpoint.anchorId} at version ${checkpoint.stateVersion}.`
+          : `The timelines share history up to the loop checkpoint at version ${checkpoint.stateVersion}.`,
         citations: [
           {
             kind: 'anchor',
-            id: comparison.forkPoint.anchorId,
-            label: 'Fork checkpoint',
-            branchId: String(comparison.forkPoint.branchId),
-            sequenceNo: comparison.forkPoint.eventSequenceNo,
+            id: checkpoint.anchorId ?? `loop-checkpoint:${checkpoint.branchId}`,
+            label: checkpoint.anchorId ? 'Fork checkpoint' : 'Loop checkpoint',
+            branchId: String(checkpoint.branchId),
+            sequenceNo: checkpoint.eventSequenceNo,
           },
         ],
       });
@@ -730,6 +744,120 @@ export class EchoService {
       missing: [],
       branchId: String(otherBranchId),
       branchLabel: `V${other.timelineIndex + 1} ${other.label}`,
+    };
+  }
+
+  /**
+   * Cross-loop memory. Each retained branch is a closed loop: this query reads
+   * every loop's own state, reports values with their own citation, and reports
+   * disagreement as disagreement. It never says which of two conflicting values
+   * is the true one, because ECHO only holds claims.
+   */
+  explainAcrossLoops(query: {
+    readonly kind: 'acrossLoops';
+    readonly evidenceKey?: string;
+  }): EchoAnswer {
+    const branches = [...this.session.listBranches()].sort(
+      (left, right) =>
+        left.loopIndex - right.loopIndex || left.timelineIndex - right.timelineIndex,
+    );
+    if (branches.length === 0) {
+      return this.unknown(query, 'No timeline is retained in this session.', []);
+    }
+
+    const claims: EchoClaim[] = [];
+    const missing: string[] = [];
+    const evidenceKey = query.evidenceKey?.trim();
+    const values = new Map<string, string[]>();
+    let recorded = 0;
+
+    for (const branch of branches) {
+      const state = this.session.getBranchState(branch.branchId);
+      if (!state) continue;
+      const loopLabel = `Loop ${branch.loopIndex} (V${branch.timelineIndex + 1} ${branch.label})`;
+      const outcome =
+        branch.catastropheStatus === 'occurred'
+          ? 'the day ended at the 18:00 deadline'
+          : branch.catastropheStatus === 'averted'
+            ? 'the catastrophe was averted'
+            : 'the day is still unresolved';
+      claims.push({
+        kind: 'recorded_event',
+        text: `${loopLabel}: ${outcome}; ending ${state.endingId ?? 'none'}; clock tick ${state.tick}.`,
+        citations: [branchCitation(branch)],
+      });
+
+      if (branch.morrowTargets.length > 0) {
+        claims.push({
+          kind: 'recorded_event',
+          text: `${loopLabel}: MORROW ran ${branch.morrowTactic ?? 'an unrecorded tactic'} and touched ${branch.morrowTargets.join(', ')}. Their testimony was shaped, not fabricated.`,
+          citations: [branchCitation(branch)],
+        });
+      }
+
+      if (!evidenceKey) continue;
+      const fact = state.facts[evidenceKey];
+      if (!fact) {
+        missing.push(`${loopLabel}: ${evidenceKey}`);
+        claims.push({
+          kind: 'unavailable',
+          text: `${loopLabel}: ${evidenceKey} was never recorded.`,
+          citations: [branchCitation(branch)],
+        });
+        continue;
+      }
+      recorded += 1;
+      const rendered = JSON.stringify(fact.value);
+      const bucket = values.get(rendered) ?? [];
+      bucket.push(loopLabel);
+      values.set(rendered, bucket);
+      claims.push({
+        kind: 'recorded_fact',
+        text: `${loopLabel}: ${evidenceKey} = ${rendered} (confidence ${fact.confidence}).`,
+        citations: [factCitation(fact), branchCitation(branch)],
+      });
+    }
+
+    if (evidenceKey) {
+      if (values.size > 1) {
+        const lines = [...values.entries()].map(
+          ([value, loops]) => `${value} on ${loops.join(', ')}`,
+        );
+        claims.push({
+          kind: 'derived_conclusion',
+          text: `The loops disagree about ${evidenceKey}: ${lines.join('; ')}. These are conflicting claims. The discrepancy does not establish which value is correct.`,
+          citations: branches.map((branch) => branchCitation(branch)),
+        });
+      } else if (values.size === 1) {
+        const [value, loops] = [...values.entries()][0] ?? ['', []];
+        claims.push({
+          kind: 'derived_conclusion',
+          text: `Every loop that recorded ${evidenceKey} agrees on ${value} (${loops.join(', ')}). Agreement is not proof; a shaped testimony can repeat cleanly.`,
+          citations: branches.map((branch) => branchCitation(branch)),
+        });
+      }
+    }
+
+    const summary = evidenceKey
+      ? `${branches.length} loop${branches.length === 1 ? '' : 's'} retained; ${evidenceKey} appears in ${recorded} of them${values.size > 1 ? ' with conflicting values' : ''}.`
+      : `${branches.length} loop${branches.length === 1 ? '' : 's'} retained: ${branches
+          .map((branch) => `L${branch.loopIndex} ${branch.catastropheStatus}`)
+          .join(', ')}.`;
+
+    return {
+      query,
+      status: !evidenceKey
+        ? 'grounded'
+        : recorded === 0
+          ? 'unknown'
+          : recorded < branches.length
+            ? 'partial'
+            : 'grounded',
+      summary,
+      claims,
+      missing,
+      branchId: String(this.session.getActiveBranchId()),
+      branchLabel: `Across ${branches.length} loop${branches.length === 1 ? '' : 's'}`,
     };
   }
 

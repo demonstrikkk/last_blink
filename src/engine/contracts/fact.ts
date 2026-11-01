@@ -7,6 +7,7 @@ import {
   factIdSchema,
   factKeySchema,
   jsonValueSchema,
+  npcIdSchema,
   tickSchema,
 } from './primitives.js';
 
@@ -32,6 +33,13 @@ export const factSchema = z.strictObject({
   branchId: branchIdSchema,
   acquiredAtTick: tickSchema,
   source: factSourceSchema,
+  /**
+   * A testimony fact can carry the mark of shaped memory. It is deliberately a
+   * quiet field, not a canonical verdict: it says the account was influenced,
+   * never that the recorded value is false. Defaults keep old saves parseable.
+   */
+  contaminated: z.boolean().default(false),
+  contaminationSource: npcIdSchema.nullable().default(null),
 });
 
 export type Fact = z.infer<typeof factSchema>;

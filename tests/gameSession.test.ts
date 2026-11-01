@@ -17,7 +17,7 @@ describe('GameSession with mock ports', () => {
 
     expect(state.sessionId).toBe(session.sessionId);
     expect(state.tick).toBe(0);
-    expect(state.stateVersion).toBe(2);
+    expect(state.stateVersion).toBe(3);
     expect(state.facts['debug.counter']?.value).toBe(0);
     expect(state.branches).toHaveLength(1);
     expect(state.player.playerId).toBe('ply_testplayer');
@@ -68,7 +68,7 @@ describe('GameSession with mock ports', () => {
     const anchor = session.getState().anchors[0];
     expect(anchor).toBeDefined();
     expect(anchor?.stateHash).toBe(preHash);
-    expect(anchor?.stateVersion).toBe(3);
+    expect(anchor?.stateVersion).toBe(4);
     expect(session.getState().player.progress.anchorsReached).toBe(1);
 
     const duplicate = session.recordAnchor('Second at same version');

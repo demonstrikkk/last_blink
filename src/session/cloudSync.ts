@@ -108,6 +108,11 @@ export class CloudSyncClient {
     return { playerId: this.playerId, authenticated: this.token !== null };
   }
 
+  /** Bearer token, exposed so a browser can persist an anonymous identity. */
+  get authToken(): string | null {
+    return this.token;
+  }
+
   /** Obtains an anonymous bearer identity. The token stays in memory. */
   async authenticate(displayName?: string): Promise<{ playerId: string; expiresAt: string }> {
     const response = await this.request<{ playerId: string; token: string; expiresAt: string }>(

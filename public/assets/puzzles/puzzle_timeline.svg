@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Timeline reconstruction puzzle">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="6" y="14" width="14" height="18" rx="1" fill="#0f1c2e" stroke="#2dd4bf"/>
+  <rect x="25" y="22" width="14" height="18" rx="1" fill="#0f1c2e" stroke="#fbbf24"/>
+  <rect x="44" y="30" width="14" height="18" rx="1" fill="#0f1c2e" stroke="#f472b6"/>
+  <path d="M20 23h5M39 31h5" stroke="#64748b" stroke-width="2"/>
+  <path d="M23 20l3 3-3 3M42 28l3 3-3 3" fill="none" stroke="#64748b" stroke-width="1.5"/>
+  <text x="13" y="40" font-family="monospace" font-size="4" fill="#6ee7e7" text-anchor="middle">REL</text>
+  <text x="32" y="48" font-family="monospace" font-size="4" fill="#fbbf24" text-anchor="middle">DIS</text>
+  <text x="51" y="56" font-family="monospace" font-size="4" fill="#f472b6" text-anchor="middle">WIT</text>
+  <path d="M10 8h44" stroke="#334155" stroke-width="2"/>
+</svg>

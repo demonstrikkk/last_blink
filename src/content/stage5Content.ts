@@ -596,6 +596,64 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       ],
     },
 
+    // The attack chain is a deterministic correlation of four independent
+    // records. It does not decide intent; it only proves that the hardware,
+    // carrier, order and charge belong to the same device.
+    {
+      schemaVersion: CONTRACT_VERSION,
+      ruleId: 'rul_attack_chain',
+      description: 'The jumper, carrier, zeroing order and charge schematic describe one device.',
+      priority: 73,
+      enabled: true,
+      condition: {
+        kind: 'all',
+        of: [
+          { kind: 'fact', key: 'evidence.optical_jumper', op: 'exists' },
+          { kind: 'fact', key: 'evidence.surveillance_frequency', op: 'exists' },
+          { kind: 'fact', key: 'evidence.zeroing_order', op: 'exists' },
+          { kind: 'fact', key: 'evidence.detonator_schematic', op: 'exists' },
+          { kind: 'not', of: { kind: 'fact', key: 'story.attack_chain', op: 'exists' } },
+        ],
+      },
+      effects: [
+        {
+          kind: 'assert_fact',
+          key: 'story.attack_chain',
+          value: 'optical_trigger_zeroing',
+          confidence: 0.96,
+          sourceRef: 'rule.rul_attack_chain',
+        },
+      ],
+    },
+
+    // The countermeasure is an explicit physical decision. The choice node is
+    // gated on the reconstructed chain and the root key, so the player cannot
+    // skip the investigation and simply press a "win" button.
+    {
+      schemaVersion: CONTRACT_VERSION,
+      ruleId: 'rul_ending_disarmed_dawn',
+      description: 'Cutting the zeroing charge saves the district before 18:00.',
+      priority: 54,
+      enabled: true,
+      condition: {
+        kind: 'all',
+        of: [
+          { kind: 'fact', key: 'story.bomb_disarmed', op: 'eq', value: true },
+          { kind: 'not', of: { kind: 'fact', key: 'story.ending_id', op: 'exists' } },
+        ],
+      },
+      effects: [
+        {
+          kind: 'assert_fact',
+          key: 'story.ending_id',
+          value: 'ending.disarmed_dawn',
+          confidence: 1,
+          sourceRef: 'rule.rul_ending_disarmed_dawn',
+        },
+        { kind: 'set_ending', endingId: 'ending.disarmed_dawn' },
+      ],
+    },
+
     // The fourth, additive ending. It requires the termination decision and
     // never competes with the three ward-call endings.
     {
@@ -675,6 +733,7 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       sourceRef: 'testimony.ivo.stall',
       sourceKind: 'testimony',
       confidence: 0.8,
+      speakerNpcId: 'npc_ivo',
        // Independent testimony: corroboration is stronger with the slip, but
        // Ivo is not forced into an arbitrary visit order.
        requires: [],
@@ -821,6 +880,41 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       sourceKind: 'record',
       confidence: 0.97,
        requires: [],
+    },
+    {
+      evidenceId: 'zeroing_order',
+      factKey: 'evidence.zeroing_order',
+      label: 'Civic zeroing order',
+      summary:
+        'The sealed archive order authorises a district clock zeroing at 18:00, keyed to Relay 7 and the 434.8 MHz carrier. It is an instruction to destroy, not a power failure.',
+      value: {
+        order: 'district_clock_zeroing',
+        executeAt: '18:00',
+        relay: 7,
+        carrier: '434.8MHz',
+        signedBy: 'directorate',
+      },
+      sourceRef: 'record.archive.zeroing_order',
+      sourceKind: 'record',
+      confidence: 0.95,
+      requires: ['evidence.archive_record'],
+    },
+    {
+      evidenceId: 'detonator_schematic',
+      factKey: 'evidence.detonator_schematic',
+      label: 'Charge schematic',
+      summary:
+        'The depot schematic shows the zeroing charge wired through the optical jumper and armed by the 434.8 MHz carrier. It names the safe cut sequence: isolate the carrier, pull the jumper, then load the root override.',
+      value: {
+        device: 'relay_zeroing_charge',
+        initiator: 'optical_jumper',
+        trigger: '434.8MHz',
+        safeSequence: ['isolate_carrier', 'pull_optical_jumper', 'load_root_override'],
+      },
+      sourceRef: 'record.depot.charge_schematic',
+      sourceKind: 'record',
+      confidence: 0.94,
+      requires: ['evidence.depot_locker'],
     },
   ],
   choices: [
@@ -994,6 +1088,34 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
         },
       ],
     },
+    {
+      nodeId: 'node.relay.disarm',
+      prompt: 'The charge is exposed. The schematic gives one safe sequence. Do you cut it?',
+      requires: ['story.attack_chain', 'evidence.override_root'],
+      options: [
+        {
+          optionId: 'cut',
+          label: 'Isolate, pull, override',
+          detail:
+            'Tune the console off 434.8 MHz, pull the optical jumper, then load ROOT-BYPASS-008.',
+          effects: [
+            { key: 'story.bomb_disarmed', value: true },
+            { key: 'story.bomb_disarm_resolved', value: true },
+          ],
+          consequenceKeys: ['story.ending_id', 'catastrophe.status'],
+        },
+        {
+          optionId: 'hold',
+          label: 'Leave the charge armed',
+          detail: 'Keep the sequence for later and step away from the relay.',
+          effects: [
+            { key: 'story.bomb_disarm_declined', value: true },
+            { key: 'story.bomb_disarm_resolved', value: true },
+          ],
+          consequenceKeys: ['story.ending_id'],
+        },
+      ],
+    },
   ],
   objectives: [
     {
@@ -1032,6 +1154,22 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       detail: 'The call-box at the east end of the south walk decides what Aster receives.',
       requires: ['story.ward_call'],
     },
+    {
+      objectiveId: 'obj_trace_attack',
+      label: 'Reconstruct the zeroing device',
+      detail:
+        'Find the civic zeroing order and the depot charge schematic, then correlate them with the jumper and the 434.8 MHz carrier.',
+      requires: ['story.attack_chain'],
+      optional: true,
+    },
+    {
+      objectiveId: 'obj_defuse_bomb',
+      label: 'Cut the zeroing charge',
+      detail:
+        'Isolate the carrier, pull the optical jumper, and load ROOT-BYPASS-008 before 18:00.',
+      requires: ['story.bomb_disarmed'],
+      optional: true,
+    },
   ],
   endings: [
     {
@@ -1057,6 +1195,12 @@ export const STAGE5_CONTENT: GameContent = gameContentSchema.parse({
       title: 'The Second Settlement',
       summary:
         'The root key severs MORROW from the district relay. With the human cost in hand, Aster wakes to a street that answers only to itself.',
+    },
+    {
+      endingId: 'ending.disarmed_dawn',
+      title: 'The Disarmed Dawn',
+      summary:
+        'The carrier is isolated, the jumper is pulled, and ROOT-BYPASS-008 closes the zeroing charge. Relay 7 holds. For the first time, 18:00 arrives with the lights still on.',
     },
   ],
 });

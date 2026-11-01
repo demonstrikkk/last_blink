@@ -13,8 +13,19 @@ interface Diagnostics {
   readonly averageLatencyMs?: number;
 }
 
+interface MekoDiagnostics {
+  readonly configured?: boolean;
+  readonly online?: boolean;
+  readonly datapackId?: string | null;
+  readonly conversationId?: string | null;
+  readonly failures?: number;
+  readonly lastError?: string | null;
+  readonly note?: string;
+}
+
 export function AiDiagnosticsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [data, setData] = useState<Diagnostics | null>(null);
+  const [meko, setMeko] = useState<MekoDiagnostics | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
@@ -31,11 +42,14 @@ export function AiDiagnosticsPanel({ open, onClose }: { open: boolean; onClose: 
       if (!auth.ok) throw new Error(`Diagnostics authentication returned ${auth.status}`);
       const authBody = (await auth.json()) as { token?: string };
       if (!authBody.token) throw new Error('Diagnostics authentication returned no token');
-      const response = await fetch(`${apiBase}/api/diagnostics/model`, {
-        headers: { authorization: `Bearer ${authBody.token}` },
-      });
+      const headers = { authorization: `Bearer ${authBody.token}` };
+      const [response, mekoResponse] = await Promise.all([
+        fetch(`${apiBase}/api/diagnostics/model`, { headers }),
+        fetch(`${apiBase}/api/diagnostics/meko`, { headers }),
+      ]);
       if (!response.ok) throw new Error(`Diagnostics endpoint returned ${response.status}`);
       setData((await response.json()) as Diagnostics);
+      setMeko(mekoResponse.ok ? ((await mekoResponse.json()) as MekoDiagnostics) : null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -66,7 +80,20 @@ export function AiDiagnosticsPanel({ open, onClose }: { open: boolean; onClose: 
             <div><dt>Average latency</dt><dd>{data.averageLatencyMs ?? 0} ms</dd></div>
           </dl>
         ) : <p className="echo-empty mono">No server diagnostic snapshot loaded.</p>}
+        {meko ? (
+          <dl className="diagnostics-grid">
+            <div><dt>Meko configured</dt><dd>{meko.configured ? 'YES' : 'NO'}</dd></div>
+            <div><dt>Meko online</dt><dd>{meko.online ? 'YES' : 'FALLBACK'}</dd></div>
+            <div><dt>Datapack</dt><dd>{meko.datapackId ?? 'NONE'}</dd></div>
+            <div><dt>Conversation</dt><dd>{meko.conversationId ?? 'NONE'}</dd></div>
+            <div><dt>Meko failures</dt><dd>{meko.failures ?? 0}</dd></div>
+            <div><dt>Last Meko error</dt><dd>{meko.lastError ?? 'NONE'}</dd></div>
+          </dl>
+        ) : (
+          <p className="echo-empty mono">Meko diagnostics unavailable (server route not loaded).</p>
+        )}
         {data?.note ? <p className="note-muted">{data.note}</p> : null}
+        {meko?.note ? <p className="note-muted">{meko.note}</p> : null}
       </aside>
     </div>
   );

@@ -23,6 +23,7 @@ export const rejectionSchema = z.strictObject({
     'stale_state',
     'unknown_target',
     'duplicate',
+    'deadline_passed',
     'engine_error',
   ]),
   message: z.string().trim().min(1).max(280),

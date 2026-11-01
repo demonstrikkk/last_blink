@@ -32,6 +32,7 @@ import { anchorSchema } from './anchor.js';
 import { branchSchema } from './branch.js';
 import { caseLinkSchema, caseHypothesisSchema } from './caseBoard.js';
 import { challengeResultSchema } from './challenge.js';
+import { morrowPlanSchema } from './loop.js';
 
 const baseShape = {
   schemaVersion: contractVersionSchema,
@@ -138,6 +139,39 @@ export const morrowIntervenedEventSchema = event('morrow.intervened', {
   escalation: z.number().int().min(0).max(MAX_MORROW_ESCALATION),
 });
 
+/**
+ * MORROW's bounded plan for one loop. The event is the trace: the engine records
+ * which minds were touched, how, and for how long. No canonical fact may travel
+ * in this payload.
+ */
+export const morrowPlanSelectedEventSchema = event('morrow.plan.selected', {
+  plan: morrowPlanSchema,
+});
+
+/** The day starts at 08:00. A reset forks a new branch at this checkpoint. */
+export const loopStartedEventSchema = event('loop.started', {
+  previousLoopIndex: z.number().int().min(1),
+  loopIndex: z.number().int().min(1),
+  startTick: tickSchema,
+  checkpointFacts: z.array(factSchema).min(1).max(64),
+  checkpointStateVersion: stateVersionSchema,
+  checkpointHash: z.string().regex(/^[0-9a-f]{16}$/),
+  reason: z.enum(['initial', 'catastrophe', 'blink']),
+  branch: branchSchema.nullable(),
+});
+
+export const catastropheOccurredEventSchema = event('catastrophe.occurred', {
+  occurredAtTick: tickSchema,
+  cause: z.string().trim().min(1).max(280),
+  missing: z.array(z.string().trim().min(1).max(80)).max(8),
+  sequence: z.array(z.string().trim().min(1).max(160)).max(8),
+});
+
+export const catastropheAvertedEventSchema = event('catastrophe.averted', {
+  avertedAtTick: tickSchema,
+  endingId: z.string().trim().min(1).max(64),
+});
+
 export const actionRejectedEventSchema = event('action.rejected', {
   actionType: actionTypeSchema,
   code: z.string().trim().min(1).max(40),
@@ -159,6 +193,10 @@ export const gameEventSchema = z.discriminatedUnion('type', [
   npcProposalEvaluatedEventSchema,
   morrowProposalEvaluatedEventSchema,
   morrowIntervenedEventSchema,
+  morrowPlanSelectedEventSchema,
+  loopStartedEventSchema,
+  catastropheOccurredEventSchema,
+  catastropheAvertedEventSchema,
   endingReachedEventSchema,
   actionRejectedEventSchema,
 ]);
@@ -178,6 +216,10 @@ export type BranchForkedEvent = z.infer<typeof branchForkedEventSchema>;
 export type NpcProposalEvaluatedEvent = z.infer<typeof npcProposalEvaluatedEventSchema>;
 export type MorrowProposalEvaluatedEvent = z.infer<typeof morrowProposalEvaluatedEventSchema>;
 export type MorrowIntervenedEvent = z.infer<typeof morrowIntervenedEventSchema>;
+export type MorrowPlanSelectedEvent = z.infer<typeof morrowPlanSelectedEventSchema>;
+export type LoopStartedEvent = z.infer<typeof loopStartedEventSchema>;
+export type CatastropheOccurredEvent = z.infer<typeof catastropheOccurredEventSchema>;
+export type CatastropheAvertedEvent = z.infer<typeof catastropheAvertedEventSchema>;
 export type EndingReachedEvent = z.infer<typeof endingReachedEventSchema>;
 export type ActionRejectedEvent = z.infer<typeof actionRejectedEventSchema>;
 
@@ -195,6 +237,10 @@ export const EVENT_TYPES: readonly GameEventType[] = [
   'npc.proposal.evaluated',
   'morrow.proposal.evaluated',
   'morrow.intervened',
+  'morrow.plan.selected',
+  'loop.started',
+  'catastrophe.occurred',
+  'catastrophe.averted',
   'ending.reached',
   'action.rejected',
 ] as const;

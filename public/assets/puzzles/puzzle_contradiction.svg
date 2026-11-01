@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Contradiction questioning puzzle">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="8" y="10" width="22" height="30" rx="1" fill="#e7e2d3"/>
+  <path d="M12 16h14M12 21h14M12 26h9" stroke="#64748b" stroke-width="1.5"/>
+  <path d="M8 10l22 30" stroke="#b91c1c" stroke-width="1" opacity="0.4"/>
+  <rect x="34" y="24" width="22" height="28" rx="1" fill="#d6cfbc"/>
+  <path d="M38 30h14M38 35h14M38 40h9" stroke="#64748b" stroke-width="1.5"/>
+  <circle cx="44" cy="20" r="9" fill="none" stroke="#f472b6" stroke-width="2"/>
+  <path d="M50 26l6 6" stroke="#f472b6" stroke-width="3"/>
+  <text x="44" y="22" font-family="monospace" font-size="7" fill="#f472b6" text-anchor="middle">?</text>
+</svg>

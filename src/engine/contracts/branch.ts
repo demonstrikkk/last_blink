@@ -36,6 +36,13 @@ export const branchSchema = z
     status: z.enum(['active', 'archived']),
     timelineIndex: z.number().int().nonnegative(),
     createdAt: isoTimestampSchema,
+    /**
+     * BLINK forks start at a signed anchor. A catastrophe reset starts at the
+     * loop's 08:00 checkpoint, which is not an anchor, so it records
+     * `forkReason: 'loop'` and leaves `forkedAtAnchorId` empty while keeping
+     * the rest of the checkpoint coordinates.
+     */
+    forkReason: z.enum(['anchor', 'loop']).default('anchor'),
   })
   .refine(
     (branch) =>
@@ -44,14 +51,15 @@ export const branchSchema = z
           branch.forkedAtTick === null &&
           branch.forkedAtStateVersion === null &&
           branch.forkedAtEventSequenceNo === null &&
-          branch.forkedAtStateHash === null
-        : branch.forkedAtAnchorId !== null &&
+          branch.forkedAtStateHash === null &&
+          branch.forkReason === 'anchor'
+        : (branch.forkReason === 'loop' || branch.forkedAtAnchorId !== null) &&
           branch.forkedAtTick !== null &&
           branch.forkedAtStateVersion !== null &&
           branch.forkedAtEventSequenceNo !== null &&
           branch.forkedAtStateHash !== null,
     {
-      message: 'root branches have no fork metadata; child branches require all of it',
+      message: 'root branches have no fork metadata; child branches require checkpoint coordinates',
       path: ['forkedAtAnchorId'],
     },
   );

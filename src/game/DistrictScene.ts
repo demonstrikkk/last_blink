@@ -873,6 +873,10 @@ export function createDistrictScene(Phaser: PhaserModule, options: DistrictScene
           graphics.strokeRect(cx - 6, cy - 6, 12, 12);
           graphics.lineBetween(cx - 3, cy, cx + 3, cy);
           graphics.lineBetween(cx, cy - 3, cx, cy + 3);
+        } else if (target.kind === 'puzzle') {
+          graphics.lineStyle(1, 0xb59bff, alpha);
+          graphics.strokeCircle(cx, cy, 8);
+          graphics.strokeRect(cx - 4, cy - 4, 8, 8);
         } else {
           graphics.lineStyle(1, 0x5ccfe6, alpha);
           graphics.strokeEllipse(cx, cy + 6, 16, 7);

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Archival incident ledger">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="14" y="9" width="36" height="46" rx="2" fill="#16283d" stroke="#94a3b8"/>
+  <rect x="18" y="14" width="28" height="3" fill="#64748b"/>
+  <path d="M20 22h24M20 27h24M20 32h18M20 37h22" stroke="#475569" stroke-width="1.5"/>
+  <rect x="30" y="40" width="22" height="12" rx="1" fill="#7f1d1d" stroke="#ef4444"/>
+  <text x="41" y="48" font-family="monospace" font-size="6" fill="#fecaca" text-anchor="middle">ZEROED</text>
+  <path d="M22 44l6 6M28 44l-6 6" stroke="#fbbf24" stroke-width="2"/>
+</svg>

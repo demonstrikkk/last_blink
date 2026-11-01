@@ -15,6 +15,11 @@ import { branchSchema } from './branch.js';
 import { playerProfileSchema } from './playerProfile.js';
 import { caseLinkSchema, caseHypothesisSchema } from './caseBoard.js';
 import { challengeResultSchema } from './challenge.js';
+import {
+  catastropheStateSchema,
+  loopStateSchema,
+  morrowPlanSchema,
+} from './loop.js';
 
 /**
  * Canonical, branch-scoped world state. Everything here is derived by applying
@@ -40,6 +45,24 @@ export const gameStateSchema = z
     branches: z.array(branchSchema).min(1).max(64),
     player: playerProfileSchema,
     endingId: z.string().trim().min(1).max(64).nullable(),
+    /** The 08:00 -> 18:00 loop this branch belongs to. */
+    loop: loopStateSchema.default({
+      index: 1,
+      resetCount: 0,
+      startTick: 0,
+      checkpointFacts: [],
+    }),
+    /** The 18:00 catastrophe ledger for this branch. */
+    catastrophe: catastropheStateSchema.default({
+      status: 'pending',
+      occurredAtTick: null,
+      avertedAtTick: null,
+      cause: null,
+      missing: [],
+      sequence: [],
+    }),
+    /** MORROW's plan for the current loop; at most one per branch per loop. */
+    morrowPlan: morrowPlanSchema.nullable().default(null),
     lastEventId: eventIdSchema.nullable(),
     /** Deterministic PRNG position; advanced only by engine code. */
     rngCursor: z.number().int().nonnegative(),
@@ -86,6 +109,28 @@ export const gameStateSchema = z
       if (anchor.branchId !== state.branchId || anchor.sessionId !== state.sessionId) {
         ctx.addIssue({ code: 'custom', message: `anchor ${anchor.anchorId} is out of scope` });
       }
+    }
+    for (const fact of state.loop.checkpointFacts) {
+      if (fact.branchId !== state.branchId) {
+        ctx.addIssue({ code: 'custom', message: `loop checkpoint fact ${fact.key} is out of scope` });
+      }
+    }
+    if (state.morrowPlan) {
+      if (
+        state.morrowPlan.branchId !== state.branchId ||
+        state.morrowPlan.sessionId !== state.sessionId
+      ) {
+        ctx.addIssue({ code: 'custom', message: 'MORROW plan is out of scope for this branch' });
+      }
+      if (state.morrowPlan.loopIndex !== state.loop.index) {
+        ctx.addIssue({ code: 'custom', message: 'MORROW plan belongs to another loop' });
+      }
+    }
+    if (state.catastrophe.status === 'occurred' && state.catastrophe.occurredAtTick === null) {
+      ctx.addIssue({ code: 'custom', message: 'an occurred catastrophe needs a tick' });
+    }
+    if (state.catastrophe.status === 'averted' && state.catastrophe.avertedAtTick === null) {
+      ctx.addIssue({ code: 'custom', message: 'an averted catastrophe needs a tick' });
     }
   });
 

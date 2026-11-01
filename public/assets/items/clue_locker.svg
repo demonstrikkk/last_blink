@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Enforcer locker contents">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="14" y="8" width="36" height="48" rx="2" fill="#1f3b52" stroke="#94a3b8"/>
+  <rect x="18" y="12" width="28" height="12" fill="#071019"/>
+  <path d="M22 18h20" stroke="#f472b6" stroke-width="1.5"/>
+  <rect x="18" y="28" width="28" height="24" fill="#0f1c2e"/>
+  <rect x="30" y="33" width="12" height="8" rx="1" fill="#2dd4bf"/>
+  <path d="M33 35v4M36 33v8M39 35v4" stroke="#06121c" stroke-width="1"/>
+  <circle cx="26" cy="46" r="3" fill="#fbbf24"/>
+  <rect x="22" y="22" width="4" height="2" fill="#64748b"/>
+</svg>

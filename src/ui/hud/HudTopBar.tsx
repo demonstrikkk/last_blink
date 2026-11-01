@@ -9,6 +9,8 @@ interface HudTopBarProps {
   readonly quality: 'high' | 'low';
   readonly muted: boolean;
   readonly saveState: 'idle' | 'saving' | 'saved' | 'restored' | 'error';
+  readonly cloudState?: 'idle' | 'syncing' | 'synced' | 'local' | 'error';
+  readonly lastCloudAt?: string | null;
   readonly lastSavedAt: string | null;
   readonly onToggleObjectives: () => void;
   readonly onToggleMorrow: () => void;
@@ -22,6 +24,7 @@ interface HudTopBarProps {
   readonly timeMode: 'day' | 'night';
   readonly onToggleTimeMode: () => void;
   readonly onOpenDiagnostics: () => void;
+  readonly onOpenBrief: () => void;
 }
 
 export function HudTopBar({
@@ -33,6 +36,8 @@ export function HudTopBar({
   quality,
   muted,
   saveState,
+  cloudState = 'idle',
+  lastCloudAt,
   lastSavedAt,
   onToggleObjectives,
   onToggleMorrow,
@@ -46,6 +51,7 @@ export function HudTopBar({
   timeMode,
   onToggleTimeMode,
   onOpenDiagnostics,
+  onOpenBrief,
 }: HudTopBarProps) {
   return (
     <header className="hud-topbar" role="banner">
@@ -97,6 +103,24 @@ export function HudTopBar({
       </nav>
 
       <div className="hud-right-controls">
+        <div className="hud-clock-group mono" aria-label="Investigation clock">
+          <span
+            className={`hud-clock${view.clock.deadlineReached ? ' hud-clock-deadline' : ''}`}
+          >
+            {view.clock.label}
+          </span>
+          <span className="hud-clock-remaining">{view.clock.remainingLabel} left</span>
+          <span className="hud-loop-badge" title="Current loop and retained timelines">
+            LOOP {view.loop.index}
+          </span>
+          {view.threats.length > 0 ? (
+            <span className="hud-threat" title={view.threats.join(' ')}>
+              <span aria-hidden="true">⚠</span>
+              <span className="hud-threat-text">{view.threats[0]}</span>
+            </span>
+          ) : null}
+        </div>
+
         <button
           type="button"
           className="hud-timeline-pill mono"
@@ -113,7 +137,7 @@ export function HudTopBar({
             type="button"
             className="hud-tool-btn hud-pulse-btn mono"
             onClick={onPulse}
-            title="Investigative Echo Pulse (Hotkey Q) — Scan for MORROW frequency overrides & coerced witnesses"
+            title="Investigative Pulse (Q) — free lead scan: nearest reachable lead, missing records and MORROW pressure. Costs no time."
           >
             <span className="pulse-btn-icon" aria-hidden="true">📡</span>
             <span>PULSE [Q]</span>
@@ -122,6 +146,9 @@ export function HudTopBar({
 
         <button type="button" className="hud-tool-btn mono" onClick={onToggleTimeMode}>
           {timeMode === 'night' ? 'DAY MODE' : 'NIGHT MODE'}
+        </button>
+        <button type="button" className="hud-tool-btn mono" onClick={onOpenBrief} title="Open the storyline and case brief">
+          BRIEF
         </button>
         <button type="button" className="hud-tool-btn mono" onClick={onOpenDiagnostics} title="Developer AI diagnostics">
           AI DIAG
@@ -149,10 +176,29 @@ export function HudTopBar({
           type="button"
           className={`hud-tool-btn hud-save-btn mono${saveState === 'saving' ? ' is-saving' : ''}`}
           onClick={onSave}
-          title={lastSavedAt ? `Saved at ${lastSavedAt}` : 'Save to IndexedDB'}
+          title={lastSavedAt ? `Saved locally at ${lastSavedAt}` : 'Save locally to IndexedDB and upload to Yugabyte'}
         >
           {saveState === 'saving' ? 'SAVING…' : 'SAVE'}
         </button>
+        <span
+          className={`hud-cloud-chip mono hud-cloud-${cloudState}`}
+          title={
+            lastCloudAt
+              ? `Yugabyte cloud sync last succeeded at ${lastCloudAt}`
+              : 'Cloud sync uses the server-configured Yugabyte database'
+          }
+          aria-live="polite"
+        >
+          {cloudState === 'syncing'
+            ? 'CLOUD…'
+            : cloudState === 'synced'
+              ? 'CLOUD ✓'
+              : cloudState === 'local'
+                ? 'LOCAL'
+                : cloudState === 'error'
+                  ? 'CLOUD !'
+                  : 'CLOUD —'}
+        </span>
       </div>
     </header>
   );

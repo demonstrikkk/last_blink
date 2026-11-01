@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Relay 7 maintenance log">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="10" y="8" width="44" height="34" rx="3" fill="#0f1c2e" stroke="#2dd4bf"/>
+  <rect x="14" y="12" width="36" height="24" fill="#071019"/>
+  <path d="M16 30h4v-6h4v10h4V20h4v14h4V24h4v8h4" fill="none" stroke="#6ee7e7" stroke-width="2"/>
+  <text x="32" y="38" font-family="monospace" font-size="7" fill="#fbbf24" text-anchor="middle">08 MIN</text>
+  <rect x="22" y="44" width="20" height="10" fill="#1f3b52"/>
+  <rect x="26" y="47" width="12" height="2" fill="#6ee7e7"/>
+  <rect x="26" y="51" width="8" height="1" fill="#334155"/>
+  <path d="M10 54h44" stroke="#2dd4bf" stroke-width="1"/>
+  <rect x="46" y="55" width="8" height="3" fill="#fbbf24"/>
+</svg>

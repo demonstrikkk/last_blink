@@ -1,4 +1,5 @@
 import type { GameEvent, GameState } from '../contracts/index.js';
+import { DEADLINE_TICK, MAX_MORROW_TARGETS } from '../contracts/loop.js';
 import { hashCanonical } from './hash.js';
 
 export class EngineInvariantError extends Error {
@@ -279,6 +280,185 @@ export function reduceGameState(state: GameState, event: GameEvent): GameState {
     case 'morrow.intervened': {
       invariant(event.tick === state.tick, 'invalid_tick', 'MORROW intervention must use the current tick');
       return base;
+    }
+
+    case 'morrow.plan.selected': {
+      const { plan } = event.payload;
+      invariant(event.tick === state.tick, 'invalid_tick', 'MORROW plan must use the current tick');
+      invariant(
+        plan.sessionId === state.sessionId && plan.branchId === state.branchId,
+        'scope_mismatch',
+        'MORROW plan is out of scope for this branch',
+      );
+      invariant(
+        plan.loopIndex === state.loop.index,
+        'loop_mismatch',
+        'MORROW plan belongs to another loop',
+      );
+      invariant(
+        plan.targets.length <= MAX_MORROW_TARGETS,
+        'morrow_limit',
+        'MORROW may influence at most three NPCs per loop',
+      );
+      const targetIds = plan.targets.map((target) => String(target.npcId));
+      invariant(
+        new Set(targetIds).size === targetIds.length,
+        'duplicate_target',
+        'a MORROW plan cannot target the same NPC twice',
+      );
+      invariant(
+        state.morrowPlan === null || state.morrowPlan.loopIndex !== state.loop.index,
+        'duplicate_plan',
+        'this loop already has a MORROW plan',
+      );
+      return { ...base, morrowPlan: plan };
+    }
+
+    case 'loop.started': {
+      const payload = event.payload;
+      invariant(event.tick === 0, 'loop_clock', 'a loop must start at 08:00');
+      invariant(payload.startTick === 0, 'loop_clock', 'the loop checkpoint must be tick 0');
+      invariant(
+        payload.loopIndex >= 1 && payload.previousLoopIndex >= 1,
+        'loop_index',
+        'loop indices start at 1',
+      );
+
+      if (payload.reason === 'initial') {
+        invariant(
+          payload.branch === null,
+          'loop_branch',
+          'the initial loop runs on the already-created root branch',
+        );
+        invariant(
+          payload.loopIndex === 1 && payload.previousLoopIndex === 1,
+          'loop_index',
+          'the initial loop is loop 1',
+        );
+        invariant(
+          state.branches.length === 1,
+          'loop_branch',
+          'the initial loop must run on the root branch',
+        );
+      } else {
+        invariant(payload.branch !== null, 'loop_branch', 'a reset must create a branch');
+        invariant(
+          payload.previousLoopIndex === state.loop.index,
+          'loop_index',
+          'the reset does not follow the current loop',
+        );
+        invariant(
+          payload.loopIndex === state.loop.index + 1,
+          'loop_index',
+          'loop indices advance by one',
+        );
+        invariant(
+          payload.branch.parentBranchId === state.branchId,
+          'branch_mismatch',
+          'the reset branch must descend from the failed timeline',
+        );
+        invariant(
+          payload.branch.forkReason === 'loop',
+          'branch_mismatch',
+          'a reset branch must record forkReason loop',
+        );
+        invariant(
+          !state.branches.some((branch) => branch.branchId === payload.branch?.branchId),
+          'duplicate_branch',
+          'the reset branch already exists',
+        );
+      }
+
+      invariant(payload.checkpointFacts.length > 0, 'loop_checkpoint', 'the checkpoint is empty');
+      const targetBranchId = payload.branch?.branchId ?? state.branchId;
+      const facts: Record<string, GameState['facts'][string]> = {};
+      for (const fact of payload.checkpointFacts) {
+        invariant(
+          fact.branchId === targetBranchId,
+          'branch_mismatch',
+          'checkpoint facts must belong to the branch being started',
+        );
+        invariant(!(fact.key in facts), 'duplicate_fact', 'checkpoint facts must be unique');
+        facts[fact.key] = fact;
+      }
+
+      return {
+        ...base,
+        tick: 0,
+        facts,
+        choices: [],
+        caseLinks: [],
+        hypotheses: [],
+        challengeResults: [],
+        anchors: [],
+        branches: payload.branch ? [...state.branches, payload.branch] : state.branches,
+        endingId: null,
+        loop: {
+          index: payload.loopIndex,
+          resetCount:
+            payload.reason === 'initial' ? 0 : state.loop.resetCount + 1,
+          startTick: 0,
+          checkpointFacts: payload.checkpointFacts,
+        },
+        catastrophe: {
+          status: 'pending',
+          occurredAtTick: null,
+          avertedAtTick: null,
+          cause: null,
+          missing: [],
+          sequence: [],
+        },
+        morrowPlan: null,
+      };
+    }
+
+    case 'catastrophe.occurred': {
+      const payload = event.payload;
+      invariant(
+        state.catastrophe.status === 'pending',
+        'catastrophe_state',
+        'this timeline already has a catastrophe outcome',
+      );
+      invariant(event.tick >= DEADLINE_TICK, 'catastrophe_early', 'the catastrophe cannot fire before 18:00');
+      invariant(
+        payload.occurredAtTick === state.tick,
+        'invalid_tick',
+        'the catastrophe tick does not match the clock',
+      );
+      return {
+        ...base,
+        catastrophe: {
+          status: 'occurred',
+          occurredAtTick: payload.occurredAtTick,
+          avertedAtTick: null,
+          cause: payload.cause,
+          missing: [...payload.missing],
+          sequence: [...payload.sequence],
+        },
+      };
+    }
+
+    case 'catastrophe.averted': {
+      const payload = event.payload;
+      invariant(
+        state.catastrophe.status === 'pending',
+        'catastrophe_state',
+        'this timeline already has a catastrophe outcome',
+      );
+      invariant(state.endingId !== null, 'catastrophe_state', 'an averted catastrophe needs a resolved case');
+      invariant(
+        payload.avertedAtTick === state.tick,
+        'invalid_tick',
+        'the averted tick does not match the clock',
+      );
+      return {
+        ...base,
+        catastrophe: {
+          ...state.catastrophe,
+          status: 'averted',
+          avertedAtTick: payload.avertedAtTick,
+        },
+      };
     }
 
     case 'ending.reached': {

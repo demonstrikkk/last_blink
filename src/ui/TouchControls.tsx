@@ -7,6 +7,8 @@ interface TouchControlsProps {
   readonly onPress: (direction: Direction, pressed: boolean) => void;
   readonly onInteract: () => void;
   readonly interactDisabled: boolean;
+  /** Pulse Scan is free and read-only, so touch players need their own button. */
+  readonly onPulse?: () => void;
 }
 
 const PAD: Array<{ direction: Direction; label: string; glyph: string; className: string }> = [
@@ -16,7 +18,13 @@ const PAD: Array<{ direction: Direction; label: string; glyph: string; className
   { direction: 'down', label: 'Move down', glyph: '▼', className: 'pad-down' },
 ];
 
-export function TouchControls({ active, onPress, onInteract, interactDisabled }: TouchControlsProps) {
+export function TouchControls({
+  active,
+  onPress,
+  onInteract,
+  interactDisabled,
+  onPulse,
+}: TouchControlsProps) {
   return (
     <div className="touch-controls">
       <div className="dpad" role="group" aria-label="Movement">
@@ -39,14 +47,21 @@ export function TouchControls({ active, onPress, onInteract, interactDisabled }:
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        className="btn btn-primary interact-btn"
-        onClick={onInteract}
-        disabled={interactDisabled}
-      >
-        Interact <kbd>E</kbd>
-      </button>
+      <div className="touch-actions">
+        <button
+          type="button"
+          className="btn btn-primary interact-btn"
+          onClick={onInteract}
+          disabled={interactDisabled}
+        >
+          Interact <kbd>E</kbd>
+        </button>
+        {onPulse ? (
+          <button type="button" className="btn touch-pulse-btn" onClick={onPulse}>
+            Pulse <kbd>Q</kbd>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

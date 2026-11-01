@@ -103,6 +103,8 @@ export const actionTypeSchema = z.enum([
   'case.link',
   'case.hypothesis',
   'challenge.complete',
+  'morrow.plan',
+  'loop.reset',
 ]);
 
 export type ActionType = z.infer<typeof actionTypeSchema>;

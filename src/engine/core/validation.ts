@@ -12,7 +12,9 @@ import {
   factAssertParamsSchema,
   forkParamsSchema,
   gameActionSchema,
+  loopResetParamsSchema,
   morrowInterveneParamsSchema,
+  morrowPlanParamsSchema,
   noopParamsSchema,
   npcProposeParamsSchema,
   type GameAction,
@@ -28,6 +30,7 @@ import {
   morrowEscalationOf,
   morrowResponseOf,
 } from '../morrow/fairness.js';
+import { MAX_MORROW_TARGETS } from '../contracts/loop.js';
 
 export type RejectionCode = Rejection['code'];
 
@@ -63,6 +66,20 @@ export function validateAction(
   }
 
   const action: GameAction = parsed.data;
+
+  // Once the day has ended, the only forward move is back to 08:00. BLINK and
+  // exploration are not a way to keep playing inside a failed timeline.
+  if (
+    state.catastrophe.status === 'occurred' &&
+    action.actionType !== 'loop.reset' &&
+    action.actionType !== 'session.noop'
+  ) {
+    return fail(
+      'deadline_passed',
+      'this timeline ended at 18:00; return to 08:00 to open a new loop',
+      { tick: state.tick, loopIndex: state.loop.index },
+    );
+  }
 
   switch (action.actionType) {
     case 'session.noop': {
@@ -284,6 +301,26 @@ export function validateAction(
         if (required.some((id) => !content.evidence.some((item) => item.evidenceId === id && state.facts[item.factKey] !== undefined))) {
           return fail('invalid_action', 'contradiction questioning requires both the slip and the witness account', { required });
         }
+        // Shaped testimony is still usable, but pressing a hesitating witness on
+        // their own words alone is not enough. The physical record anchors it.
+        const testimonyDefinition = content.evidence.find(
+          (item) => item.evidenceId === 'vendor_testimony',
+        );
+        const testimonyFact = testimonyDefinition
+          ? state.facts[testimonyDefinition.factKey]
+          : undefined;
+        if (testimonyFact?.contaminated === true) {
+          const relayDefinition = content.evidence.find(
+            (item) => item.evidenceId === 'relay_7_log',
+          );
+          if (!relayDefinition || state.facts[relayDefinition.factKey] === undefined) {
+            return fail(
+              'invalid_action',
+              "Ivo's account keeps slipping against itself. Anchor the contradiction in the Relay 7 hardware record before you press him.",
+              { requires: 'relay_7_log', reason: 'contaminated_testimony' },
+            );
+          }
+        }
       }
       return { ok: true, action: { actionType: 'challenge.complete', actorId: action.actorId, params: params.data } };
     }
@@ -404,6 +441,104 @@ export function validateAction(
       return {
         ok: true,
         action: { actionType: 'npc.propose', actorId: action.actorId, params: params.data },
+      };
+    }
+
+    case 'morrow.plan': {
+      const params = morrowPlanParamsSchema.safeParse(action.params);
+      if (!params.success) {
+        return fail('invalid_action', 'morrow.plan requires a complete, typed plan');
+      }
+      if (action.actorId !== 'system_morrow') {
+        return fail('invalid_action', 'only system_morrow may submit a plan', {
+          actorId: action.actorId,
+        });
+      }
+      const plan = params.data.plan;
+      if (plan.sessionId !== state.sessionId) {
+        return fail('invalid_action', 'the plan belongs to another session', {
+          planId: plan.planId,
+        });
+      }
+      if (plan.branchId !== state.branchId) {
+        return fail('invalid_action', 'the plan belongs to another branch', {
+          planId: plan.planId,
+          branchId: plan.branchId,
+        });
+      }
+      if (plan.loopIndex !== state.loop.index) {
+        return fail('stale_state', 'the plan was built for another loop', {
+          planId: plan.planId,
+          planLoop: plan.loopIndex,
+          loopIndex: state.loop.index,
+        });
+      }
+      if (plan.createdAtTick !== state.tick) {
+        return fail('stale_state', 'the plan was built at an older tick', {
+          planId: plan.planId,
+          planTick: plan.createdAtTick,
+          tick: state.tick,
+        });
+      }
+      // Schema max is a second line of defence; this is the engine's explicit
+      // refusal of a plan that touches too many minds.
+      if (plan.targets.length > MAX_MORROW_TARGETS) {
+        return fail('policy_denied', 'MORROW may influence at most three NPCs per loop', {
+          planId: plan.planId,
+          targets: plan.targets.length,
+          ceiling: MAX_MORROW_TARGETS,
+        });
+      }
+      const targetIds = plan.targets.map((target) => String(target.npcId));
+      if (new Set(targetIds).size !== targetIds.length) {
+        return fail('invalid_action', 'a plan cannot target the same NPC twice', {
+          planId: plan.planId,
+          targets: targetIds,
+        });
+      }
+      if (state.morrowPlan !== null && state.morrowPlan.loopIndex === state.loop.index) {
+        return fail('duplicate', 'this loop already has a MORROW plan', {
+          planId: state.morrowPlan.planId,
+        });
+      }
+      return {
+        ok: true,
+        action: { actionType: 'morrow.plan', actorId: action.actorId, params: params.data },
+      };
+    }
+
+    case 'loop.reset': {
+      const params = loopResetParamsSchema.safeParse(action.params);
+      if (!params.success) return fail('invalid_action', 'loop.reset requires a label');
+      if (!String(action.actorId).startsWith('player_')) {
+        return fail('invalid_action', 'only the investigator can return to 08:00', {
+          actorId: action.actorId,
+        });
+      }
+      if (state.catastrophe.status !== 'occurred') {
+        return fail('invalid_action', 'the day has not ended, so there is nothing to reset', {
+          status: state.catastrophe.status,
+          tick: state.tick,
+        });
+      }
+      if (state.endingId !== null) {
+        return fail('invalid_action', 'this timeline is already resolved', {
+          endingId: state.endingId,
+        });
+      }
+      if (state.loop.checkpointFacts.length === 0) {
+        return fail('stale_state', 'the 08:00 checkpoint is missing from this branch', {
+          loopIndex: state.loop.index,
+        });
+      }
+      if (state.branches.length >= 64) {
+        return fail('policy_denied', 'the session has reached its timeline limit', {
+          branches: state.branches.length,
+        });
+      }
+      return {
+        ok: true,
+        action: { actionType: 'loop.reset', actorId: action.actorId, params: params.data },
       };
     }
 

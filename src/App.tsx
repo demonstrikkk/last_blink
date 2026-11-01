@@ -7,16 +7,22 @@ import {
   useSyncExternalStore,
 } from 'react';
 import {
+  CITY_ROSTER,
   MorrowController,
   NpcCognitionController,
+  buildMorrowPlan,
   createSystemClock,
+  priorLoopsFromBranches,
   type ActionResult,
   type BranchId,
   type DeterministicGameSession,
   type GameEventId,
+  type GameState,
   type MorrowModelPort,
+  type PersistencePort,
 } from './engine/index.js';
-import { createBrowserSession } from './session/runtime.js';
+import { createBrowserSession, type BrowserSessionResult } from './session/runtime.js';
+import { syncDurableSession, type CloudSyncOutcome } from './session/cloudRuntime.js';
 import { STAGE5_CONTENT } from './content/stage5Content.js';
 import { STAGE9_NPC_LIST } from './content/npcContent.js';
 import {
@@ -25,10 +31,15 @@ import {
   type DialogueScript,
 } from './content/stage5Dialogue.js';
 import { PhaserHost, type WorldHandle } from './game/PhaserHost.js';
-import { ALL_WORLD_TARGETS, SPAWN, TILE, type WorldTarget } from './world/district.js';
+import { ALL_WORLD_TARGETS, SPAWN, TILE, type WorldTarget, type WorldPuzzleId } from './world/district.js';
 import { deriveWorldView } from './world/worldView.js';
+import { buildPulseReadout } from './world/pulse.js';
 import type { MoveInput } from './world/movement.js';
+import { shapeTestimonyLine } from './world/testimony.js';
 import { DialogueSheet, type DialoguePhase } from './ui/DialogueSheet.js';
+import { CatastropheOverlay } from './ui/CatastropheOverlay.js';
+import { CaseBrief } from './ui/CaseBrief.js';
+import { PuzzleSheet } from './ui/PuzzleSheet.js';
 import { Ledger, type SaveState } from './ui/Ledger.js';
 import { BlinkPanel } from './ui/BlinkPanel.js';
 import { EchoPanel } from './ui/EchoPanel.js';
@@ -52,10 +63,7 @@ type DialogueState =
 const EMPTY_TOUCH: MoveInput = { up: false, down: false, left: false, right: false };
 
 export function App() {
-  const [sessionData, setSessionData] = useState<{
-    session: DeterministicGameSession;
-    restoredFromSave: boolean;
-  } | null>(null);
+  const [sessionData, setSessionData] = useState<BrowserSessionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,14 +102,24 @@ export function App() {
     );
   }
 
-  return <GameScreen session={sessionData.session} initialRestored={sessionData.restoredFromSave} />;
+  return (
+    <GameScreen
+      session={sessionData.session}
+      persistence={sessionData.persistence}
+      initialRestored={sessionData.restoredFromSave}
+    />
+  );
 }
+
+type CloudState = 'idle' | 'syncing' | 'synced' | 'local' | 'error';
 
 function GameScreen({
   session,
+  persistence,
   initialRestored = false,
 }: {
   session: DeterministicGameSession;
+  persistence: PersistencePort;
   initialRestored?: boolean;
 }) {
   const subscribe = useCallback(
@@ -126,13 +144,20 @@ function GameScreen({
   });
   const [worldReady, setWorldReady] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [puzzle, setPuzzle] = useState<WorldPuzzleId | null>(null);
+  const [introOpen, setIntroOpen] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem('last_blink_intro_seen') !== '1';
+    } catch {
+      return true;
+    }
+  });
   const [blinkOpen, setBlinkOpen] = useState(false);
   const [echoOpen, setEchoOpen] = useState(false);
   const [npcOpen, setNpcOpen] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [showObjectives, setShowObjectives] = useState(true);
   const [showMorrow, setShowMorrow] = useState(true);
-  const [showEcho, setShowEcho] = useState(false);
   const [showBranch] = useState(true);
   const [morrowNotice, setMorrowNotice] = useState<string | null>(null);
   const [npcNotice, setNpcNotice] = useState<string | null>(null);
@@ -148,6 +173,8 @@ function GameScreen({
   });
   const [blinkGlitch, setBlinkGlitch] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>(initialRestored ? 'restored' : 'idle');
+  const [cloudState, setCloudState] = useState<CloudState>('idle');
+  const [lastCloudAt, setLastCloudAt] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastSaveId, setLastSaveId] = useState<string | null>(null);
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
@@ -157,12 +184,22 @@ function GameScreen({
 
   const viewRef = useRef(view);
   viewRef.current = view;
-  const paused = dialogue.phase !== 'closed' || blinkOpen || echoOpen || npcOpen || ledgerOpen;
+  const paused =
+    dialogue.phase !== 'closed' ||
+    introOpen ||
+    blinkOpen ||
+    echoOpen ||
+    npcOpen ||
+    ledgerOpen ||
+    puzzle !== null ||
+    view.catastrophe.status === 'occurred';
   const pausedRef = useRef(false);
   pausedRef.current = paused;
   const touchRef = useRef<MoveInput>(EMPTY_TOUCH);
   const worldRef = useRef<WorldHandle | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
+  const cloudOfflineRef = useRef(false);
+  const autoSaveVersionRef = useRef(state.stateVersion);
 
   const promptTarget = ALL_WORLD_TARGETS.find((target) => target.id === promptTargetId) ?? null;
   const activeScript: DialogueScript | null =
@@ -172,6 +209,62 @@ function GameScreen({
   const activeNode = activeScript
     ? view.choices.find((node) => node.nodeId === activeScript.choiceNodeId) ?? null
     : null;
+  const activeDialogueLine =
+    dialogue.phase === 'lines' ? (activeScript?.lines[dialogue.index] ?? null) : null;
+  const presentedLine = shapeTestimonyLine(
+    activeDialogueLine,
+    activeScript?.scriptId ?? '',
+    state,
+  );
+
+  /**
+   * MORROW opens every loop with a bounded plan. The engine is the authority on
+   * the three-mind ceiling and the one-plan-per-loop rule; if a provider later
+   * proposes something else, it still passes through this same dispatch.
+   */
+  useEffect(() => {
+    const current = session.getState();
+    if (
+      current.morrowPlan !== null ||
+      current.catastrophe.status !== 'pending' ||
+      current.endingId !== null
+    ) {
+      return;
+    }
+    const collected = Object.values(current.facts)
+      .filter((fact) => fact.key.startsWith('evidence.'))
+      .map((fact) => fact.key.slice('evidence.'.length));
+    const focus = [
+      ...collected,
+      'ward_dispatch',
+      'relay_7_log',
+      'vendor_testimony',
+      'surveillance_frequency',
+    ].filter((id, index, all) => all.indexOf(id) === index);
+    const plan = buildMorrowPlan({
+      sessionId: String(current.sessionId),
+      branchId: String(current.branchId),
+      loopIndex: current.loop.index,
+      tick: current.tick,
+      seed: `${current.sessionId}:${current.loop.index}`,
+      roster: CITY_ROSTER,
+      focus,
+      collected,
+      priorLoops: priorLoopsFromBranches(session.listBranches()),
+    });
+    session.dispatch({
+      actionType: 'morrow.plan',
+      actorId: 'system_morrow',
+      params: { plan },
+    });
+  }, [
+    session,
+    state.loop.index,
+    state.branchId,
+    state.morrowPlan,
+    state.catastrophe.status,
+    state.endingId,
+  ]);
 
   useEffect(() => {
     worldRef.current?.setMuted(muted);
@@ -340,6 +433,19 @@ function GameScreen({
     showToast(result.status === 'accepted' ? 'Validated challenge result recorded on this timeline.' : describeRejection(result));
   }, [session, showToast]);
 
+  const resetDay = useCallback(() => {
+    const result = session.resetLoop('Return to 08:00');
+    if (result.status === 'accepted') {
+      setDialogue({ phase: 'closed' });
+      setChoiceIndex(0);
+      setPresentedEvidenceId(null);
+      worldRef.current?.triggerTimelineShift();
+      showToast('Loop reset. The failed timeline is preserved; MORROW carries its lesson forward.');
+    } else {
+      showToast(describeRejection(result));
+    }
+  }, [session, showToast]);
+
   const openDialogue = useCallback(
     (scriptId: string) => {
       const script = getDialogueScript(scriptId, session.getState(), viewRef.current);
@@ -385,6 +491,10 @@ function GameScreen({
         openDialogue(target.id);
       } else if (target.kind === 'anchor') {
         recordAnchor();
+      } else if (target.kind === 'puzzle') {
+        if (!target.puzzle) return;
+        setPuzzle(target.puzzle);
+        worldRef.current?.playSfx('ui-open');
       } else {
         openDialogue(target.id);
       }
@@ -446,6 +556,15 @@ function GameScreen({
 
   const closeDialogue = useCallback(() => setDialogue({ phase: 'closed' }), []);
 
+  const closeIntro = useCallback(() => {
+    setIntroOpen(false);
+    try {
+      window.localStorage.setItem('last_blink_intro_seen', '1');
+    } catch {
+      // Storage can be unavailable; the brief simply reappears next session.
+    }
+  }, []);
+
   const presentEvidence = useCallback((evidenceId: string) => {
     const evidence = viewRef.current.evidence.find((item) => item.evidenceId === evidenceId);
     if (!evidence?.collected) return;
@@ -460,6 +579,9 @@ function GameScreen({
   }, [activeScript]);
 
   const branches = session.listBranches();
+  const loopSnapshots: readonly GameState[] = branches
+    .map((branch) => session.getBranchState(branch.branchId))
+    .filter((snapshot): snapshot is GameState => snapshot !== null);
   const comparison =
     compareTargetId && compareTargetId !== state.branchId
       ? session.compareBranches(state.branchId, compareTargetId as BranchId)
@@ -509,9 +631,10 @@ function GameScreen({
   );
 
   const triggerPulse = useCallback(() => {
+    const readout = buildPulseReadout(view, playerTile);
     worldRef.current?.triggerInvestigativePulse();
-    showToast('Investigative Pulse: Scanning district frequencies for MORROW surveillance overrides...');
-  }, [showToast]);
+    showToast(readout.summary);
+  }, [playerTile, showToast, view]);
 
   const toggleMute = useCallback(() => {
     setMuted((current) => {
@@ -539,6 +662,14 @@ function GameScreen({
         event.preventDefault();
         if (dialogue.phase !== 'closed') {
           setDialogue({ phase: 'closed' });
+          return;
+        }
+        if (introOpen) {
+          closeIntro();
+          return;
+        }
+        if (puzzle !== null) {
+          setPuzzle(null);
           return;
         }
         if (blinkOpen) {
@@ -610,7 +741,15 @@ function GameScreen({
       }
 
       // Hotkeys when exploration is active
-      if (!onControl && !blinkOpen && !echoOpen && !npcOpen && !ledgerOpen) {
+      if (
+        !onControl &&
+        !introOpen &&
+        puzzle === null &&
+        !blinkOpen &&
+        !echoOpen &&
+        !npcOpen &&
+        !ledgerOpen
+      ) {
         const k = event.key.toLowerCase();
         if (k === 'q') {
           event.preventDefault();
@@ -641,11 +780,14 @@ function GameScreen({
     blinkOpen,
     choiceIndex,
     choose,
+    closeIntro,
     dialogue.phase,
     dialogue,
     echoOpen,
+    introOpen,
     ledgerOpen,
     npcOpen,
+    puzzle,
     toggleMute,
     triggerPulse,
   ]);
@@ -655,15 +797,64 @@ function GameScreen({
     setTouchActive((current) => ({ ...current, [direction]: pressed }));
   }, []);
 
+  const syncCloud = useCallback(async (): Promise<CloudSyncOutcome | null> => {
+    setCloudState('syncing');
+    const outcome = await syncDurableSession(persistence, session.getState().sessionId);
+    if (outcome.status === 'synced' || outcome.status === 'pulled') {
+      setCloudState('synced');
+      setLastCloudAt(new Date().toLocaleTimeString());
+      cloudOfflineRef.current = false;
+    } else if (outcome.status === 'conflict' || outcome.status === 'error') {
+      setCloudState('error');
+      cloudOfflineRef.current = true;
+    } else {
+      setCloudState('local');
+      cloudOfflineRef.current = true;
+    }
+    return outcome;
+  }, [persistence, session]);
+
+  useEffect(() => {
+    if (state.stateVersion <= autoSaveVersionRef.current) return;
+    autoSaveVersionRef.current = state.stateVersion;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await session.save();
+        } catch (cause) {
+          console.error('[last-blink] autosave failed', cause);
+          return;
+        }
+        if (!cloudOfflineRef.current) await syncCloud();
+      })();
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [session, state.stateVersion, syncCloud]);
+
   const save = async () => {
     setSaveState('saving');
     setSaveErrorMessage(null);
+    cloudOfflineRef.current = false;
     try {
       const envelope = await session.save();
       setSaveState('saved');
       setLastSavedAt(new Date(envelope.savedAt).toLocaleTimeString());
       setLastSaveId(envelope.saveId);
-      showToast(`Saved to IndexedDB (${envelope.saveId}). Session is durable.`);
+      showToast(
+        `Saved to IndexedDB (${envelope.saveId}). Uploading this timeline to Yugabyte…`,
+      );
+      void syncCloud().then((cloud) => {
+        if (!cloud) return;
+        if (cloud.status === 'synced' || cloud.status === 'pulled') {
+          showToast(
+            `Cloud ${cloud.status === 'pulled' ? 'is ahead' : 'synced'} · ${cloud.message}`,
+          );
+        } else if (cloud.status === 'conflict' || cloud.status === 'error') {
+          showToast(`Local save kept. Cloud did not accept it: ${cloud.message}`);
+        } else {
+          showToast(`Local save kept. ${cloud.message}`);
+        }
+      });
     } catch (cause) {
       console.error('[last-blink] save failed', cause);
       const msg = cause instanceof Error ? cause.message : String(cause);
@@ -687,15 +878,17 @@ function GameScreen({
         view={view}
         showObjectives={showObjectives}
         showMorrow={showMorrow}
-        showEcho={showEcho}
+        showEcho={echoOpen}
         showLedger={ledgerOpen}
         quality={quality}
         muted={muted}
         saveState={saveState}
+        cloudState={cloudState}
+        lastCloudAt={lastCloudAt}
         lastSavedAt={lastSavedAt}
         onToggleObjectives={() => setShowObjectives((v) => !v)}
         onToggleMorrow={() => setShowMorrow((v) => !v)}
-        onToggleEcho={() => setShowEcho((v) => !v)}
+        onToggleEcho={() => setEchoOpen(true)}
         onToggleLedger={() => setLedgerOpen((v) => !v)}
         onToggleQuality={toggleQuality}
         onToggleMute={toggleMute}
@@ -705,6 +898,7 @@ function GameScreen({
          timeMode={timeMode}
          onToggleTimeMode={() => setTimeMode((mode) => (mode === 'night' ? 'day' : 'night'))}
          onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+         onOpenBrief={() => setIntroOpen(true)}
        />
 
       <div className="game-viewport">
@@ -796,6 +990,7 @@ function GameScreen({
           onPress={setTouch}
           onInteract={() => promptTarget && handleTarget(promptTarget.id)}
           interactDisabled={!promptTarget || paused}
+          onPulse={triggerPulse}
         />
       </div>
 
@@ -815,9 +1010,7 @@ function GameScreen({
         />
       ) : null}
 
-      {showEcho ? (
-        <EchoCard view={view} onOpenEcho={() => setEchoOpen(true)} />
-      ) : null}
+      {worldReady ? <EchoCard view={view} onOpenEcho={() => setEchoOpen(true)} /> : null}
 
       {showBranch ? (
         <BranchCard
@@ -832,7 +1025,7 @@ function GameScreen({
         <DialogueSheet
           phase={dialogue.phase as DialoguePhase}
           script={activeScript}
-          line={dialogue.phase === 'lines' ? (activeScript.lines[dialogue.index] ?? null) : null}
+          line={presentedLine}
           lineIndex={dialogue.phase === 'lines' ? dialogue.index : 0}
           lineCount={activeScript.lines.length}
           node={activeNode}
@@ -844,6 +1037,44 @@ function GameScreen({
           onClose={closeDialogue}
           presentedEvidenceId={presentedEvidenceId}
           onPresentEvidence={presentEvidence}
+        />
+      ) : null}
+
+      {/* ---- Map-anchored puzzles ---- */}
+      <PuzzleSheet
+        open={puzzle !== null}
+        puzzle={puzzle}
+        onClose={() => setPuzzle(null)}
+        state={state}
+        view={view}
+        context={
+          puzzle
+            ? getDialogueScript(
+                puzzle === 'signal'
+                  ? 'frequency_console'
+                  : puzzle === 'timeline'
+                    ? 'ward_dispatch'
+                    : puzzle === 'contradiction'
+                      ? 'ivo'
+                      : 'relay_disarm',
+                state,
+                view,
+              )
+            : null
+        }
+        onMakeCaseChoice={makeCaseChoice}
+        onCompleteChallenge={completeChallenge}
+      />
+
+      {/* ---- Intro / storyline brief ---- */}
+      <CaseBrief open={introOpen} onClose={closeIntro} view={view} />
+
+      {/* ---- 18:00 catastrophe ---- */}
+      {view.catastrophe.status === 'occurred' && !echoOpen && !blinkOpen ? (
+        <CatastropheOverlay
+          view={view}
+          onReset={resetDay}
+          onOpenEcho={() => setEchoOpen(true)}
         />
       ) : null}
 
@@ -886,6 +1117,7 @@ function GameScreen({
         hash={hash}
         events={session.getLineageEvents()}
         branches={branches}
+        loopSnapshots={loopSnapshots}
         saveState={saveState}
         lastSavedAt={lastSavedAt}
         lastSaveId={lastSaveId}
@@ -893,6 +1125,10 @@ function GameScreen({
         isDurable={true}
         onSave={() => void save()}
         onRestart={restart}
+        onOpenEcho={() => {
+          setLedgerOpen(false);
+          setEchoOpen(true);
+        }}
         onUpdateCaseLink={updateCaseLink}
         onUpdateHypothesis={updateHypothesis}
         onMakeCaseChoice={makeCaseChoice}

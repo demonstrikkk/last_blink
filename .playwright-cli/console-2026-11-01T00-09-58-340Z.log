@@ -101,3 +101,572 @@
  An error occurred in the <GameScreen> component. Consider adding an error boundary to your tree to customize error handling behavior.
 Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://127.0.0.1:4174/@vite/client:367
 [ 2349386ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 4933659ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4933668ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4933669ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4933669ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4933669ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4933670ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4939624ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4939625ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4939625ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4939625ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4939626ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4939626ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4948220ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4948221ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4948222ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4948222ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4948222ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4948223ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4948242ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4948243ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4948244ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4948244ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4948248ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4948248ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4953311ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4953312ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4953312ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4953312ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4953316ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4953316ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4953344ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4953345ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4953351ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4953352ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4953383ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4953383ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4959721ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4959722ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4959722ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4959722ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4959723ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4959724ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4959766ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4959766ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4959766ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4959766ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4959767ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4959767ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4978979ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4978979ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4978980ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4978980ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4978980ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4978981ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4993434ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4993434ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4993434ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4993435ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4993435ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4993435ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4997322ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4997322ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4997322ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4997323ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 4997324ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 4997324ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5010196ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5010197ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5010197ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5010197ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5010197ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5010198ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5010199ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5010199ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5010200ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5010200ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5010201ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5010201ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5014339ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5014340ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5014340ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5014341ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5014342ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5014342ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5022529ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5022529ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5022530ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5022530ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5022531ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5022531ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5022586ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5022587ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5022587ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5022587ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5022587ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5022588ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5036046ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5036047ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5036048ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5036049ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5036049ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5036050ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5036106ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5036107ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5036107ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5036107ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5036115ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5036115ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5043434ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5043435ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5043435ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5043436ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5043436ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5043436ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5048967ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5048967ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5048967ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5048967ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5048968ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5048968ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5049016ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5049017ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5049017ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5049018ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5049030ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5049031ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5056534ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5056534ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5056534ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5056535ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5056535ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5056535ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5056621ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5056621ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5056622ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5056622ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5056622ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5056622ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5062425ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5062425ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5062426ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5062426ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5062427ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5062428ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088435ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088435ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088435ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088435ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088436ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088436ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088528ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088529ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088530ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088530ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088531ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088531ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088582ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088583ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088583ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088584ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5088584ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5088585ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5094534ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5094535ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5094535ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5094535ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5094535ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5094536ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5094633ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5094634ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5094635ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5094635ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5094636ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5094636ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5100278ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5100278ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5100278ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5100278ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5100280ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5100280ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5105377ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5105377ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5105378ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5105378ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5105378ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5105378ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5111280ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5111280ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5111281ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5111281ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5111282ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5111282ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5131177ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5131177ms] [ERROR] [vite] Failed to reload /src/ui/NpcPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5131178ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5131178ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5131178ms] [ERROR] [vite] SyntaxError: The requested module '/src/engine/contracts/primitives.ts?t=1793496725736' does not provide an export named 'factSchema' @ http://127.0.0.1:4174/@vite/client:367
+[ 5131178ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 5552730ms] TypeError: Cannot read properties of undefined (reading 'resetCount')
+    at deriveWorldView (http://127.0.0.1:4174/src/world/worldView.ts?t=1793497350974:273:32)
+    at GameScreen (http://127.0.0.1:4174/src/App.tsx?t=1793497350974:125:15)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:14140:12)
+    at renderWithHooks (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:4398:19)
+    at updateFunctionComponent (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:5773:16)
+    at beginWork (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:6389:20)
+    at runWithFiberInDEV (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:942:66)
+    at performUnitOfWork (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9146:92)
+    at workLoopSync (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9042:37)
+    at renderRootSync (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9026:6)
+[ 5552721ms] [WARNING] %s
+
+%s
+ An error occurred in the <GameScreen> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://127.0.0.1:4174/@vite/client:367
+[ 5569555ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 5985541ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 6075858ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 8429996ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:4174/src/ui/Ledger.tsx?t=1793500228220:0
+[ 8429999ms] [ERROR] [vite] Failed to reload /src/ui/Ledger.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[ 8552065ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 8566331ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 8925878ms] [ERROR] The final argument passed to %s changed size between renders. The order and size of this array must remain constant.
+
+Previous: %s
+Incoming: %s useEffect [() => {
+		if (dialogue.phase !== "lines") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		if (dialogue.index + 1 < script.lines.length) {
+			setDialogue({
+				phase: "lines",
+				scriptId: dialogue.scriptId,
+				index: dialogue.index + 1
+			});
+			return;
+		}
+		const node = viewRef.current.choices.find((candidate) => candidate.nodeId === script.choiceNodeId);
+		setChoiceIndex(0);
+		if (!node) {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.resolvedOptionId !== null) {
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.available) {
+			setDialogue({
+				phase: "choice",
+				scriptId: dialogue.scriptId
+			});
+		} else {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		}
+	}, false, 0, (optionId) => {
+		if (dialogue.phase !== "choice") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		const result = session.dispatch({
+			actionType: "choice.make",
+			actorId: "player_local",
+			params: {
+				nodeId: script.choiceNodeId,
+				optionId
+			}
+		});
+		if (result.status === "accepted") {
+			void runMorrow(result.eventIds[result.eventIds.length - 1]);
+			runNpcs();
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+			const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+			if (fresh.ending) {
+				worldRef.current?.playSfx("ending-sting");
+				showToast(`Ending reached: ${fresh.ending.title}.`);
+			} else {
+				worldRef.current?.playSfx("choice-lock");
+				showToast("Decision committed to canonical state. The street has answered.");
+			}
+		} else {
+			showToast(describeRejection(result));
+		}
+	}, closed, [object Object], false, false, false, () => {
+		setMuted((current) => {
+			const next = !current;
+			worldRef.current?.setMuted(next);
+			return next;
+		});
+	}, () => {
+		worldRef.current?.triggerInvestigativePulse();
+		showToast("Investigative Pulse: Scanning district frequencies for MORROW surveillance overrides...");
+	}] [() => {
+		if (dialogue.phase !== "lines") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		if (dialogue.index + 1 < script.lines.length) {
+			setDialogue({
+				phase: "lines",
+				scriptId: dialogue.scriptId,
+				index: dialogue.index + 1
+			});
+			return;
+		}
+		const node = viewRef.current.choices.find((candidate) => candidate.nodeId === script.choiceNodeId);
+		setChoiceIndex(0);
+		if (!node) {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.resolvedOptionId !== null) {
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.available) {
+			setDialogue({
+				phase: "choice",
+				scriptId: dialogue.scriptId
+			});
+		} else {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		}
+	}, false, 0, (optionId) => {
+		if (dialogue.phase !== "choice") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		const result = session.dispatch({
+			actionType: "choice.make",
+			actorId: "player_local",
+			params: {
+				nodeId: script.choiceNodeId,
+				optionId
+			}
+		});
+		if (result.status === "accepted") {
+			void runMorrow(result.eventIds[result.eventIds.length - 1]);
+			runNpcs();
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+			const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+			if (fresh.ending) {
+				worldRef.current?.playSfx("ending-sting");
+				showToast(`Ending reached: ${fresh.ending.title}.`);
+			} else {
+				worldRef.current?.playSfx("choice-lock");
+				showToast("Decision committed to canonical state. The street has answered.");
+			}
+		} else {
+			showToast(describeRejection(result));
+		}
+	}, () => {
+		setIntroOpen(false);
+		try {
+			window.localStorage.setItem("last_blink_intro_seen", "1");
+		} catch {}
+	}, closed, [object Object], false, true, false, false, () => {
+		setMuted((current) => {
+			const next = !current;
+			worldRef.current?.setMuted(next);
+			return next;
+		});
+	}, () => {
+		worldRef.current?.triggerInvestigativePulse();
+		showToast("Investigative Pulse: Scanning district frequencies for MORROW surveillance overrides...");
+	}] @ http://127.0.0.1:4174/@vite/client:367
+[ 9206459ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[ 9218471ms] [ERROR] The final argument passed to %s changed size between renders. The order and size of this array must remain constant.
+
+Previous: %s
+Incoming: %s useEffect [() => {
+		if (dialogue.phase !== "lines") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		if (dialogue.index + 1 < script.lines.length) {
+			setDialogue({
+				phase: "lines",
+				scriptId: dialogue.scriptId,
+				index: dialogue.index + 1
+			});
+			return;
+		}
+		const node = viewRef.current.choices.find((candidate) => candidate.nodeId === script.choiceNodeId);
+		setChoiceIndex(0);
+		if (!node) {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.resolvedOptionId !== null) {
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.available) {
+			setDialogue({
+				phase: "choice",
+				scriptId: dialogue.scriptId
+			});
+		} else {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		}
+	}, false, 0, (optionId) => {
+		if (dialogue.phase !== "choice") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		const result = session.dispatch({
+			actionType: "choice.make",
+			actorId: "player_local",
+			params: {
+				nodeId: script.choiceNodeId,
+				optionId
+			}
+		});
+		if (result.status === "accepted") {
+			void runMorrow(result.eventIds[result.eventIds.length - 1]);
+			runNpcs();
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+			const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+			if (fresh.ending) {
+				worldRef.current?.playSfx("ending-sting");
+				showToast(`Ending reached: ${fresh.ending.title}.`);
+			} else {
+				worldRef.current?.playSfx("choice-lock");
+				showToast("Decision committed to canonical state. The street has answered.");
+			}
+		} else {
+			showToast(describeRejection(result));
+		}
+	}, () => {
+		setIntroOpen(false);
+		try {
+			window.localStorage.setItem("last_blink_intro_seen", "1");
+		} catch {}
+	}, closed, [object Object], false, true, false, false, () => {
+		setMuted((current) => {
+			const next = !current;
+			worldRef.current?.setMuted(next);
+			return next;
+		});
+	}, () => {
+		worldRef.current?.triggerInvestigativePulse();
+		showToast("Investigative Pulse: Scanning district frequencies for MORROW surveillance overrides...");
+	}] [() => {
+		if (dialogue.phase !== "lines") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		if (dialogue.index + 1 < script.lines.length) {
+			setDialogue({
+				phase: "lines",
+				scriptId: dialogue.scriptId,
+				index: dialogue.index + 1
+			});
+			return;
+		}
+		const node = viewRef.current.choices.find((candidate) => candidate.nodeId === script.choiceNodeId);
+		setChoiceIndex(0);
+		if (!node) {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.resolvedOptionId !== null) {
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+		} else if (node.available) {
+			setDialogue({
+				phase: "choice",
+				scriptId: dialogue.scriptId
+			});
+		} else {
+			setDialogue({
+				phase: "blocked",
+				scriptId: dialogue.scriptId
+			});
+		}
+	}, false, 0, (optionId) => {
+		if (dialogue.phase !== "choice") return;
+		const script = getDialogueScript(dialogue.scriptId, session.getState(), viewRef.current);
+		if (!script) return;
+		const result = session.dispatch({
+			actionType: "choice.make",
+			actorId: "player_local",
+			params: {
+				nodeId: script.choiceNodeId,
+				optionId
+			}
+		});
+		if (result.status === "accepted") {
+			void runMorrow(result.eventIds[result.eventIds.length - 1]);
+			runNpcs();
+			setDialogue({
+				phase: "resolved",
+				scriptId: dialogue.scriptId
+			});
+			const fresh = deriveWorldView(session.getState(), STAGE5_CONTENT);
+			if (fresh.ending) {
+				worldRef.current?.playSfx("ending-sting");
+				showToast(`Ending reached: ${fresh.ending.title}.`);
+			} else {
+				worldRef.current?.playSfx("choice-lock");
+				showToast("Decision committed to canonical state. The street has answered.");
+			}
+		} else {
+			showToast(describeRejection(result));
+		}
+	}, () => {
+		setIntroOpen(false);
+		try {
+			window.localStorage.setItem("last_blink_intro_seen", "1");
+		} catch {}
+	}, closed, [object Object], false, true, false, false, , () => {
+		setMuted((current) => {
+			const next = !current;
+			worldRef.current?.setMuted(next);
+			return next;
+		});
+	}, () => {
+		worldRef.current?.triggerInvestigativePulse();
+		showToast("Investigative Pulse: Scanning district frequencies for MORROW surveillance overrides...");
+	}] @ http://127.0.0.1:4174/@vite/client:367
+[10834909ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[10843013ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[11347250ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:4174/src/session/cloudRuntime.ts?t=1793503145469:0
+[11347258ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[11347260ms] [ERROR] [vite] Failed to reload /src/ui/EchoPanel.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:4174/@vite/client:367
+[12400637ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:4174/@vite/client:1089
+[12632124ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:15802
+[12636265ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756
+[12636426ms] [INFO] [last-blink] session saved {sessionId: ses_local_mvxa8btb, stateVersion: 11, saveId: sav_8596b2_000m} @ http://127.0.0.1:4174/src/engine/session/mocks.ts?t=1793500632940:98
+[14279648ms] ReferenceError: showEcho is not defined
+    at GameScreen (http://127.0.0.1:4174/src/App.tsx?t=1793506077579:1125:5)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:14140:12)
+    at renderWithHooks (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:4398:19)
+    at updateFunctionComponent (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:5773:16)
+    at beginWork (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:6389:20)
+    at runWithFiberInDEV (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:942:66)
+    at performUnitOfWork (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9146:92)
+    at workLoopSync (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9042:37)
+    at renderRootSync (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:9026:6)
+    at performWorkOnRoot (http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=21958c0a:8713:27)
+[14279428ms] [WARNING] %s
+
+%s
+ An error occurred in the <GameScreen> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://127.0.0.1:4174/@vite/client:367
+[14290179ms] [INFO] [last-blink] restored session from durable persistence {sessionId: ses_local_mvxa8btb, saveId: sav_8596b2_000m, stateVersion: 11} @ http://127.0.0.1:4174/src/engine/session/mocks.ts?t=1793500632940:98
+[14290183ms] [INFO] [last-blink] restored session from durable persistence {sessionId: ses_local_mvxa8btb, saveId: sav_8596b2_000m, stateVersion: 11} @ http://127.0.0.1:4174/src/engine/session/mocks.ts?t=1793500632940:98
+[14290396ms] [LOG] %cPhaser v4.2.1 (WebGL | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent @ http://127.0.0.1:4174/node_modules/.vite/deps/phaser.js?v=2ef5cd5d:12756

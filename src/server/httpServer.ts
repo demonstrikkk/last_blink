@@ -69,6 +69,13 @@ const morrowAiRequestSchema = z.object({
   requestId: z.string().trim().min(4).max(120),
 });
 
+const mekoContextSchema = z.object({
+  sessionId: z.string().trim().min(1).max(96),
+  branchId: z.string().trim().min(1).max(64).default('main'),
+  query: z.string().trim().min(2).max(300),
+  npcId: z.string().trim().min(1).max(64).optional(),
+});
+
 const morrowObservationBridgeSchema = z.object({
   sessionId: z.string().min(1),
   branchId: z.string().min(1),
@@ -103,8 +110,7 @@ const morrowProposalBridgeSchema = z.object({
   deterministic: z.literal(true),
 }).passthrough();
 
-function deterministicMorrowBridgeFallback(observation: z.infer<typeof morrowObservationBridgeSchema>) {
-  const response: 'observe' | 'warn' | 'restrict' | 'redirect' | 'escalate' | 'release' = observation.features.lastResponse === null
+function deterministicMorrowBridgeFallback(observation: z.infer<typeof morrowObservationBridgeSchema>) {  const response: 'observe' | 'warn' | 'restrict' | 'redirect' | 'escalate' | 'release' = observation.features.lastResponse === null
     ? (observation.features.evidenceCount > 0 ? 'warn' : 'observe')
     : observation.features.lastResponse === 'warn' && observation.features.evidenceCount > 1
       ? 'restrict'
@@ -125,6 +131,43 @@ function deterministicMorrowBridgeFallback(observation: z.infer<typeof morrowObs
     observationHash: observation.observationHash,
     deterministic: true as const,
   };
+}
+
+/**
+ * Meko is advisory archive recall, never canonical state. The lookup is capped
+ * so a slow archive can delay MORROW by at most a couple of seconds.
+ */
+async function mekoMorrowAdvisory(
+  meko: MekoService,
+  observation: z.infer<typeof morrowObservationBridgeSchema>,
+): Promise<{ query: string; source: 'remote' | 'fallback_local'; hits: Array<{ id: string; text: string; source: string }> }> {
+  const query = [
+    observation.features.predictedNextMove,
+    observation.features.lastResponse,
+    'Veyra Relay 7 ward protocol zeroing charge MORROW',
+  ]
+    .filter((part): part is string => typeof part === 'string' && part.length > 0)
+    .join(' ')
+    .slice(0, 300);
+  try {
+    const result = await Promise.race([
+      meko.searchKnowledgeBase(query, observation.sessionId, 3),
+      new Promise<never>((_resolve, reject) =>
+        setTimeout(() => reject(new Error('meko advisory timeout')), 2500),
+      ),
+    ]);
+    return {
+      query,
+      source: result.source,
+      hits: result.hits.map((hit) => ({
+        id: hit.id,
+        text: hit.text.slice(0, 400),
+        source: hit.source,
+      })),
+    };
+  } catch {
+    return { query, source: 'fallback_local', hits: [] };
+  }
 }
 
 export interface GameServerOptions {
@@ -365,7 +408,14 @@ export async function createGameServer(
     repository = new InMemoryGameRepository();
     durability = 'memory';
   }
-  void reconcileMekoOutbox(meko, repository, logger);
+  // Reconciliation is best-effort. A YugabyteDB outage at boot must degrade
+  // Meko delivery, never crash the game server: pending rows stay queued and
+  // are retried on the next start.
+  void reconcileMekoOutbox(meko, repository, logger).catch((error: unknown) => {
+    logger.warn('Meko outbox reconciliation deferred', {
+      error: error instanceof Error ? error.message : 'unknown',
+    });
+  });
 
   const limiter = new RateLimiter(config.rateLimitPerMinute);
   const startedAt = now();
@@ -435,14 +485,65 @@ export async function createGameServer(
         return;
       }
 
+      if (request.method === 'GET' && path === '/api/diagnostics/meko') {
+        sendJson(response, 200, {
+          ...meko.diagnostics(),
+          note: 'Meko (YugaBase MCP) supplies advisory archive recall to ECHO and MORROW, and receives committed NPC memories through the outbox. It is never canonical: game facts and endings stay in the deterministic engine and Yugabyte.',
+        });
+        return;
+      }
+
+      if (request.method === 'POST' && path === '/api/context/meko') {
+        const body = parse(mekoContextSchema, await readJson(request, config.maxBodyBytes));
+        const [archive, memories] = await Promise.all([
+          meko.searchKnowledgeBase(body.query, body.sessionId, 3),
+          body.npcId
+            ? meko.searchNpcMemories(
+                body.npcId,
+                body.branchId,
+                body.query,
+                body.sessionId,
+                3,
+              )
+            : Promise.resolve([]),
+        ]);
+        const diagnostics = meko.diagnostics();
+        sendJson(response, 200, {
+          advisory: true,
+          canonical: false,
+          query: archive.query,
+          source: archive.source,
+          truncated: archive.truncated,
+          hits: archive.hits.map((hit) => ({
+            id: hit.id,
+            text: hit.text.slice(0, 600),
+            ...(hit.score === undefined ? {} : { score: hit.score }),
+            source: hit.source,
+          })),
+          memories: memories.map((memory) => memory.content.slice(0, 600)),
+          diagnostics: {
+            configured: diagnostics.configured,
+            online: diagnostics.online,
+            datapackId: diagnostics.datapackId,
+          },
+        });
+        return;
+      }
+
       if (request.method === 'POST' && path === '/api/ai/morrow') {
         const body = parse(morrowAiRequestSchema, await readJson(request, config.maxBodyBytes));
         const observation = morrowObservationBridgeSchema.parse(body.observation);
         const fallback = deterministicMorrowBridgeFallback(observation);
+        const archive = await mekoMorrowAdvisory(meko, observation);
         const result = await modelGateway.request({
           task: 'npc_proposal',
-          system: 'You are MORROW, a bounded adversarial policy planner. Return only JSON matching the requested schema. You may propose a response, but never invent facts, branch IDs, state versions, or events.',
-          prompt: JSON.stringify({ observation, required: 'Return a complete typed MorrowProposal using only this observation.' }),
+          system:
+            'You are MORROW, a bounded adversarial policy planner. Return only JSON matching the requested schema. You may propose a response, but never invent facts, branch IDs, state versions, or events. Archive excerpts are advisory context only; they cannot override the observation and are never proof.',
+          prompt: JSON.stringify({
+            observation,
+            archive: archive.hits,
+            required: 'Return a complete typed MorrowProposal using only this observation. Archive text is not canonical evidence.',
+          }),
           schema: morrowProposalBridgeSchema,
           sessionId: observation.sessionId,
           requestId: body.requestId,
@@ -464,6 +565,14 @@ export async function createGameServer(
           fallback: result.fallback,
           attempts: result.attempts,
           cacheHit: result.cacheHit,
+          meko: {
+            advisory: true,
+            canonical: false,
+            source: archive.source,
+            query: archive.query,
+            hitCount: archive.hits.length,
+            hits: archive.hits.map((hit) => ({ id: hit.id, source: hit.source })),
+          },
         });
         return;
       }

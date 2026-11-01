@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { BranchSummary, GameEvent, GameState } from '../engine/index.js';
 import type { WorldView } from '../world/worldView.js';
+import { InvestigationBrief } from './InvestigationBrief.js';
+import { evidenceArt } from './investigationArt.js';
+import { PuzzleBody } from './PuzzleBody.js';
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'restored';
 
@@ -12,6 +15,7 @@ interface LedgerProps {
   readonly hash: string;
   readonly events: readonly GameEvent[];
   readonly branches: readonly BranchSummary[];
+  readonly loopSnapshots: readonly GameState[];
   readonly saveState: SaveState;
   readonly lastSavedAt?: string | null;
   readonly lastSaveId?: string | null;
@@ -19,6 +23,7 @@ interface LedgerProps {
   readonly isDurable?: boolean;
   readonly onSave: () => void;
   readonly onRestart: () => void;
+  readonly onOpenEcho?: () => void;
   readonly onUpdateCaseLink: (params: { linkId: string; leftEvidenceId: string; rightEvidenceId: string; relation: 'supports' | 'contradicts' | 'corroborates' | 'uncertain'; note: string }) => void;
   readonly onUpdateHypothesis: (params: { hypothesisId: string; text: string; supportingEvidenceIds: string[]; opposingEvidenceIds: string[] }) => void;
   readonly onMakeCaseChoice: (nodeId: string, optionId: string) => void;
@@ -33,6 +38,7 @@ export function Ledger({
   hash,
   events,
   branches,
+  loopSnapshots,
   saveState,
   lastSavedAt,
   lastSaveId,
@@ -40,11 +46,13 @@ export function Ledger({
   isDurable = true,
   onSave,
   onRestart,
+  onOpenEcho,
   onUpdateCaseLink,
   onUpdateHypothesis,
   onMakeCaseChoice,
   onCompleteChallenge,
 }: LedgerProps) {
+  const [tab, setTab] = useState<'brief' | 'ledger'>('brief');
   const [selectedEvidence, setSelectedEvidence] = useState<string[]>([]);
   const [relation, setRelation] = useState<'supports' | 'contradicts' | 'corroborates' | 'uncertain'>('uncertain');
   const [linkNote, setLinkNote] = useState('');
@@ -52,16 +60,8 @@ export function Ledger({
   const [hypothesisId, setHypothesisId] = useState('theory_morrow');
   const [supporting, setSupporting] = useState<string[]>([]);
   const [opposing, setOpposing] = useState<string[]>([]);
-  const [signalAnswer, setSignalAnswer] = useState('');
-  const [signalFeedback, setSignalFeedback] = useState<string | null>(null);
-  const [timelineOrder, setTimelineOrder] = useState(['relay_7_log', 'ward_dispatch', 'vendor_testimony']);
-  const [timelineFeedback, setTimelineFeedback] = useState<string | null>(null);
-  const [contradictionFeedback, setContradictionFeedback] = useState<string | null>(null);
   if (!open) return null;
 
-  const timelineCompleted = state.challengeResults.some((result) => result.challengeId === 'challenge_timeline_relay7');
-  const contradictionCompleted = state.challengeResults.some((result) => result.challengeId === 'challenge_dispatch_contradiction');
-  const signalCompleted = state.choices.some((choice) => choice.nodeId === 'node.frequency.puzzle');
   const facts = Object.entries(state.facts).sort(([left], [right]) =>
     left < right ? -1 : left > right ? 1 : 0,
   );
@@ -87,7 +87,12 @@ export function Ledger({
   return (
     <div className="ledger-layer">
       <button type="button" className="ledger-backdrop" aria-label="Close ledger" onClick={onClose} />
-      <aside className="ledger" role="dialog" aria-modal="true" aria-labelledby="ledger-title">
+      <aside
+        className={`ledger${tab === 'brief' ? ' ledger-brief' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ledger-title"
+      >
         <header className="ledger-head">
           <div>
             <p className="micro">ENGINE LEDGER</p>
@@ -98,6 +103,39 @@ export function Ledger({
           </button>
         </header>
 
+        <div className="ledger-tabs" role="tablist" aria-label="Case board views">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'brief'}
+            className={`btn btn-quiet${tab === 'brief' ? ' choice-active' : ''}`}
+            onClick={() => setTab('brief')}
+          >
+            Investigator brief
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'ledger'}
+            className={`btn btn-quiet${tab === 'ledger' ? ' choice-active' : ''}`}
+            onClick={() => setTab('ledger')}
+          >
+            Raw ledger
+          </button>
+        </div>
+
+        {tab === 'brief' ? (
+          <InvestigationBrief
+            state={state}
+            view={view}
+            loopSnapshots={loopSnapshots}
+            onMakeCaseChoice={onMakeCaseChoice}
+            onCompleteChallenge={onCompleteChallenge}
+            onOpenEcho={onOpenEcho}
+            onOpenLedger={() => setTab('ledger')}
+          />
+        ) : (
+          <>
         <dl className="ledger-stats">
           <div>
             <dt>State version</dt>
@@ -195,6 +233,16 @@ export function Ledger({
                 className={`evidence-ledger-item${evidence.collected ? ' evidence-collected' : ''}`}
               >
                 <div className="evidence-ledger-head">
+                  {evidenceArt(evidence.evidenceId) ? (
+                    <img
+                      className="evidence-art"
+                      src={evidenceArt(evidence.evidenceId) ?? undefined}
+                      alt=""
+                      width={44}
+                      height={44}
+                      loading="lazy"
+                    />
+                  ) : null}
                   <strong>{evidence.label}</strong>
                   <span className="mono state-chip">
                     {evidence.collected ? evidence.verificationStatus.replace('_', ' ') : 'UNCOLLECTED'}
@@ -323,26 +371,16 @@ export function Ledger({
             )}
 
               <section className="challenge-grid" aria-labelledby="case-challenges">
-             <h4 id="case-challenges">Investigation challenges</h4>
-             <article className="challenge-card">
-               <span className="micro">SIGNAL RECONSTRUCTION · V{view.timeline.index + 1}</span>
-               <p>Read the diner guestbook fragment and reconstruct the ward channel. The answer must match the recorded frequency; it does not prove who issued the command.</p>
-               <div className="button-row"><button type="button" className={`btn btn-quiet${signalAnswer === '434.8MHz' ? ' choice-active' : ''}`} onClick={() => setSignalAnswer('434.8MHz')}>434.8 MHz</button><button type="button" className={`btn btn-quiet${signalAnswer === '433.2MHz' ? ' choice-active' : ''}`} onClick={() => setSignalAnswer('433.2 MHz')}>433.2 MHz</button><button type="button" className="btn" disabled={signalCompleted} onClick={() => { if (signalCompleted) return; if (signalAnswer === '434.8MHz') { setSignalFeedback('Correct: the 434.8 MHz fragment matches clue_guestbook. This establishes the surveillance channel, not the author of the order.'); onMakeCaseChoice('node.frequency.puzzle', 'tune'); } else setSignalFeedback('Not established: compare the number in clue_guestbook again. The wrong frequency cannot identify the channel.'); }}>Reconstruct signal</button></div>
-               {signalFeedback ? <p className="challenge-feedback" role="status">{signalFeedback}</p> : null}
-             </article>
-             <article className="challenge-card">
-               <span className="micro">TIMELINE RECONSTRUCTION · RECORDED EVENTS</span>
-               <p>Arrange the dispatch evidence before the witness recollection. Use the arrows to test the order; a plausible order still leaves the clock discrepancy unresolved.</p>
-               <ol className="challenge-order">{timelineOrder.map((id, index) => <li key={id}><span className="mono">{id}</span><button type="button" className="btn btn-quiet" disabled={index === 0} onClick={() => setTimelineOrder((items) => { const next = [...items]; [next[index - 1], next[index]] = [next[index]!, next[index - 1]!]; return next; })}>↑</button><button type="button" className="btn btn-quiet" disabled={index === timelineOrder.length - 1} onClick={() => setTimelineOrder((items) => { const next = [...items]; [next[index], next[index + 1]] = [next[index + 1]!, next[index]!]; return next; })}>↓</button></li>)}</ol>
-               <button type="button" className="btn" disabled={timelineCompleted} onClick={() => { if (timelineCompleted) return; const correct = timelineOrder.join(',') === 'relay_7_log,ward_dispatch,vendor_testimony'; setTimelineFeedback(correct ? 'Plausible order: Relay 7 record → ward dispatch → vendor testimony. This establishes sequence only; the eight-minute clock conflict remains an unknown.' : 'That order conflicts with the recorded context. Start with the Relay 7 technical record, then the dispatch record, then the witness recollection.'); if (correct) onCompleteChallenge({ challengeId: 'challenge_timeline_relay7', challengeType: 'timeline_reconstruction', answer: { order: timelineOrder } }); }}>{timelineCompleted ? 'Timeline result recorded' : 'Check recorded order'}</button>
-               {timelineFeedback ? <p className="challenge-feedback" role="status">{timelineFeedback}</p> : null}
-             </article>
-             <article className="challenge-card">
-               <span className="micro">CONTRADICTION QUESTIONING · WITNESS CLAIM VS RECORD</span>
-               <p>Present the ward dispatch slip against the vendor testimony. Choose a follow-up that tests the contradiction rather than assuming either source is complete.</p>
-               <div className="button-row"><button type="button" className="btn btn-quiet" disabled={contradictionCompleted} onClick={() => { if (contradictionCompleted) return; setContradictionFeedback('Useful follow-up: ask who sealed the route and when. The testimony undermines the authorized-route claim, but does not establish who altered the slip.'); onCompleteChallenge({ challengeId: 'challenge_dispatch_contradiction', challengeType: 'contradiction_questioning', answer: { question: 'ask_route_seal' } }); }}>Ask who sealed the route</button><button type="button" className="btn btn-quiet" onClick={() => setContradictionFeedback('Weak inference: treating the dispatch slip as conclusive ignores the vendor testimony. Compare provenance before assigning blame.')}>Declare the slip definitive</button></div>
-               {contradictionFeedback ? <p className="challenge-feedback" role="status">{contradictionFeedback}</p> : null}
-             </article>
+              <h4 id="case-challenges">Investigation challenges</h4>
+              <article className="challenge-card">
+                <PuzzleBody kind="signal" state={state} view={view} onMakeCaseChoice={onMakeCaseChoice} onCompleteChallenge={onCompleteChallenge} />
+              </article>
+              <article className="challenge-card">
+                <PuzzleBody kind="timeline" state={state} view={view} onMakeCaseChoice={onMakeCaseChoice} onCompleteChallenge={onCompleteChallenge} />
+              </article>
+              <article className="challenge-card">
+                <PuzzleBody kind="contradiction" state={state} view={view} onMakeCaseChoice={onMakeCaseChoice} onCompleteChallenge={onCompleteChallenge} />
+              </article>
               </section>
           <ul className="case-link-list">
             {view.caseAssessment.links.filter((link) => link.established).map((link) => (
@@ -415,6 +453,8 @@ export function Ledger({
                       : 'Persistence is in memory only. Refreshing restarts the street.'}
           </p>
         </section>
+          </>
+        )}
       </aside>
     </div>
   );

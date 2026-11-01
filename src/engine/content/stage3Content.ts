@@ -5,6 +5,7 @@ import {
   factKeySchema,
   gameVersionSchema,
   jsonValueSchema,
+  npcIdSchema,
   ruleSchema,
 } from '../contracts/index.js';
 
@@ -33,6 +34,11 @@ export const evidenceDefinitionSchema = z.strictObject({
   sourceRef: z.string().trim().min(1).max(160),
   sourceKind: z.enum(['record', 'testimony', 'asset']).default('record'),
   confidence: confidenceSchema,
+  /**
+   * Who said it, when the evidence is testimony. MORROW can shape what a
+   * speaker remembers, so the collector needs to know whose account this is.
+   */
+  speakerNpcId: npcIdSchema.nullable().default(null),
   /**
    * Fact keys that must already exist before this evidence can be collected.
    * Additive Stage 5 field: action callers still only name the evidence id.
@@ -73,6 +79,11 @@ export const objectiveDefinitionSchema = z.strictObject({
   label: z.string().trim().min(1).max(120),
   detail: z.string().trim().min(1).max(280),
   requires: z.array(factKeySchema).min(1).max(8),
+  /**
+   * Optional objectives are bonus investigation tracks. They never hold the
+   * "current objective" pointer and never block a ward ending.
+   */
+  optional: z.boolean().default(false),
 });
 
 /** Presentation metadata for a rule-owned ending. */

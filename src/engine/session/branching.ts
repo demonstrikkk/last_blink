@@ -27,7 +27,7 @@ export function isScarFactKey(key: string): boolean {
 
 export interface BranchCheckpoint {
   readonly branchId: BranchId;
-  readonly anchorId: string;
+  readonly anchorId: string | null;
   readonly stateVersion: number;
   readonly tick: number;
   readonly eventSequenceNo: number;
@@ -51,6 +51,10 @@ export interface BranchSummary {
   readonly checkpoint: BranchCheckpoint | null;
   readonly eventCount: number;
   readonly ownEventCount: number;
+  readonly loopIndex: number;
+  readonly catastropheStatus: GameState['catastrophe']['status'];
+  readonly morrowTargets: readonly string[];
+  readonly morrowTactic: string | null;
 }
 
 export interface FactDifference {
@@ -139,6 +143,16 @@ export function rebaseState(state: GameState, branch: Branch, branchId: BranchId
     challengeResults: state.challengeResults.map((result) =>
       result.branchId === branchId ? result : { ...result, branchId },
     ),
+    loop: {
+      ...state.loop,
+      checkpointFacts: state.loop.checkpointFacts.map((fact) =>
+        fact.branchId === branchId ? fact : { ...fact, branchId },
+      ),
+    },
+    morrowPlan:
+      state.morrowPlan === null || state.morrowPlan.branchId === branchId
+        ? state.morrowPlan
+        : { ...state.morrowPlan, branchId },
     branches: [...state.branches.filter((item) => item.branchId !== branchId), branch],
   };
 }
@@ -180,7 +194,6 @@ export function lineageEvents(
 export function checkpointOf(branch: Branch): BranchCheckpoint | null {
   if (
     branch.parentBranchId === null ||
-    branch.forkedAtAnchorId === null ||
     branch.forkedAtStateVersion === null ||
     branch.forkedAtEventSequenceNo === null ||
     branch.forkedAtStateHash === null ||
@@ -221,6 +234,10 @@ export function summariseBranch(
     checkpoint: checkpointOf(branch),
     eventCount: lineageEvents(branch, ancestors, logs).length,
     ownEventCount: runtime.events.length,
+    loopIndex: state.loop.index,
+    catastropheStatus: state.catastrophe.status,
+    morrowTargets: state.morrowPlan?.targets.map((target) => String(target.npcId)) ?? [],
+    morrowTactic: state.morrowPlan?.tactic ?? null,
   };
 }
 

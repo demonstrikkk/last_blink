@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges" role="img" aria-label="Plaza civic terminal">
+  <rect width="64" height="64" rx="6" fill="#0a1220"/>
+  <rect x="1" y="1" width="62" height="62" rx="5" fill="none" stroke="#1f3b52"/>
+  <rect x="16" y="8" width="32" height="40" rx="3" fill="#0f1c2e" stroke="#6ee7e7"/>
+  <rect x="20" y="12" width="24" height="20" fill="#071019"/>
+  <path d="M23 18h18M23 22h14M23 26h10" stroke="#2dd4bf" stroke-width="1.5"/>
+  <circle cx="32" cy="38" r="5" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+  <path d="M32 35v6M30 38h4" stroke="#fbbf24" stroke-width="1"/>
+  <rect x="26" y="48" width="12" height="8" fill="#1f3b52"/>
+  <rect x="22" y="56" width="20" height="3" fill="#334155"/>
+</svg>

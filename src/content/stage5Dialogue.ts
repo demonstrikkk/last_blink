@@ -191,6 +191,15 @@ export function getDialogueScript(
   if (scriptId === 'archive_record') {
     return resolveArchiveRecordDialogue(state, view);
   }
+  if (scriptId === 'zeroing_order') {
+    return resolveZeroingOrderDialogue(state, view);
+  }
+  if (scriptId === 'detonator_schematic') {
+    return resolveDetonatorSchematicDialogue(state, view);
+  }
+  if (scriptId === 'relay_disarm') {
+    return resolveRelayDisarmDialogue(state, view);
+  }
   if (scriptId === 'ren') {
     return resolveRenDialogue(state, view);
   }
@@ -1183,6 +1192,84 @@ function resolveArchiveRecordDialogue(_state: GameState, _view: WorldView): Dial
     gate: 'Archival Incident Ledger inspected. Proof of premeditated suppression added to findings.',
     contextNote: 'Historical Record: Official suppression directive identified.',
     stanceNote: 'Archival record documented.',
+  };
+}
+
+function resolveZeroingOrderDialogue(_state: GameState, _view: WorldView): DialogueScript {
+  return {
+    scriptId: 'zeroing_order',
+    displayName: 'Civic Zeroing Order',
+    role: 'Sealed archive annex, Central Connector',
+    choiceNodeId: 'node.sable.relay',
+    lines: [
+      { speaker: 'Archive Annex', text: '[SEALED ORDER // DIRECTORATE EYES ONLY]' },
+      {
+        speaker: 'Archive Annex',
+        text: 'At 18:00 the district exchange will accept a zeroing token keyed to Relay 7 and the 434.8 MHz carrier. The street will read it as a power failure.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'This is not a blackout contingency. It is a demolition order with a clock face.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'If the jumper, the carrier and this order belong to one device, the depot schematic will tell me how to cut it.',
+      },
+    ],
+    gate: 'The zeroing order is now on the record. Find the depot charge schematic to reconstruct the device.',
+    contextNote: 'Attack order: the 18:00 catastrophe is a commanded zeroing event.',
+    stanceNote: 'A demolition order, signed and sealed.',
+  };
+}
+
+function resolveDetonatorSchematicDialogue(_state: GameState, _view: WorldView): DialogueScript {
+  return {
+    scriptId: 'detonator_schematic',
+    displayName: 'Charge Schematic',
+    role: 'Depot maintenance bay, South Yard',
+    choiceNodeId: 'node.relay.disarm',
+    lines: [
+      { speaker: 'Depot Bay', text: '[RELAY 7 ZEROING CHARGE // MAINTENANCE COPY]' },
+      {
+        speaker: 'Depot Bay',
+        text: 'Initiator: optical jumper. Arming carrier: 434.8 MHz. Cut sequence: isolate the carrier, pull the jumper, load ROOT-BYPASS-008.',
+      },
+      {
+        speaker: 'Aster',
+        text: 'One wrong order and the charge sees the cut as a trigger. The sequence is the whole puzzle.',
+      },
+    ],
+    gate: 'The schematic is in hand. Correlate the jumper, carrier and zeroing order, then cut the charge at Relay 7.',
+    contextNote: 'Countermeasure: the charge has one safe cut sequence.',
+    stanceNote: 'The device is now legible.',
+  };
+}
+
+function resolveRelayDisarmDialogue(state: GameState, view: WorldView): DialogueScript {
+  const disarmed = state.facts['story.bomb_disarmed']?.value === true;
+  const chain = state.facts['story.attack_chain'] !== undefined;
+  return {
+    scriptId: 'relay_disarm',
+    displayName: 'Relay 7 Zeroing Charge',
+    role: 'Relay 7 basement, Old Quarter',
+    choiceNodeId: 'node.relay.disarm',
+    lines: disarmed
+      ? [
+          { speaker: 'Relay 7', text: 'Carrier isolated. Jumper pulled. Root override accepted. Charge inert.' },
+          { speaker: 'Aster', text: 'The clock can reach 18:00. The street will still be here.' },
+        ]
+      : [
+          { speaker: 'Relay 7', text: '[ZEROING CHARGE // ARMED // CARRIER 434.8 MHz]' },
+          {
+            speaker: 'Aster',
+            text: chain
+              ? `The chain is whole: jumper, carrier, order, charge. Sequence: isolate, pull, override. Case: ${view.caseAssessment.title}.`
+              : 'The charge is here, but the chain is not whole. I need the jumper, the carrier, the zeroing order and the schematic before I touch it.',
+          },
+        ],
+    gate: 'Disarming needs the reconstructed attack chain and ROOT-BYPASS-008.',
+    contextNote: 'Countermeasure gate: the safe sequence is evidence-gated.',
+    stanceNote: 'The charge waits for a confident hand.',
   };
 }
 
