@@ -213,7 +213,176 @@ export function PuzzleBody({
         </div>
       </div>
 
-      {locked.length > 0 ? (
+      {kind === 'timeline' ? (
+        <>
+          {locked.length > 0 ? (
+            <div className="puzzle-locked" role="status">
+              <p>
+                Some records are still missing. Arrange the records you have; the sequence can only
+                be committed once every record is recovered. Find{' '}
+                <strong>{locked.join(', ')}</strong>.
+              </p>
+              <p className="mono">LOCKED // {locked.join(' · ')}</p>
+            </div>
+          ) : null}
+          {timelineCompleted ? (
+            <p className="puzzle-success mono">
+              ORDER RECORDED // sequence accepted; the eight-minute clock conflict remains open.
+            </p>
+          ) : (
+            <>
+              <p className="puzzle-hint">
+                Read the three records and place each one on the clock. The slot is the minute the
+                record itself describes — not the order you happened to find it in.
+              </p>
+              <ol className="timeline-rail">
+                {TIMELINE_SLOTS.map((slot) => {
+                  const placedId = Object.entries(timelinePlacement).find(
+                    ([, slotId]) => slotId === slot.id,
+                  )?.[0];
+                  const placed = TIMELINE_CARDS.find((card) => card.id === placedId);
+                  return (
+                    <li key={slot.id} className={`timeline-slot${placed ? ' slot-filled' : ''}`}>
+                      <div className="timeline-slot-head">
+                        <span className="mono">{slot.clock}</span>
+                        <strong>{slot.label}</strong>
+                        <span className="micro mono">{slot.hint}</span>
+                      </div>
+                      {placed ? (
+                        <button
+                          type="button"
+                          className="timeline-card card-placed"
+                          onClick={() => {
+                            setTimelinePlacement((current) => {
+                              const next = { ...current };
+                              delete next[placed.id];
+                              return next;
+                            });
+                            setFeedback(null);
+                          }}
+                        >
+                          <span className="card-title">{placed.title}</span>
+                          <span className="card-stamp mono">{placed.stamp}</span>
+                          <span className="micro mono">Click to return it to the pool</span>
+                        </button>
+                      ) : (
+                        <div
+                          className={`timeline-slot-target${draggedTimelineCard ? ' slot-drag-ready' : ''}`}
+                          role="button"
+                          tabIndex={timelinePicked === null ? -1 : 0}
+                          aria-label={timelinePicked === null ? `${slot.label}: pick a record first` : `Place selected record at ${slot.label}`}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            const cardId = event.dataTransfer.getData('text/plain') || draggedTimelineCard;
+                            if (cardId) placeTimelineCard(cardId, slot.id);
+                          }}
+                          onClick={() => {
+                            if (timelinePicked === null) return;
+                            placeTimelineCard(timelinePicked, slot.id);
+                          }}
+                          onKeyDown={(event) => {
+                            if ((event.key === 'Enter' || event.key === ' ') && timelinePicked !== null) {
+                              event.preventDefault();
+                              placeTimelineCard(timelinePicked, slot.id);
+                            }
+                          }}
+                        >
+                          {timelinePicked === null
+                            ? 'Pick a record below'
+                            : `Place ${timelinePicked === 'ward_dispatch' ? 'the dispatch slip' : timelinePicked === 'relay_7_log' ? 'the relay log' : "Ivo's account"} here`}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <div className="timeline-pool" role="group" aria-label="Records waiting to be placed">
+                {TIMELINE_CARDS.filter((card) => timelinePlacement[card.id] === undefined).map(
+                  (card) => {
+                    const recovered = collected(view, card.id);
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        disabled={!recovered}
+                        className={`timeline-card${timelinePicked === card.id ? ' card-picked' : ''}${recovered ? '' : ' card-locked'}`}
+                        aria-pressed={timelinePicked === card.id}
+                        onClick={() => {
+                          if (recovered) setTimelinePicked(card.id);
+                        }}
+                        draggable={recovered}
+                        onDragStart={(event) => {
+                          if (!recovered) return;
+                          event.dataTransfer.setData('text/plain', card.id);
+                          event.dataTransfer.effectAllowed = 'move';
+                          setDraggedTimelineCard(card.id);
+                        }}
+                        onDragEnd={() => setDraggedTimelineCard(null)}
+                      >
+                        <span className="card-title">{card.title}</span>
+                        <span className="card-stamp mono">
+                          {recovered ? card.stamp : 'RECORD NOT RECOVERED'}
+                        </span>
+                        <span className="card-quote">
+                          {recovered
+                            ? card.quote
+                            : `Recover this record before placing it: ${card.title}.`}
+                        </span>
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="btn"
+                disabled={
+                  locked.length > 0 ||
+                  Object.keys(timelinePlacement).length < TIMELINE_CARDS.length
+                }
+                onClick={() => {
+                  if (locked.length > 0) {
+                    setFeedback(
+                      `The sequence cannot be committed yet. Recover ${locked.join(', ')} first.`,
+                    );
+                    return;
+                  }
+                  const wrong = TIMELINE_CARDS.find(
+                    (card) => timelinePlacement[card.id] !== card.slot,
+                  );
+                  if (wrong) {
+                    setFeedback(
+                      `Not yet: ${wrong.title} sits in the wrong slot, because ${wrong.proof}.`,
+                    );
+                    return;
+                  }
+                  const order = TIMELINE_SLOTS.map(
+                    (slot) =>
+                      TIMELINE_CARDS.find((card) => timelinePlacement[card.id] === slot.id)?.id ?? '',
+                  );
+                  setFeedback(
+                    'Order recorded: the relay log opens the window, the slip is stamped at the reset, and Ivo places the departure after the clocks return. This fixes sequence; it still does not name who altered the slip.',
+                  );
+                  onCompleteChallenge({
+                    challengeId: 'challenge_timeline_relay7',
+                    challengeType: 'timeline_reconstruction',
+                    answer: { order },
+                  });
+                }}
+              >
+                {locked.length > 0
+                  ? `Recover ${locked.length} record${locked.length === 1 ? '' : 's'} first`
+                  : Object.keys(timelinePlacement).length < TIMELINE_CARDS.length
+                    ? `Verify the order (${Object.keys(timelinePlacement).length}/${TIMELINE_CARDS.length})`
+                    : 'Verify the order'}
+              </button>
+            </>
+          )}
+        </>
+      ) : locked.length > 0 ? (
         <div className="puzzle-locked" role="status">
           <p>
             This console is dark until the record supports it. Find{' '}
@@ -267,137 +436,6 @@ export function PuzzleBody({
               }}
             >
               Lock the channel
-            </button>
-          </>
-        )
-      ) : kind === 'timeline' ? (
-        timelineCompleted ? (
-          <p className="puzzle-success mono">
-            ORDER RECORDED // sequence accepted; the eight-minute clock conflict remains open.
-          </p>
-        ) : (
-          <>
-            <p className="puzzle-hint">
-              Read the three records and place each one on the clock. The slot is the minute the
-              record itself describes — not the order you happened to find it in.
-            </p>
-            <ol className="timeline-rail">
-              {TIMELINE_SLOTS.map((slot) => {
-                const placedId = Object.entries(timelinePlacement).find(
-                  ([, slotId]) => slotId === slot.id,
-                )?.[0];
-                const placed = TIMELINE_CARDS.find((card) => card.id === placedId);
-                return (
-                  <li key={slot.id} className={`timeline-slot${placed ? ' slot-filled' : ''}`}>
-                    <div className="timeline-slot-head">
-                      <span className="mono">{slot.clock}</span>
-                      <strong>{slot.label}</strong>
-                      <span className="micro mono">{slot.hint}</span>
-                    </div>
-                    {placed ? (
-                      <button
-                        type="button"
-                        className="timeline-card card-placed"
-                        onClick={() => {
-                          setTimelinePlacement((current) => {
-                            const next = { ...current };
-                            delete next[placed.id];
-                            return next;
-                          });
-                          setFeedback(null);
-                        }}
-                      >
-                        <span className="card-title">{placed.title}</span>
-                        <span className="card-stamp mono">{placed.stamp}</span>
-                        <span className="micro mono">Click to return it to the pool</span>
-                      </button>
-                    ) : (
-                      <div
-                        className={`timeline-slot-target${draggedTimelineCard ? ' slot-drag-ready' : ''}`}
-                        role="button"
-                        tabIndex={timelinePicked === null ? -1 : 0}
-                        aria-label={timelinePicked === null ? `${slot.label}: pick a record first` : `Place selected record at ${slot.label}`}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          const cardId = event.dataTransfer.getData('text/plain') || draggedTimelineCard;
-                          if (cardId) placeTimelineCard(cardId, slot.id);
-                        }}
-                        onClick={() => {
-                          if (timelinePicked === null) return;
-                          placeTimelineCard(timelinePicked, slot.id);
-                        }}
-                        onKeyDown={(event) => {
-                          if ((event.key === 'Enter' || event.key === ' ') && timelinePicked !== null) {
-                            event.preventDefault();
-                            placeTimelineCard(timelinePicked, slot.id);
-                          }
-                        }}
-                      >
-                        {timelinePicked === null
-                          ? 'Pick a record below'
-                          : `Place ${timelinePicked === 'ward_dispatch' ? 'the dispatch slip' : timelinePicked === 'relay_7_log' ? 'the relay log' : "Ivo's account"} here`}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-
-            <div className="timeline-pool" role="group" aria-label="Records waiting to be placed">
-              {TIMELINE_CARDS.filter((card) => timelinePlacement[card.id] === undefined).map(
-                (card) => (
-                  <button
-                    key={card.id}
-                    type="button"
-                    className={`timeline-card${timelinePicked === card.id ? ' card-picked' : ''}`}
-                    aria-pressed={timelinePicked === card.id}
-                    onClick={() => setTimelinePicked(card.id)}
-                    draggable
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData('text/plain', card.id);
-                      event.dataTransfer.effectAllowed = 'move';
-                      setDraggedTimelineCard(card.id);
-                    }}
-                    onDragEnd={() => setDraggedTimelineCard(null)}
-                  >
-                    <span className="card-title">{card.title}</span>
-                    <span className="card-stamp mono">{card.stamp}</span>
-                    <span className="card-quote">{card.quote}</span>
-                  </button>
-                ),
-              )}
-            </div>
-
-            <button
-              type="button"
-              className="btn"
-              disabled={Object.keys(timelinePlacement).length < TIMELINE_CARDS.length}
-              onClick={() => {
-                const wrong = TIMELINE_CARDS.find(
-                  (card) => timelinePlacement[card.id] !== card.slot,
-                );
-                if (wrong) {
-                  setFeedback(
-                    `Not yet: ${wrong.title} sits in the wrong slot, because ${wrong.proof}.`,
-                  );
-                  return;
-                }
-                const order = TIMELINE_SLOTS.map(
-                  (slot) =>
-                    TIMELINE_CARDS.find((card) => timelinePlacement[card.id] === slot.id)?.id ?? '',
-                );
-                setFeedback(
-                  'Order recorded: the relay log opens the window, the slip is stamped at the reset, and Ivo places the departure after the clocks return. This fixes sequence; it still does not name who altered the slip.',
-                );
-                onCompleteChallenge({
-                  challengeId: 'challenge_timeline_relay7',
-                  challengeType: 'timeline_reconstruction',
-                  answer: { order },
-                });
-              }}
-            >
-              Verify the order
             </button>
           </>
         )

@@ -87,6 +87,29 @@ describe('map-anchored puzzles', () => {
     expect(html).toContain('Pick a record below');
   });
 
+  it('renders the full timeline board even before the records are recovered', async () => {
+    const { session } = await stage5Harness();
+    const view = deriveWorldView(session.getState(), STAGE5_CONTENT);
+    const html = renderToStaticMarkup(
+      createElement(PuzzleBody, {
+        kind: 'timeline',
+        state: session.getState(),
+        view,
+        onMakeCaseChoice: noopChoice,
+        onCompleteChallenge: noopChallenge,
+      }),
+    );
+    expect(html).toContain('03:06');
+    expect(html).toContain('03:14');
+    expect(html).toContain('03:22');
+    expect(html).toContain('Relay 7 hardware log');
+    expect(html).toContain('Ward dispatch slip');
+    expect(html).toContain("Ivo&#x27;s account");
+    expect(html).toContain('RECORD NOT RECOVERED');
+    expect(html).toContain('Recover 3 records first');
+    expect(html).not.toContain('This console is dark');
+  });
+
   it('renders the contradiction puzzle only after the slip and the account exist', async () => {
     const { session } = await stage5Harness();
     collect(session, 'ward_dispatch');

@@ -57,20 +57,6 @@ export function PuzzleSheet({
           </button>
         </header>
 
-        {context ? (
-          <div className="puzzle-context">
-            <p className="micro mono">
-              {context.displayName} · {context.role}
-            </p>
-            {context.lines.map((line, index) => (
-              <p key={`${context.scriptId}-${index}`}>
-                <strong>{line.speaker}:</strong> {line.text}
-              </p>
-            ))}
-            <p className="puzzle-gate mono">{context.gate}</p>
-          </div>
-        ) : null}
-
         <PuzzleBody
           kind={puzzle}
           state={state}
@@ -78,6 +64,20 @@ export function PuzzleSheet({
           onMakeCaseChoice={onMakeCaseChoice}
           onCompleteChallenge={onCompleteChallenge}
         />
+
+        {context ? (
+          <details className="puzzle-context">
+            <summary className="puzzle-context-summary mono">
+              CASE CONTEXT // {context.displayName} · {context.role}
+            </summary>
+            {context.lines.map((line, index) => (
+              <p key={`${context.scriptId}-${index}`}>
+                <strong>{line.speaker}:</strong> {line.text}
+              </p>
+            ))}
+            <p className="puzzle-gate mono">{context.gate}</p>
+          </details>
+        ) : null}
 
         <p className="note-muted">
           The same console is on the Case Board under Challenges. Solving it here commits the

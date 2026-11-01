@@ -2045,6 +2045,17 @@ kbd {
   border-color: var(--cyan);
 }
 
+.timeline-card.card-locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+  border-style: dashed;
+  border-color: var(--amber);
+}
+
+.timeline-card.card-locked .card-stamp {
+  color: var(--amber);
+}
+
 .timeline-pool {
   display: grid;
   gap: 6px;
@@ -4172,6 +4183,31 @@ kbd {
   padding: 10px 12px;
   border-left: 2px solid var(--cyan);
   background: color-mix(in srgb, var(--ink-900) 86%, var(--cyan) 14%);
+}
+
+.puzzle-context-summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.puzzle-context-summary::-webkit-details-marker {
+  display: none;
+}
+
+.puzzle-context-summary::before {
+  content: '▸ ';
+  color: var(--cyan);
+}
+
+.puzzle-context[open] > .puzzle-context-summary {
+  margin-bottom: 6px;
+}
+
+.puzzle-context[open] > .puzzle-context-summary::before {
+  content: '▾ ';
 }
 
 .puzzle-context p {
